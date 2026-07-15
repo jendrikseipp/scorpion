@@ -1,0 +1,560 @@
+<title>Perfect SCP — branch progress</title>
+<style>
+  :root {
+    --paper: #eef0f3;
+    --panel: #ffffff;
+    --panel-2: #f7f8fa;
+    --ink: #12151b;
+    --muted: #5a6472;
+    --faint: #8a93a1;
+    --line: #dde1e8;
+    --hair: #e7eaef;
+    --coverage: #1f9e69;
+    --mem: #2183a8;
+    --time: #bd7513;
+    --keep: #1f9e69;
+    --discard: #b8607a;
+    --shadow: 0 1px 2px rgba(18,21,27,.05), 0 8px 24px rgba(18,21,27,.05);
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0c0f14;
+      --panel: #141922;
+      --panel-2: #10141c;
+      --ink: #e7ebf1;
+      --muted: #949dac;
+      --faint: #626c7c;
+      --line: #232b37;
+      --hair: #1b222c;
+      --coverage: #46c98c;
+      --mem: #4bb8d8;
+      --time: #e0a84b;
+      --keep: #46c98c;
+      --discard: #d67f9c;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"] {
+    --paper: #eef0f3; --panel: #ffffff; --panel-2: #f7f8fa; --ink: #12151b;
+    --muted: #5a6472; --faint: #8a93a1; --line: #dde1e8; --hair: #e7eaef;
+    --coverage: #1f9e69; --mem: #2183a8; --time: #bd7513; --keep: #1f9e69;
+    --discard: #b8607a; --shadow: 0 1px 2px rgba(18,21,27,.05), 0 8px 24px rgba(18,21,27,.05);
+  }
+  :root[data-theme="dark"] {
+    --paper: #0c0f14; --panel: #141922; --panel-2: #10141c; --ink: #e7ebf1;
+    --muted: #949dac; --faint: #626c7c; --line: #232b37; --hair: #1b222c;
+    --coverage: #46c98c; --mem: #4bb8d8; --time: #e0a84b; --keep: #46c98c;
+    --discard: #d67f9c; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: clamp(20px, 4vw, 56px) clamp(16px, 4vw, 40px) 72px; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--faint); margin: 0 0 14px;
+  }
+  h1 {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: clamp(26px, 5vw, 42px);
+    letter-spacing: -.01em; line-height: 1.08;
+    margin: 0 0 14px; text-wrap: balance;
+  }
+  h1 .accent { color: var(--coverage); }
+  .lede { max-width: 64ch; color: var(--muted); font-size: 16px; margin: 0; }
+  .lede a { color: var(--ink); text-underline-offset: 3px; text-decoration-color: var(--line); }
+
+  /* KPI readout */
+  .kpis {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px; background: var(--line);
+    border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+    margin: 34px 0 8px;
+  }
+  .kpi { background: var(--panel); padding: 18px 18px 16px; }
+  .kpi .k-label {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--faint); margin: 0 0 9px;
+  }
+  .kpi .k-val {
+    font-family: var(--mono); font-weight: 600; font-size: 28px;
+    letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .kpi .k-sub { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 7px; }
+  .k-up { color: var(--coverage); }
+
+  /* Panels */
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: clamp(18px, 3vw, 28px); box-shadow: var(--shadow);
+  }
+  section { margin-top: 34px; }
+  .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 6px; flex-wrap: wrap; }
+  .sec-title { font-family: var(--mono); font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); margin: 0; }
+  .sec-note { font-size: 13.5px; color: var(--muted); margin: 4px 0 0; max-width: 70ch; }
+
+  figure { margin: 0; }
+  svg { display: block; width: 100%; height: auto; }
+  .cap { font-size: 12.5px; color: var(--muted); margin: 12px 2px 0; }
+
+  /* small multiples */
+  .multi { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 16px; box-shadow: var(--shadow); }
+  .card h3 { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; margin: 0 0 2px; }
+  .card .sub { font-size: 12.5px; color: var(--muted); margin: 0 0 12px; min-height: 2.6em; }
+  .card .result { font-family: var(--mono); font-size: 12.5px; color: var(--muted); margin-top: 10px; font-variant-numeric: tabular-nums; }
+  .card .result b { color: var(--ink); font-weight: 600; }
+
+  /* legend */
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .swatch { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+  /* ledger strip */
+  .seg-group { margin-top: 16px; }
+  .seg-label { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); margin: 0 0 8px; display: flex; gap: 10px; align-items: baseline; }
+  .seg-label b { color: var(--ink); font-weight: 600; letter-spacing: 0; text-transform: none; font-size: 12.5px; }
+  .ticks { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tick {
+    width: 16px; height: 26px; border-radius: 3px; cursor: default;
+    background: var(--keep); position: relative;
+  }
+  .tick.discard { background: transparent; border: 1.5px dashed var(--discard); }
+  .tick:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  /* milestones */
+  .mile { display: grid; gap: 0; }
+  .mrow { display: grid; grid-template-columns: 92px 1fr; gap: 16px; padding: 15px 0; border-top: 1px solid var(--hair); }
+  .mrow:first-child { border-top: none; }
+  .mtag { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--coverage); padding-top: 2px; }
+  .mtag.algo { color: var(--mem); }
+  .mtag.fix { color: var(--time); }
+  .mbody h4 { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+  .mbody p { margin: 0; color: var(--muted); font-size: 14px; }
+  .mbody code { font-family: var(--mono); font-size: 12.5px; background: var(--panel-2); padding: 1px 5px; border-radius: 4px; }
+
+  footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  footer a { color: var(--ink); }
+  .mono { font-family: var(--mono); }
+
+  @media (max-width: 560px) {
+    .mrow { grid-template-columns: 1fr; gap: 4px; }
+    .kpi .k-val { font-size: 24px; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Autoresearch log · branch <span class="mono">perfect-scp</span></p>
+    <h1>Perfect SCP heuristic:<br>from <span class="accent">integration</span> to a tuned implementation</h1>
+    <p class="lede">
+      An autonomous optimization loop that integrated the perfect saturated cost
+      partitioning heuristic (Höft, Speck &amp; Seipp, KR 2025) into Scorpion and
+      then reworked its construction until it fits in time and memory. Every kept
+      change was A/B-measured against a frozen reference and confirmed on the full
+      optimal-STRIPS benchmark set; initial heuristic values stayed bit-identical
+      throughout. Opened as <a href="https://github.com/jendrikseipp/scorpion/pull/33">scorpion#33</a>.
+    </p>
+
+    <div class="kpis">
+      <div class="kpi">
+        <p class="k-label">Coverage</p>
+        <div class="k-val">609&nbsp;→&nbsp;<span class="k-up">666</span></div>
+        <p class="k-sub">+57 tasks (+9.4%)</p>
+      </div>
+      <div class="kpi">
+        <p class="k-label">Construction speed</p>
+        <div class="k-val">5.3×</div>
+        <p class="k-sub">faster (segment 0)</p>
+      </div>
+      <div class="kpi">
+        <p class="k-label">Peak memory</p>
+        <div class="k-val">2.8×</div>
+        <p class="k-sub">smaller on blowup tasks</p>
+      </div>
+      <div class="kpi">
+        <p class="k-label">Experiments</p>
+        <div class="k-val">69</div>
+        <p class="k-sub">53 kept · 16 reverted</p>
+      </div>
+      <div class="kpi">
+        <p class="k-label">Grid runs</p>
+        <div class="k-val">6</div>
+        <p class="k-sub">h bit-identical</p>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <h2 class="sec-title">Coverage across grid experiments</h2>
+    </div>
+    <p class="sec-note">
+      Optimal-STRIPS benchmarks, A* with <span class="mono">sscp</span> over
+      systematic(2) projections, 30&nbsp;min / 8&nbsp;GiB. Each point is a full
+      benchmark run of one revision. The dip at <em>table-sharing</em> is the
+      lookup-table cache before it was memory-budgeted; the final cluster sits in
+      a 661–666 boundary band (tasks tipping over the wall-clock limit on slower
+      nodes, verified as noise — identical A* expansions).
+    </p>
+    <figure class="panel">
+      <svg id="coverageChart" viewBox="0 0 980 360" role="img"
+           aria-label="Coverage rising from 609 at integration to a 661–666 band at the tuned revisions."></svg>
+    </figure>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2 class="sec-title">Three optimization campaigns</h2>
+    </div>
+    <p class="sec-note">
+      The loop ran in three segments, each re-baselined to the previous segment's
+      end (ratio&nbsp;=&nbsp;1.0), so the curves are within-segment and not directly
+      comparable across panels. Lower is better.
+    </p>
+    <div class="legend" style="margin:14px 2px 16px">
+      <span><i class="swatch" style="background:var(--mem)"></i>peak memory ratio</span>
+      <span><i class="swatch" style="background:var(--time)"></i>construction-time ratio</span>
+    </div>
+    <div class="multi">
+      <div class="card">
+        <h3>Segment 0 · Speed</h3>
+        <p class="sub">Constant-factor wins in the hot construction loops.</p>
+        <svg class="camo" viewBox="0 0 320 210" role="img" aria-label="Construction-time ratio falling to 0.19 over 25 experiments."></svg>
+        <p class="result"><b>time 1.00 → 0.19</b> · 5.3× faster<br><span style="color:var(--faint)">vs. the integration binary</span></p>
+      </div>
+      <div class="card">
+        <h3>Segment 1 · Memory + algorithm</h3>
+        <p class="sub">Packed data structures plus the intersection-conflict rule that collapses the graph.</p>
+        <svg class="camo" viewBox="0 0 320 210" role="img" aria-label="Peak-memory ratio falling to 0.30 and time to 0.52."></svg>
+        <p class="result"><b>mem 1.00 → 0.30</b> · 3.4× smaller<br><b>time → 0.52</b> · 1.9× faster<br><span style="color:var(--faint)">vs. the segment-0 binary</span></p>
+      </div>
+      <div class="card">
+        <h3>Segment 2 · DAG generation</h3>
+        <p class="sub">Diff-encoded caches, 16-byte nodes and mask-only partitioning.</p>
+        <svg class="camo" viewBox="0 0 320 210" role="img" aria-label="Peak-memory ratio falling to 0.36 and time to 0.54."></svg>
+        <p class="result"><b>mem 1.00 → 0.36</b> · 2.8× smaller<br><b>time → 0.54</b> · 1.8× faster<br><span style="color:var(--faint)">vs. the segment-1 binary</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2 class="sec-title">Every experiment</h2>
+    </div>
+    <p class="sec-note">
+      69 experiments, in order. A change was kept only when the measured win beat
+      the run-to-run noise; 16 were reverted, including four deliberate ablations
+      that confirmed earlier changes still earn their keep. Hover a tick for the
+      idea and its outcome.
+    </p>
+    <div class="panel" style="margin-top:16px">
+      <div class="legend" style="margin-bottom:6px">
+        <span><i class="swatch" style="background:var(--keep)"></i>kept</span>
+        <span><i class="swatch" style="border:1.5px dashed var(--discard);background:transparent;width:9px;height:9px"></i>reverted</span>
+      </div>
+      <div id="ledger"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2 class="sec-title">Turning points</h2>
+    </div>
+    <div class="panel mile" id="milestones" style="margin-top:16px"></div>
+  </section>
+
+  <footer>
+    <p>
+      Source of record: <span class="mono">misc/autoresearch/perfect-scp/</span>
+      — <span class="mono">autoresearch.md</span> (full log),
+      <span class="mono">autoresearch.jsonl</span> (ledger, the data behind these plots).
+      Generated for branch <span class="mono">perfect-scp</span> · PR
+      <a href="https://github.com/jendrikseipp/scorpion/pull/33">jendrikseipp/scorpion#33</a>.
+    </p>
+  </footer>
+</div>
+
+<script>
+/* ---- data (from autoresearch.jsonl + grid reports) ---- */
+const coverage = [
+  {rev: "integration", cov: 609},
+  {rev: "fast",        cov: 615},
+  {rev: "conflicts",   cov: 656},
+  {rev: "table-share", cov: 649},
+  {rev: "final·s1",    cov: 654},
+  {rev: "memory",      cov: 660},
+  {rev: "speed",       cov: 661},
+  {rev: "speed2",      cov: 666},
+  {rev: "final",       cov: 665},
+  {rev: "cleaned",     cov: 661},
+];
+// kept-run metric ratchets per segment (primary + secondary where tracked)
+const seg0time = [.996,.985,.775,.758,.619,.610,.556,.539,.542,.538,.259,.252,.237,.196,.191,.188,.190];
+const seg1mem  = [1.00,.943,.853,.806,.760,.644,.529,.529,.324,.324,.303,.303,.323,.305,.305,.298,.297,.297,.297,.297];
+const seg1time = [.999,1.009,.944,.957,.943,.791,.777,.773,.926,.794,.787,.642,.522,.529,.524,.516,.506,.502,.526,.516];
+const seg2mem  = [.988,.903,.879,.607,.608,.418,.360,.360,.360,.360,.359,.359,.359,.358,.358];
+const seg2time = [.958,.932,.983,.977,.956,.978,.923,.902,.937,.869,.611,.544,.549,.539,.539];
+
+const ledger = [
+{r:1,s:0,k:1,d:"baseline (identical binaries)"},
+{r:2,s:0,k:0,d:"hash-index for duplicate lookup tables — dedup wasn't the bottleneck"},
+{r:3,s:0,k:1,d:"branchless / vectorizable reduce_costs"},
+{r:4,s:0,k:0,d:"flip cache_lookup_tables default — 40% slower"},
+{r:5,s:0,k:1,d:"register cost key once per max node"},
+{r:6,s:0,k:1,d:"incremental negative-scf flags per child"},
+{r:7,s:0,k:0,d:"return scf by const ref — copies weren't the cost"},
+{r:8,s:0,k:1,d:"fix early exit in compute_independent_abstractions (+18%)"},
+{r:9,s:0,k:1,d:"fuse unguarded reduction with negative-scf tracking"},
+{r:10,s:0,k:0,d:"single-component fast path (first try) — within noise"},
+{r:11,s:0,k:0,d:"simulated_any_op flag instead of vector compare — noise"},
+{r:12,s:0,k:1,d:"reuse Dijkstra buffers across goal-distance calls"},
+{r:13,s:0,k:1,d:"uint64 word masks for the dependency checks"},
+{r:14,s:0,k:1,d:"clarity: remove dump_tree / dead debug code"},
+{r:15,s:0,k:1,d:"clarity: StructuredSCPOptions replaces g_hacked_* globals"},
+{r:16,s:0,k:0,d:"hoist per-child buffers — 2% worse"},
+{r:17,s:0,k:1,d:"cache PRUNED_LOOKUP sentinel (52% — 3.9× total)"},
+{r:18,s:0,k:1,d:"single-component fast path (retry, now worthwhile)"},
+{r:19,s:0,k:1,d:"sparse SaturatedCostFunction with nonzero_ops"},
+{r:20,s:0,k:1,d:"deque scf_cache + const-ref, no per-child copies"},
+{r:21,s:0,k:1,d:"CostContext with incremental live/cond masks"},
+{r:22,s:0,k:0,d:"in-place CostContext undo — 1.6% worse, uglier"},
+{r:23,s:0,k:1,d:"dense [cost_key][abstraction] lookup cache"},
+{r:24,s:0,k:0,d:"reusable member DisjointSet — no win"},
+{r:25,s:0,k:1,d:"clarity: non-const Instruction members"},
+{r:26,s:1,k:1,d:"segment 1 baseline"},
+{r:27,s:1,k:1,d:"packed cost-function storage"},
+{r:28,s:1,k:1,d:"transparent node-set dedup caches"},
+{r:29,s:1,k:1,d:"free construction caches before instruction phase"},
+{r:30,s:1,k:1,d:"flattened Instructions struct"},
+{r:31,s:1,k:1,d:"flat arena of SSCPNode structs"},
+{r:32,s:1,k:1,d:"shared children pool with per-node slices"},
+{r:33,s:1,k:1,d:"clarity: drop level field, sort by node id"},
+{r:34,s:1,k:1,d:"ALGORITHMIC: intersection conflicts + ∞-donation (DAG collapse)"},
+{r:35,s:1,k:0,d:"input-keyed memoization — 2× memory"},
+{r:36,s:1,k:1,d:"static pair-conflict bit matrix (+17%)"},
+{r:37,s:1,k:0,d:"interned-set memo incl. inputs — time↓ but mem↑ trade-off"},
+{r:38,s:1,k:1,d:"scheduled-set cache keyed by (cost key, set id)"},
+{r:39,s:1,k:1,d:"cost key in CostContext + read-only entry probe"},
+{r:40,s:1,k:1,d:"ALGORITHMIC: per-abstraction restricted-cost table sharing"},
+{r:41,s:1,k:1,d:"bit-packed cost blob pool"},
+{r:42,s:1,k:1,d:"rolling content hash (O(delta) updates)"},
+{r:43,s:1,k:1,d:"int16 lookup-cache rows with overflow map"},
+{r:44,s:1,k:1,d:"in-place context reduction with sparse undo"},
+{r:45,s:1,k:1,d:"consolidation: remove orphaned symbols"},
+{r:46,s:1,k:0,d:"ablation: masks — removing costs +2.7% (kept)"},
+{r:47,s:1,k:0,d:"ablation: static matrix — removing costs +17% (kept)"},
+{r:48,s:1,k:0,d:"ablation: fast path — removing costs +6% (kept)"},
+{r:49,s:1,k:0,d:"ablation: entry probe — removing costs +14% (kept)"},
+{r:50,s:1,k:1,d:"clarity: split into sscp_dag.h + cost_function_registry"},
+{r:51,s:1,k:1,d:"budgeted restricted-cost maps (fixes scanalyzer OOM)"},
+{r:52,s:2,k:1,d:"sparse SaturatedCostFunction (parallel arrays)"},
+{r:53,s:2,k:1,d:"registry blobs as diff bitmask vs first cost function"},
+{r:54,s:2,k:1,d:"SSCPNode 32 → 16 bytes via unions"},
+{r:55,s:2,k:1,d:"chunked BlobPool (kills doubling-realloc spike)"},
+{r:56,s:2,k:1,d:"geometric checkpoints drop useless caches early"},
+{r:57,s:2,k:1,d:"per-abstraction registry for restricted keys"},
+{r:58,s:2,k:1,d:"two-level diff masks (dirty-block bitmap)"},
+{r:59,s:2,k:1,d:"probe max-node memo before partitioning"},
+{r:60,s:2,k:1,d:"frontier-search partition replaces union-find (psr −27%)"},
+{r:61,s:2,k:0,d:"word-wise mask save/restore — neutral"},
+{r:62,s:2,k:1,d:"word-mask simulated-ops (removes two O(ops) passes)"},
+{r:63,s:2,k:1,d:"mask-only simulated contexts (−30% time)"},
+{r:64,s:2,k:1,d:"sized-assignment gathers replace push_back loops"},
+{r:65,s:2,k:0,d:"branchless per-block masks — +1%"},
+{r:66,s:2,k:1,d:"scaling budgets for 1000+-abstraction tasks"},
+{r:67,s:2,k:1,d:"audit: remove dead connected_components library"},
+{r:68,s:2,k:1,d:"audit: remove redundant memo probe + comment merge"},
+{r:69,s:2,k:1,d:"verified cleanup behaviour-preserving (identical expansions)"},
+];
+
+const milestones = [
+  {tag:"algo", cls:"algo", title:"Intersection conflicts collapse the graph",
+   body:"Deciding order independence by the <em>intersection</em> of saturation-affecting labels (Theorems 6/7), not the union used in the authors' dev branch, shrank example graphs by orders of magnitude — rovers06 from 2.88M to 14.6k nodes, tpp06 from a 7&nbsp;GB blowup to 87 nodes."},
+  {tag:"algo", cls:"algo", title:"Restricted-cost table sharing",
+   body:"Goal distances depend only on an abstraction's relevant operators, so cost functions that agree on those share a lookup table and skip the Dijkstra — later interned in per-abstraction registries and memory-budgeted."},
+  {tag:"mem", cls:"", title:"Diff-encoded, chunked cost-function registry",
+   body:"Each cost function is stored as a two-level bitmask of the operators that differ from the task's costs plus the packed changed values, in a chunked pool — the dominant memory consumer during DAG generation, cut to a fraction with one-pass verification."},
+  {tag:"speed", cls:"fix", title:"Frontier-search partitioning",
+   body:"Replacing the disjoint-set union-find with a frontier search over the implicit dependency graph cut psr47 DAG generation 27% and let the whole connected-components library be deleted."},
+  {tag:"fix", cls:"fix", title:"Two soundness findings",
+   body:"The ported dev branch's union rule yields inadmissible heuristics on 28 tasks; and the vendored gtl's <code>bit_vector::find_next</code> misreports set bits — reported upstream as greg7mdp/gtl#56. Neither affects this implementation."},
+];
+
+/* ---- rendering ---- */
+const NS = "http://www.w3.org/2000/svg";
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function el(name, attrs, txt) {
+  const n = document.createElementNS(NS, name);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (txt != null) n.textContent = txt;
+  return n;
+}
+
+function drawCoverage() {
+  const svg = document.getElementById("coverageChart");
+  const W = 980, H = 360, m = {t: 28, r: 24, b: 54, l: 46};
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const yMin = 600, yMax = 675;
+  const x = i => m.l + (coverage.length === 1 ? 0 : i * iw / (coverage.length - 1));
+  const y = v => m.t + ih - (v - yMin) / (yMax - yMin) * ih;
+
+  // gridlines + y labels
+  for (let v = 600; v <= 675; v += 15) {
+    svg.appendChild(el("line", {x1: m.l, y1: y(v), x2: W - m.r, y2: y(v),
+      stroke: "var(--hair)", "stroke-width": 1}));
+    svg.appendChild(el("text", {x: m.l - 10, y: y(v) + 4, "text-anchor": "end",
+      fill: "var(--faint)", "font-size": 12, "font-family": "var(--mono)"}, v));
+  }
+  // boundary band over last cluster (speed2..cleaned: 661-666)
+  const bx = x(7) - 10;
+  svg.appendChild(el("rect", {x: bx, y: y(666), width: W - m.r - bx,
+    height: y(661) - y(666), fill: "var(--coverage)", opacity: .08}));
+  svg.appendChild(el("text", {x: W - m.r, y: y(666) - 8, "text-anchor": "end",
+    fill: "var(--faint)", "font-size": 11, "font-family": "var(--mono)"}, "boundary band 661–666"));
+
+  // area + line
+  const pts = coverage.map((d, i) => [x(i), y(d.cov)]);
+  const linePath = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const areaPath = linePath + ` L${x(coverage.length - 1).toFixed(1)} ${y(yMin).toFixed(1)} L${x(0).toFixed(1)} ${y(yMin).toFixed(1)} Z`;
+  svg.appendChild(el("path", {d: areaPath, fill: "var(--coverage)", opacity: .09}));
+  const line = el("path", {d: linePath, fill: "none", stroke: "var(--coverage)",
+    "stroke-width": 2.5, "stroke-linejoin": "round", "stroke-linecap": "round"});
+  svg.appendChild(line);
+
+  // points + value labels + x labels
+  coverage.forEach((d, i) => {
+    const last = i === coverage.length - 1;
+    const dot = el("circle", {cx: x(i), cy: y(d.cov), r: last || i === 7 ? 5 : 3.5,
+      fill: "var(--panel)", stroke: "var(--coverage)", "stroke-width": 2.5});
+    dot.appendChild(el("title", {}, `${d.rev}: ${d.cov} solved`));
+    svg.appendChild(dot);
+    // value label above notable points
+    if (i === 0 || i === 2 || i === 3 || i === 7 || last) {
+      svg.appendChild(el("text", {x: x(i), y: y(d.cov) - 13, "text-anchor": "middle",
+        fill: "var(--ink)", "font-size": 13, "font-weight": 600,
+        "font-family": "var(--mono)", "font-variant-numeric": "tabular-nums"}, d.cov));
+    }
+    const lab = el("text", {x: x(i), y: H - 30, "text-anchor": "middle",
+      fill: "var(--muted)", "font-size": 11, "font-family": "var(--mono)"}, d.rev);
+    lab.setAttribute("transform", `rotate(-32 ${x(i)} ${H - 30})`);
+    svg.appendChild(lab);
+  });
+  // axis titles
+  svg.appendChild(el("text", {x: m.l, y: 16, fill: "var(--faint)", "font-size": 11,
+    "font-family": "var(--mono)", "letter-spacing": ".08em"}, "TASKS SOLVED"));
+
+  if (!reduce) {
+    const len = line.getTotalLength();
+    line.style.strokeDasharray = len; line.style.strokeDashoffset = len;
+    line.animate([{strokeDashoffset: len}, {strokeDashoffset: 0}],
+      {duration: 1100, easing: "ease-out", fill: "forwards"});
+  }
+}
+
+function drawCampaign(svg, series) {
+  const W = 320, H = 210, m = {t: 14, r: 14, b: 26, l: 30};
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const n = Math.max(...series.map(s => s.data.length));
+  const x = i => m.l + (n <= 1 ? 0 : i * iw / (n - 1));
+  const y = v => m.t + ih - v / 1.05 * ih;             // 0..1.05 domain
+
+  [0, .5, 1].forEach(v => {
+    svg.appendChild(el("line", {x1: m.l, y1: y(v), x2: W - m.r, y2: y(v),
+      stroke: "var(--hair)", "stroke-width": 1}));
+    svg.appendChild(el("text", {x: m.l - 7, y: y(v) + 3.5, "text-anchor": "end",
+      fill: "var(--faint)", "font-size": 10, "font-family": "var(--mono)"}, v.toFixed(1)));
+  });
+
+  series.forEach(s => {
+    const pts = s.data.map((v, i) => [x(i), y(v)]);
+    const d = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+    if (s.primary) {
+      const area = d + ` L${x(s.data.length - 1).toFixed(1)} ${y(0).toFixed(1)} L${x(0).toFixed(1)} ${y(0).toFixed(1)} Z`;
+      svg.appendChild(el("path", {d: area, fill: s.color, opacity: .10}));
+    }
+    const path = el("path", {d, fill: "none", stroke: s.color,
+      "stroke-width": s.primary ? 2.2 : 1.5, "stroke-linejoin": "round",
+      "stroke-linecap": "round", opacity: s.primary ? 1 : .7});
+    if (!s.primary) path.setAttribute("stroke-dasharray", "3 3");
+    svg.appendChild(path);
+    const lp = pts[pts.length - 1];
+    svg.appendChild(el("circle", {cx: lp[0], cy: lp[1], r: 4,
+      fill: "var(--panel)", stroke: s.color, "stroke-width": 2.2}));
+    svg.appendChild(el("text", {x: lp[0] - 6, y: lp[1] - 8, "text-anchor": "end",
+      fill: s.color, "font-size": 12, "font-weight": 600, "font-family": "var(--mono)",
+      "font-variant-numeric": "tabular-nums"}, s.data[s.data.length - 1].toFixed(2)));
+    if (s.primary && !reduce) {
+      const len = path.getTotalLength();
+      path.style.strokeDasharray = len; path.style.strokeDashoffset = len;
+      path.animate([{strokeDashoffset: len}, {strokeDashoffset: 0}],
+        {duration: 950, easing: "ease-out", fill: "forwards"});
+    }
+  });
+  svg.appendChild(el("text", {x: W - m.r, y: H - 8, "text-anchor": "end",
+    fill: "var(--faint)", "font-size": 10, "font-family": "var(--mono)"}, "experiments →"));
+}
+
+function drawLedger() {
+  const host = document.getElementById("ledger");
+  const segs = [
+    {id: 0, name: "Segment 0 — Speed", note: "runs 1–25"},
+    {id: 1, name: "Segment 1 — Memory + algorithm", note: "runs 26–51"},
+    {id: 2, name: "Segment 2 — DAG generation", note: "runs 52–69"},
+  ];
+  segs.forEach(seg => {
+    const g = document.createElement("div"); g.className = "seg-group";
+    const lab = document.createElement("p"); lab.className = "seg-label";
+    lab.innerHTML = `<b>${seg.name}</b> <span>${seg.note}</span>`;
+    g.appendChild(lab);
+    const strip = document.createElement("div"); strip.className = "ticks";
+    ledger.filter(x => x.s === seg.id).forEach(x => {
+      const t = document.createElement("div");
+      t.className = "tick" + (x.k ? "" : " discard");
+      t.tabIndex = 0;
+      t.title = `#${x.r} · ${x.k ? "KEPT" : "REVERTED"} — ${x.d}`;
+      strip.appendChild(t);
+    });
+    g.appendChild(strip);
+    host.appendChild(g);
+  });
+}
+
+function drawMilestones() {
+  const host = document.getElementById("milestones");
+  milestones.forEach(mi => {
+    const row = document.createElement("div"); row.className = "mrow";
+    const tag = document.createElement("div"); tag.className = "mtag " + mi.cls;
+    tag.textContent = mi.tag === "algo" ? "algorithm" : mi.tag === "speed" ? "speed" :
+                      mi.tag === "mem" ? "memory" : "correctness";
+    const body = document.createElement("div"); body.className = "mbody";
+    body.innerHTML = `<h4>${mi.title}</h4><p>${mi.body}</p>`;
+    row.appendChild(tag); row.appendChild(body); host.appendChild(row);
+  });
+}
+
+drawCoverage();
+document.querySelectorAll(".camo").forEach((svg, i) => {
+  if (i === 0) drawCampaign(svg, [{data: seg0time, color: "var(--time)", primary: true}]);
+  if (i === 1) drawCampaign(svg, [
+    {data: seg1time, color: "var(--time)", primary: false},
+    {data: seg1mem, color: "var(--mem)", primary: true}]);
+  if (i === 2) drawCampaign(svg, [
+    {data: seg2time, color: "var(--time)", primary: false},
+    {data: seg2mem, color: "var(--mem)", primary: true}]);
+});
+drawLedger();
+drawMilestones();
+</script>
