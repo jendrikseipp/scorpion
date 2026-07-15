@@ -189,7 +189,7 @@ void instantiate_effect(
             !eff.literal->instantiate(var_mapping, fluent_facts, lit_out))
             return;
         if (!lit_out.empty()) {
-            result.emplace_back(move(condition), move(lit_out[0]));
+            result.push_back({move(condition), move(lit_out[0])});
         }
     };
     if (eff.parameters.empty()) {

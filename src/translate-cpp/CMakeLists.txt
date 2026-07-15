@@ -33,6 +33,15 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
        AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15)
         add_compile_options(-Wno-unqualified-std-cast-call)
     endif()
+    # Clang before version 17 and Apple Clang produce a false-positive
+    # -Wzero-as-null-pointer-constant warning for defaulted three-way
+    # comparison operators (mirrors src/search;
+    # https://github.com/llvm/llvm-project/issues/43670).
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"
+       OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
+           AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 17))
+        add_compile_options(-Wno-zero-as-null-pointer-constant)
+    endif()
 elseif(MSVC)
     # Enable exceptions and use warning level 4, mirroring src/preprocess_h2.
     # Disable warnings that currently trigger in the code (same set as the

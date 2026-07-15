@@ -19,14 +19,14 @@ PropositionalAction::PropositionalAction(
     : name(move(name_)), precondition(move(precondition_)), cost(cost_) {
     for (const auto &[cond, lit] : effects)
         if (!lit.negated)
-            add_effects.emplace_back(cond, lit);
+            add_effects.push_back({cond, lit});
     // A negated effect deletes the fact: record it as the positive fact in
     // del_effects (dropping duplicates already covered by an equal add effect).
     for (const auto &[cond, lit] : effects) {
         if (!lit.negated)
             continue;
         if (!contains_add_effect_for(add_effects, cond, lit.fact))
-            del_effects.emplace_back(cond, GroundLiteral{lit.fact, false});
+            del_effects.push_back({cond, GroundLiteral{lit.fact, false}});
     }
 }
 
