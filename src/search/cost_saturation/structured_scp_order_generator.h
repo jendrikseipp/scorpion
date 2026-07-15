@@ -84,6 +84,42 @@ constexpr int PRUNED_LOOKUP = -1;
 // Sentinel for lookup nodes that have not been computed yet.
 constexpr int UNKNOWN_LOOKUP = -2;
 
+/*
+  Builds the "additive-disjunctive heuristic graph" (ADHG) that computes
+  the perfect saturated cost partitioning heuristic h*_SCP over a set of
+  abstractions (Höft, Speck & Seipp, "Sensitivity Analysis for SCP
+  Heuristics", KR 2025). The graph maximizes over saturation orders (max
+  nodes) and sums over provably order-independent groups of abstractions
+  (sum nodes); StructuredSCPOrderHeuristic evaluates it per state.
+
+  Relation to the paper (differences a reader should be aware of):
+
+  - Order independence (which abstractions a sum node may combine) is
+    decided by abstractions_depend(): two abstractions can only influence
+    each other's heuristic value if some operator affects both, following
+    Theorems 6/7 (SCP*-AFF-inf), i.e. the INTERSECTION of their
+    saturation-affecting labels. This matches the paper and its artifact
+    (10.5281/zenodo.16606498). It does NOT match the union used in the
+    authors' "structured-scp" development branch, which disables the rule
+    and blows the graph up by orders of magnitude.
+
+  - The paper's Lemma 1 / Theorem 6 tacitly assume that saturating an
+    abstraction never raises another abstraction's remaining costs. Under
+    general cost partitioning this can fail: an operator with no
+    transition in an abstraction has saturated cost -infinity (an empty
+    supremum), so saturating that abstraction donates infinite remaining
+    cost for the operator to all later abstractions. To stay exactly
+    value-preserving, abstractions_depend() adds explicit dependency terms
+    for these "-infinity donating" operators (see precompute_relevant_ops
+    and compute_conflicting_ops). This cannot happen for projections
+    (irrelevant operators self-loop) but does for pruned Cartesian
+    abstractions, so it is stricter than the paper as literally stated.
+
+  Everything else here is engineering that does not change the heuristic
+  values: the ADHG is built as a deduplicated DAG in a flat node arena,
+  and cost functions, goal-distance lookup tables and max nodes are
+  memoized and memory-budgeted so that hard tasks stay feasible.
+*/
 class StructuredSCPOrderGenerator {
 public:
     StructuredSCPOrderGenerator(
