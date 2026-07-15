@@ -173,7 +173,7 @@ create_fast_downward_library(
         utils/markup
         utils/math
         utils/memory
-        utils/murmurhash3
+        ext/murmurhash3/murmurhash3
         utils/rng
         utils/rng_options
         utils/strings
