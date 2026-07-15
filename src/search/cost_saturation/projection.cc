@@ -640,8 +640,8 @@ void Projection::compute_scp_active_operators() const {
    3. o is guaranteed to be on a shortest path to the goal
         (then sat(o) = max{..., (h(s')+cost(o)) - h(s'), ...} >= cost(o) >= 0)
 */
-vector<bool> Projection::get_operators_with_non_increasing_remaining_cost()
-const {
+vector<bool>
+Projection::get_operators_with_non_increasing_remaining_cost() const {
     vector<bool> result(looping_operators.size(), false);
 
     // "1. o induces a self loop"

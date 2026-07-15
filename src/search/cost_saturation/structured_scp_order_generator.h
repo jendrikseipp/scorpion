@@ -7,11 +7,10 @@
 #include "utils.h"
 
 #include "../task_proxy.h"
+#include "gtl/phmap.hpp"
 
 #include "../utils/collections.h"
 #include "../utils/logging.h"
-
-#include "gtl/phmap.hpp"
 
 #include <cstdint>
 #include <deque>
@@ -27,6 +26,10 @@ class Options;
 namespace cost_saturation {
 // Bit mask over the task's operators, one bit per operator.
 using OpMask = std::vector<uint64_t>;
+
+// A partition of abstraction ids into order-independent groups; each inner
+// vector holds the ids that must be combined in a single max node.
+using AbstractionGroups = std::vector<std::vector<int>>;
 
 struct StructuredSCPOptions {
     bool use_unsolvability_infos;
@@ -171,16 +174,14 @@ protected:
         }
 
         int64_t size() const {
-            return dense
-                   ? static_cast<int64_t>(rows.size()) * num_abstractions
-                   : static_cast<int64_t>(overflow.size());
+            return dense ? static_cast<int64_t>(rows.size()) * num_abstractions
+                         : static_cast<int64_t>(overflow.size());
         }
 
         // Returns the table id, PRUNED_LOOKUP or UNKNOWN_LOOKUP.
         int get(CostKey cost_key, int abstraction_id) {
             if (!dense) {
-                auto it = overflow.find(
-                    overflow_key(cost_key, abstraction_id));
+                auto it = overflow.find(overflow_key(cost_key, abstraction_id));
                 return it == overflow.end() ? UNKNOWN_LOOKUP : it->second;
             }
             if (cost_key >= rows.size()) {
@@ -189,8 +190,7 @@ protected:
             std::vector<int16_t> &row = rows[cost_key];
             if (row.empty()) {
                 row.assign(
-                    num_abstractions,
-                    static_cast<int16_t>(UNKNOWN_LOOKUP));
+                    num_abstractions, static_cast<int16_t>(UNKNOWN_LOOKUP));
             }
             int16_t entry = row[abstraction_id];
             if (entry == SMALL_OVERFLOW) {
@@ -207,8 +207,7 @@ protected:
                 rows[cost_key][abstraction_id] = SMALL_OVERFLOW;
                 overflow[overflow_key(cost_key, abstraction_id)] = table_id;
             } else {
-                rows[cost_key][abstraction_id] =
-                    static_cast<int16_t>(table_id);
+                rows[cost_key][abstraction_id] = static_cast<int16_t>(table_id);
             }
         }
 
@@ -270,7 +269,7 @@ protected:
     void reduce_cost_context(
         CostContext &context, const SaturatedCostFunction &scf);
 
-    std::vector<std::vector<int>> compute_independent_abstractions(
+    AbstractionGroups compute_independent_abstractions(
         const std::vector<int> &pending_abstraction_ids,
         const CostContext &context);
 
@@ -281,7 +280,7 @@ protected:
 
     const std::vector<int> &get_lookup_table(NodeId node) const {
         return lookup_tables[nodes[node].abstraction_id]
-               [nodes[node].lookup_table_id];
+                            [nodes[node].lookup_table_id];
     }
 
     /* The returned reference lives as long as the generator with

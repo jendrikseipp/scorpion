@@ -75,8 +75,8 @@ public:
        be non-negative for all cost functions, so subtracting the saturated
        costs never increases the remaining costs. The default implementation
        conservatively makes no such guarantee. */
-    virtual std::vector<bool> get_operators_with_non_increasing_remaining_cost()
-    const {
+    virtual std::vector<bool>
+    get_operators_with_non_increasing_remaining_cost() const {
         return std::vector<bool>(get_num_operators(), false);
     }
 

@@ -2,9 +2,9 @@
 #define CARTESIAN_ABSTRACTIONS_TYPES_H
 
 #include <deque>
+#include <gtl/phmap.hpp>
 #include <limits>
 #include <memory>
-#include <gtl/phmap.hpp>
 #include <unordered_set>
 #include <vector>
 

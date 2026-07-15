@@ -13,8 +13,7 @@ public:
     StructuredSCPOrderGeneratorFull(
         const std::shared_ptr<AbstractTask> &transform,
         Abstractions abstractions, const StructuredSCPOptions &options,
-        utils::Verbosity verbosity, bool prune_duplicates,
-        bool use_conflicts)
+        utils::Verbosity verbosity, bool prune_duplicates, bool use_conflicts)
         : StructuredSCPOrderGenerator(
               transform, move(abstractions), options, verbosity),
           sum_sscp_node_post_cache(
@@ -33,25 +32,23 @@ private:
        costs before recursing and restore them afterwards, so the context
        is unchanged when they return. */
     NodeId create_sum_node(
-        CostContext &context,
-        const std::vector<std::vector<int>> &independent_abstractions,
+        CostContext &context, const AbstractionGroups &independent_abstractions,
         NodeId scheduled_child = NO_NODE);
     NodeId create_max_node(
-        CostContext &context,
-        const std::vector<int> &dependent_abstractions);
+        CostContext &context, const std::vector<int> &dependent_abstractions);
 
     /* Deduplicate compositional nodes by their children ids. Sets of node
        ids with transparent lookup avoid storing a copy of the children
        vector per entry. */
-    using SSCPNodeSet = gtl::flat_hash_set<
-        NodeId, NodeChildrenHash, NodeChildrenEqual>;
+    using SSCPNodeSet =
+        gtl::flat_hash_set<NodeId, NodeChildrenHash, NodeChildrenEqual>;
     SSCPNodeSet sum_sscp_node_post_cache;
     SSCPNodeSet max_sscp_node_post_cache;
 
     /* Abstraction id sets recur across many max node calls, so we intern
        them and memoize max nodes under compact (cost key, set id) keys. */
     gtl::flat_hash_map<std::vector<int>, uint32_t, VectorIntMurmurHash>
-    id_set_registry;
+        id_set_registry;
     gtl::flat_hash_map<uint64_t, NodeId> max_sscp_node_pre_cache;
 
     uint32_t intern_id_set(const std::vector<int> &ids) {

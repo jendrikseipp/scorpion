@@ -59,8 +59,8 @@ public:
     virtual int get_num_operators() const override;
     virtual bool operator_is_active(int op_id) const override;
     virtual bool operator_is_scp_active(int op_id) const override;
-    virtual std::vector<bool> get_operators_with_non_increasing_remaining_cost()
-    const override;
+    virtual std::vector<bool>
+    get_operators_with_non_increasing_remaining_cost() const override;
     virtual bool operator_induces_self_loop(int op_id) const override;
     virtual void for_each_transition(
         const TransitionCallback &callback) const override;

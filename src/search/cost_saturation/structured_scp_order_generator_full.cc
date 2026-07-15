@@ -21,20 +21,22 @@ NodeId StructuredSCPOrderGeneratorFull::create_sscp_order_dag() {
     iota(abstraction_ids.begin(), abstraction_ids.end(), 0);
 
     precompute_operator_properties(abstraction_ids);
-    CostContext context = make_cost_context(
-        task_properties::get_operator_costs(task_proxy));
-    vector<vector<int>> independent_abstractions = use_conflicts
-        ? compute_independent_abstractions(abstraction_ids, context)
-        : vector<vector<int>>({abstraction_ids});
+    CostContext context =
+        make_cost_context(task_properties::get_operator_costs(task_proxy));
+    vector<vector<int>> independent_abstractions =
+        use_conflicts
+            ? compute_independent_abstractions(abstraction_ids, context)
+            : vector<vector<int>>({abstraction_ids});
     assert(!independent_abstractions.empty());
-    NodeId root_node = (independent_abstractions.size() == 1)
-        ? create_max_node(context, independent_abstractions[0])
-        : create_sum_node(context, independent_abstractions);
+    NodeId root_node =
+        (independent_abstractions.size() == 1)
+            ? create_max_node(context, independent_abstractions[0])
+            : create_sum_node(context, independent_abstractions);
     // Release the considerable amount of memory used by the hash maps.
     SSCPNodeSet(0, NodeChildrenHash{&nodes}, NodeChildrenEqual{&nodes})
-    .swap(sum_sscp_node_post_cache);
+        .swap(sum_sscp_node_post_cache);
     SSCPNodeSet(0, NodeChildrenHash{&nodes}, NodeChildrenEqual{&nodes})
-    .swap(max_sscp_node_post_cache);
+        .swap(max_sscp_node_post_cache);
     decltype(id_set_registry)().swap(id_set_registry);
     decltype(max_sscp_node_pre_cache)().swap(max_sscp_node_pre_cache);
 
@@ -42,8 +44,7 @@ NodeId StructuredSCPOrderGeneratorFull::create_sscp_order_dag() {
 }
 
 NodeId StructuredSCPOrderGeneratorFull::create_sum_node(
-    CostContext &context,
-    const vector<vector<int>> &independent_abstractions,
+    CostContext &context, const AbstractionGroups &independent_abstractions,
     NodeId scheduled_child) {
     vector<NodeId> children;
     children.reserve(
@@ -52,8 +53,7 @@ NodeId StructuredSCPOrderGeneratorFull::create_sum_node(
         children.push_back(scheduled_child);
     }
 
-    for (const vector<int> &dependent_abstractions :
-         independent_abstractions) {
+    for (const vector<int> &dependent_abstractions : independent_abstractions) {
         NodeId child = create_max_node(context, dependent_abstractions);
         if (child == NO_NODE) {
             continue;
@@ -117,10 +117,10 @@ void reduce_costs_sparse_unguarded(
         // Left addition: x - y = x for all values y if x is infinite.
         if (remaining != INF) {
             int reduced = (saturated == -INF)
-                ? INF
-                : static_cast<int>(
-                      static_cast<unsigned int>(remaining) -
-                      static_cast<unsigned int>(saturated));
+                              ? INF
+                              : static_cast<int>(
+                                    static_cast<unsigned int>(remaining) -
+                                    static_cast<unsigned int>(saturated));
             remaining_costs[op_id] = reduced;
             if (reduced < 0) {
                 set_op_mask_bit(exhausted_ops, op_id);
@@ -142,10 +142,10 @@ void reduce_costs_sparse_unguarded_and_track_negative(
         // Left addition: x - y = x for all values y if x is infinite.
         if (remaining != INF) {
             int reduced = (saturated == -INF)
-                ? INF
-                : static_cast<int>(
-                      static_cast<unsigned int>(remaining) -
-                      static_cast<unsigned int>(saturated));
+                              ? INF
+                              : static_cast<int>(
+                                    static_cast<unsigned int>(remaining) -
+                                    static_cast<unsigned int>(saturated));
             remaining_costs[op_id] = reduced;
             if (reduced < 0) {
                 set_op_mask_bit(exhausted_ops, op_id);
@@ -204,8 +204,7 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
                         negative_scf_ops, exhausted_ops);
                 } else {
                     reduce_costs_sparse_unguarded(
-                        overall_remaining_costs, saturated_cost,
-                        exhausted_ops);
+                        overall_remaining_costs, saturated_cost, exhausted_ops);
                 }
             }
             scheduled_children.abstraction_ids.push_back(abstraction_id);
@@ -229,7 +228,8 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
        Exhausted bits are only reliable for operators without negative
        saturated costs, which the negative mask excludes anyway. */
     const bool simulate_with_masks = options.use_affecting_labels &&
-        options.use_infinite_labels && options.use_non_negative_labels;
+                                     options.use_infinite_labels &&
+                                     options.use_non_negative_labels;
     vector<vector<int>> independent_abstractions;
     bool split_computed = false;
     if (check_cost_partitioning && simulate_with_masks) {
@@ -301,8 +301,7 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
         int abstraction_id = scheduled_children.abstraction_ids[i];
         NodeId scheduled_child = scheduled_children.nodes[i];
         assert(scheduled_child != NO_NODE);
-        const SaturatedCostFunction &scf =
-            get_saturated_costs(scheduled_child);
+        const SaturatedCostFunction &scf = get_saturated_costs(scheduled_child);
         /* Reduce the context in place and restore it after handling this
            child; the delta is sparse, a full copy is not. */
         saved_costs.clear();
@@ -312,9 +311,9 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
         uint64_t saved_hash = context.cost_hash;
         CostKey saved_key = context.key;
         reduce_cost_context(context, scf);
-        const vector<int> &base_abstractions = options.use_general_cp
-            ? dependent_abstractions
-            : scheduled_children.abstraction_ids;
+        const vector<int> &base_abstractions =
+            options.use_general_cp ? dependent_abstractions
+                                   : scheduled_children.abstraction_ids;
         vector<int> remaining_abstractions(base_abstractions.size() - 1);
         size_t next = 0;
         for (int abstr_id : base_abstractions) {
@@ -358,14 +357,12 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
     } else if (unique_children.size() == 1) {
         max_node = *unique_children.begin();
     } else {
-        vector<NodeId> children(
-            unique_children.begin(), unique_children.end());
+        vector<NodeId> children(unique_children.begin(), unique_children.end());
         // Sort children for the dedup key.
         sort(children.begin(), children.end());
 
-        auto it = prune_duplicates
-            ? max_sscp_node_post_cache.find(children)
-            : max_sscp_node_post_cache.end();
+        auto it = prune_duplicates ? max_sscp_node_post_cache.find(children)
+                                   : max_sscp_node_post_cache.end();
         if (it != max_sscp_node_post_cache.end()) {
             max_node = *it;
         } else {
@@ -399,7 +396,6 @@ public:
         add_option<bool>(
             "check_conflicts",
             "use the conflict graph to prune the SCP order DAG", "true");
-
     }
 
     virtual shared_ptr<StructuredSCPOrderGeneratorFull> create_component(

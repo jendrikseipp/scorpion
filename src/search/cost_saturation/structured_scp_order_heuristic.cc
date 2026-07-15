@@ -14,8 +14,7 @@ StructuredSCPOrderHeuristic::StructuredSCPOrderHeuristic(
     const string &description, utils::Verbosity verbosity,
     AbstractionFunctions &&abs_functions,
     vector<UnsolvabilityInfo> &&unsolvability_infos,
-    Instructions &&instructions,
-    vector<vector<vector<int>>> &&lookup_tables)
+    Instructions &&instructions, vector<vector<vector<int>>> &&lookup_tables)
     : Heuristic(transform, cache_estimates, description, verbosity),
       abs_functions(move(abs_functions)),
       unsolvability_infos(move(unsolvability_infos)),
@@ -36,12 +35,11 @@ StructuredSCPOrderHeuristic::StructuredSCPOrderHeuristic(
         values = vector<int>(num_lookups + this->instructions.size(), -1);
     }
 
+    cout << "Initializing structured SCP order heuristic with " << num_lookups
+         << " values to look up (in " << this->lookup_tables.size()
+         << " abstractions)" << endl;
     cout << "Initializing structured SCP order heuristic with "
-         << num_lookups << " values to look up (in "
-         << this->lookup_tables.size() << " abstractions)" << endl;
-    cout << "Initializing structured SCP order heuristic with "
-         << this->instructions.size() << " compositional instructions."
-         << endl;
+         << this->instructions.size() << " compositional instructions." << endl;
 }
 
 int StructuredSCPOrderHeuristic::compute_heuristic(
@@ -52,7 +50,7 @@ int StructuredSCPOrderHeuristic::compute_heuristic(
     for (size_t abstr_id = 0; abstr_id < unsolvability_infos.size();
          ++abstr_id) {
         if (unsolvability_infos[abstr_id]
-            .unsolvable_states[abstract_state_ids[abstr_id]]) {
+                .unsolvable_states[abstract_state_ids[abstr_id]]) {
             return DEAD_END;
         }
     }

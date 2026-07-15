@@ -34,12 +34,12 @@ enum class NodeType : uint8_t {
 struct SSCPNode {
     NodeType type;
     union {
-        int num_children;    // max and sum nodes
-        int abstraction_id;  // lookup nodes
+        int num_children; // max and sum nodes
+        int abstraction_id; // lookup nodes
     };
     union {
         int64_t children_offset; // max and sum nodes
-        int lookup_table_id;     // lookup nodes
+        int lookup_table_id; // lookup nodes
     };
 };
 
@@ -75,10 +75,9 @@ struct NodeArena {
     NodeId add_compositional_node(
         NodeType type, const std::vector<NodeId> &children) {
         assert(type == NodeType::MAX || type == NodeType::SUM);
-        assert(std::all_of(children.begin(), children.end(),
-                           [&](NodeId child) {
-                               return child < static_cast<int>(nodes.size());
-                           }));
+        assert(std::all_of(children.begin(), children.end(), [&](NodeId child) {
+            return child < static_cast<int>(nodes.size());
+        }));
         SSCPNode node;
         node.type = type;
         node.num_children = children.size();
@@ -111,8 +110,7 @@ struct NodeChildrenHash {
 
     size_t operator()(const std::vector<NodeId> &children) const {
         return hash_bytes(
-            children.data(), children.size() * sizeof(NodeId),
-            children.size());
+            children.data(), children.size() * sizeof(NodeId), children.size());
     }
 
     size_t operator()(NodeId node) const {
@@ -130,7 +128,7 @@ struct NodeChildrenEqual {
 
     bool operator()(NodeId node, const std::vector<NodeId> &children) const {
         return (*arena)[node].num_children ==
-               static_cast<int>(children.size()) &&
+                   static_cast<int>(children.size()) &&
                std::equal(
                    children.begin(), children.end(),
                    arena->children_begin(node));
@@ -141,8 +139,7 @@ struct NodeChildrenEqual {
     }
 
     bool operator()(NodeId node1, NodeId node2) const {
-        return (*arena)[node1].num_children ==
-               (*arena)[node2].num_children &&
+        return (*arena)[node1].num_children == (*arena)[node2].num_children &&
                std::equal(
                    arena->children_begin(node1), arena->children_end(node1),
                    arena->children_begin(node2));

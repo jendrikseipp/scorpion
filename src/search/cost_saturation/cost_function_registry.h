@@ -40,9 +40,10 @@ public:
     void append(const std::vector<uint8_t> &blob) {
         if (chunks.empty() ||
             chunks.back().size() + blob.size() > chunks.back().capacity()) {
-            size_t chunk_bytes = chunks.empty()
-                ? MIN_CHUNK_BYTES
-                : std::min(MAX_CHUNK_BYTES, 2 * chunks.back().capacity());
+            size_t chunk_bytes =
+                chunks.empty()
+                    ? MIN_CHUNK_BYTES
+                    : std::min(MAX_CHUNK_BYTES, 2 * chunks.back().capacity());
             chunks.emplace_back();
             chunks.back().reserve(std::max(chunk_bytes, blob.size()));
         }
@@ -109,7 +110,7 @@ public:
     static uint64_t mix_op_cost(int op_id, int cost) {
         // splitmix64 finalizer.
         uint64_t x = static_cast<uint64_t>(op_id) * 0x9E3779B97F4A7C15ULL ^
-            static_cast<uint64_t>(static_cast<unsigned int>(cost));
+                     static_cast<uint64_t>(static_cast<unsigned int>(cost));
         x = (x ^ (x >> 30)) * 0xBF58476D1CE4E5B9ULL;
         x = (x ^ (x >> 27)) * 0x94D049BB133111EBULL;
         return x ^ (x >> 31);
@@ -136,8 +137,7 @@ public:
     // Approximate footprint of the pool, refs and hash map.
     int64_t memory_in_bytes() const {
         return blobs.memory_in_bytes() +
-               key_by_hash.size() *
-               (sizeof(uint64_t) + sizeof(CostKey) + 4);
+               key_by_hash.size() * (sizeof(uint64_t) + sizeof(CostKey) + 4);
     }
 
     void release_memory();

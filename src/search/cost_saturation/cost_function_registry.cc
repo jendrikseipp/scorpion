@@ -29,8 +29,8 @@ static unsigned int packed_cost_value(int cost) {
 /* Append the given values with a compile-time bit width that divides 8, so
    the loops have fixed stride. */
 template<int BITS>
-static void pack_values(const vector<unsigned int> &values,
-                        vector<uint8_t> &blob) {
+static void
+pack_values(const vector<unsigned int> &values, vector<uint8_t> &blob) {
     constexpr int PER_BYTE = 8 / BITS;
     size_t offset = blob.size();
     blob.resize(offset + (values.size() + PER_BYTE - 1) / PER_BYTE, 0);
@@ -41,8 +41,8 @@ static void pack_values(const vector<unsigned int> &values,
 }
 
 template<typename UInt>
-static void pack_values_wide(const vector<unsigned int> &values,
-                             vector<uint8_t> &blob) {
+static void
+pack_values_wide(const vector<unsigned int> &values, vector<uint8_t> &blob) {
     size_t offset = blob.size();
     blob.resize(offset + values.size() * sizeof(UInt));
     UInt *out = reinterpret_cast<UInt *>(blob.data() + offset);
@@ -83,11 +83,12 @@ void CostFunctionRegistry::pack(const Costs &costs, vector<uint8_t> &blob) {
     }
     size_t masks_offset = blob.size();
     blob.resize(masks_offset + scratch_masks.size() * sizeof(uint64_t));
-    memcpy(blob.data() + masks_offset, scratch_masks.data(),
-           scratch_masks.size() * sizeof(uint64_t));
+    memcpy(
+        blob.data() + masks_offset, scratch_masks.data(),
+        scratch_masks.size() * sizeof(uint64_t));
 
-    uint8_t bits_per_value = bit_ceil(
-        static_cast<uint8_t>(bit_width(max_value)));
+    uint8_t bits_per_value =
+        bit_ceil(static_cast<uint8_t>(bit_width(max_value)));
     blob[0] = bits_per_value;
     switch (bits_per_value) {
     case 1:
@@ -117,13 +118,13 @@ template<int BITS>
 unsigned int read_value(const uint8_t *values, size_t index) {
     if constexpr (BITS < 8) {
         constexpr int PER_BYTE = 8 / BITS;
-        return (values[index / PER_BYTE] >>
-                (index % PER_BYTE * BITS)) & ((1u << BITS) - 1);
+        return (values[index / PER_BYTE] >> (index % PER_BYTE * BITS)) &
+               ((1u << BITS) - 1);
     } else {
         typename std::conditional<
             BITS == 8, uint8_t,
-            typename std::conditional<
-                BITS == 16, uint16_t, uint32_t>::type>::type v;
+            typename std::conditional<BITS == 16, uint16_t, uint32_t>::type>::
+            type v;
         memcpy(&v, values + index * sizeof(v), sizeof(v));
         return v;
     }
@@ -142,8 +143,9 @@ bool matches_blocks(
         size_t end = min(num_ops, begin + 64);
         if (!(bitmap[block / 8] & (1 << (block % 8)))) {
             // Clean block: all costs must equal the baseline.
-            if (!equal(costs.begin() + begin, costs.begin() + end,
-                       baseline.begin() + begin)) {
+            if (!equal(
+                    costs.begin() + begin, costs.begin() + end,
+                    baseline.begin() + begin)) {
                 return false;
             }
             continue;
