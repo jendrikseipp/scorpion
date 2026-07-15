@@ -156,6 +156,10 @@ def configs_optimal_extended():
             """astar(scp_online([
                 projections(sys_scp(max_time=0.5))],
                 interval=10))"""],
+        "sscp": [
+            "--search",
+            """astar(sscp(structured_order_generator=structured_order_generator_full(
+                abstraction_generators=[projections(systematic(2))])))"""],
         "max_over_abstractions": [
             "--search",
             """astar(maximize([

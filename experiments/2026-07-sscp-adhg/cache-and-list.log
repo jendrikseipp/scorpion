@@ -1,0 +1,1880 @@
+2026-07-12 20:36:22,350 INFO     Executing git archive --format tar edcb285f3f22eb67972ab5fb07c290136a12750c {'stdout': <_io.TextIOWrapper name='/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/edcb285f3f22eb67972ab5fb07c290136a12750c_e5e41175-tmp/solver.tgz' mode='w' encoding='UTF-8'>, 'cwd': PosixPath('/proj/dfsplan/users/x_jense/scorpion-dev')}
+2026-07-12 20:36:23,039 INFO     Executing ./build.py {'cwd': PosixPath('/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/edcb285f3f22eb67972ab5fb07c290136a12750c_e5e41175')}
+-- The C compiler identification is GNU 11.5.0
+-- The CXX compiler identification is GNU 11.5.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test FLAG_FOUND
+-- Performing Test FLAG_FOUND - Success
+Flag '-std=c++20' set for '/usr/bin/c++'
+-- Building for 64-bit.
+Building from a repository with uncommited changes.
+Git revision: "a52558092-dirty"
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Found Cplex: /home/x_jense/lib/cplex/cplex/include/ilcplex (found suitable version "22.1.1", minimum required is "12")
+-- Configuring done (2.1s)
+-- Generating done (0.2s)
+-- Build files have been written to: /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/edcb285f3f22eb67972ab5fb07c290136a12750c_e5e41175/builds/release
+[  1%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/translator_main.cc.o
+[  1%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/graph.cc.o
+Copying translator module into output directory
+[  1%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/planner.cc.o
+[  1%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/axiom.cc.o
+[  2%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/causal_graph.cc.o
+[  3%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/h2_mutexes.cc.o
+[  3%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/max_dag.cc.o
+[  3%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/strings.cc.o
+[  3%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/helper_functions.cc.o
+[  4%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/translate_options.cc.o
+[  6%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/mutex_group.cc.o
+[  6%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/f_expression.cc.o
+[  6%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/logging.cc.o
+[  7%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/operator.cc.o
+[  7%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/state.cc.o
+[  7%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/task.cc.o
+[  7%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/timer.cc.o
+[  7%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/system.cc.o
+[  7%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/parser/parser.cc.o
+[  8%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/variable.cc.o
+[  8%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/types.cc.o
+[  8%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/predicate.cc.o
+[  8%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/scc.cc.o
+[  8%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/condition.cc.o
+[  8%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/axiom.cc.o
+[  8%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/effect.cc.o
+[  8%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/action.cc.o
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/normalize/normalize.cc.o
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/parser/lisp_parser.cc.o
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/program.cc.o
+[  9%] Building CXX object search/CMakeFiles/downward.dir/planner.cc.o
+[  9%] Built target translate
+[  9%] Building CXX object search/CMakeFiles/downward.dir/abstract_task.cc.o
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/build.cc.o
+[ 10%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/split.cc.o
+[ 10%] Building CXX object search/CMakeFiles/downward.dir/axioms.cc.o
+[ 11%] Building CXX object search/CMakeFiles/downward.dir/command_line.cc.o
+[ 11%] Building CXX object search/CMakeFiles/downward.dir/evaluation_context.cc.o
+[ 11%] Building CXX object search/CMakeFiles/downward.dir/evaluation_result.cc.o
+[ 11%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/model.cc.o
+[ 11%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/instantiate/instantiate.cc.o
+[ 12%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/invariants/constraints.cc.o
+[ 12%] Building CXX object search/CMakeFiles/downward.dir/evaluator.cc.o
+[ 12%] Building CXX object search/CMakeFiles/downward.dir/evaluator_cache.cc.o
+[ 13%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/invariants/invariants.cc.o
+[ 13%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/invariants/invariant_finder.cc.o
+[ 13%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/fact_groups/fact_groups.cc.o
+[ 13%] Building CXX object search/CMakeFiles/downward.dir/heuristic.cc.o
+[ 14%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/axioms/axiom_rules.cc.o
+[ 14%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/sccs.cc.o
+[ 15%] Building CXX object search/CMakeFiles/downward.dir/open_list_factory.cc.o
+[ 15%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/sas/sas_task.cc.o
+[ 15%] Building CXX object search/CMakeFiles/downward.dir/operator_cost.cc.o
+[ 15%] Building CXX object search/CMakeFiles/downward.dir/operator_id.cc.o
+[ 16%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/simplify/simplify.cc.o
+[ 16%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/simplify/variable_order.cc.o
+[ 16%] Building CXX object search/CMakeFiles/downward.dir/per_state_bitset.cc.o
+[ 17%] Building CXX object search/CMakeFiles/downward.dir/plan_manager.cc.o
+[ 17%] Building CXX object search/CMakeFiles/downward.dir/pruning_method.cc.o
+[ 17%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pipeline/translate.cc.o
+[ 17%] Building CXX object search/CMakeFiles/downward.dir/search_algorithm.cc.o
+[ 18%] Building CXX object search/CMakeFiles/downward.dir/search_node_info.cc.o
+[ 18%] Building CXX object search/CMakeFiles/downward.dir/search_progress.cc.o
+[ 18%] Building CXX object search/CMakeFiles/downward.dir/search_space.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/search_statistics.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/state_id.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/state_registry.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/task_proxy.cc.o
+[ 20%] Building CXX object search/CMakeFiles/downward.dir/task_utils/causal_graph.cc.o
+[ 20%] Building CXX object search/CMakeFiles/downward.dir/algorithms/int_packer.cc.o
+[ 20%] Building CXX object search/CMakeFiles/downward.dir/task_utils/successor_generator.cc.o
+[ 21%] Building CXX object search/CMakeFiles/downward.dir/task_utils/successor_generator_factory.cc.o
+[ 21%] Building CXX object search/CMakeFiles/downward.dir/task_utils/successor_generator_internals.cc.o
+[ 21%] Building CXX object search/CMakeFiles/downward.dir/task_utils/task_properties.cc.o
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/bounds.cc.o
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/doc_printer.cc.o
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/options.cc.o
+[ 22%] Linking CXX executable ../bin/preprocess-h2
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/plugin.cc.o
+[ 23%] Building CXX object search/CMakeFiles/downward.dir/plugins/plugin_info.cc.o
+[ 23%] Building CXX object search/CMakeFiles/downward.dir/plugins/raw_registry.cc.o
+[ 23%] Building CXX object search/CMakeFiles/downward.dir/plugins/registry.cc.o
+[ 24%] Building CXX object search/CMakeFiles/downward.dir/plugins/types.cc.o
+[ 24%] Built target preprocess-h2
+[ 24%] Building CXX object search/CMakeFiles/downward.dir/parser/abstract_syntax_tree.cc.o
+[ 24%] Building CXX object search/CMakeFiles/downward.dir/parser/decorated_abstract_syntax_tree.cc.o
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/parser/lexical_analyzer.cc.o
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/parser/syntax_analyzer.cc.o
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/parser/token_stream.cc.o
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/utils/countdown_timer.cc.o
+[ 26%] Building CXX object search/CMakeFiles/downward.dir/utils/component_errors.cc.o
+[ 26%] Building CXX object search/CMakeFiles/downward.dir/utils/exceptions.cc.o
+[ 26%] Building CXX object search/CMakeFiles/downward.dir/utils/logging.cc.o
+[ 27%] Building CXX object search/CMakeFiles/downward.dir/utils/markup.cc.o
+[ 27%] Building CXX object search/CMakeFiles/downward.dir/utils/math.cc.o
+[ 27%] Building CXX object search/CMakeFiles/downward.dir/utils/memory.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/murmurhash3.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/rng.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/rng_options.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/strings.cc.o
+[ 29%] Building CXX object search/CMakeFiles/downward.dir/utils/system.cc.o
+[ 29%] Building CXX object search/CMakeFiles/downward.dir/utils/system_unix.cc.o
+[ 29%] Building CXX object search/CMakeFiles/downward.dir/utils/system_windows.cc.o
+[ 30%] Building CXX object search/CMakeFiles/downward.dir/utils/task_lexer.cc.o
+[ 30%] Building CXX object search/CMakeFiles/downward.dir/utils/timer.cc.o
+[ 30%] Building CXX object search/CMakeFiles/downward.dir/open_lists/alternation_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/best_first_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/epsilon_greedy_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/pareto_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/tiebreaking_open_list.cc.o
+[ 32%] Building CXX object search/CMakeFiles/downward.dir/open_lists/type_based_open_list.cc.o
+[ 32%] Building CXX object search/CMakeFiles/downward.dir/evaluators/subcategory.cc.o
+[ 32%] Building CXX object search/CMakeFiles/downward.dir/evaluators/const_evaluator.cc.o
+[ 33%] Building CXX object search/CMakeFiles/downward.dir/evaluators/g_evaluator.cc.o
+[ 33%] Building CXX object search/CMakeFiles/downward.dir/evaluators/max_evaluator.cc.o
+[ 33%] Building CXX object search/CMakeFiles/downward.dir/evaluators/combining_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/evaluators/pref_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/evaluators/weighted_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/evaluators/sum_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/pruning/limited_pruning.cc.o
+[ 35%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_atom_centric.cc.o
+[ 35%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets.cc.o
+[ 35%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_simple.cc.o
+[ 36%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_action_centric.cc.o
+[ 36%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_ec.cc.o
+[ 36%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/iterative_width_search.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/novelty/novelty_evaluator.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/novelty/novelty_table.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_astar.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/eager_search.cc.o
+[ 38%] Building CXX object search/CMakeFiles/downward.dir/pruning/null_pruning_method.cc.o
+[ 38%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/search_common.cc.o
+[ 38%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/breadth_first_search.cc.o
+[ 39%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/exhaustive_search.cc.o
+[ 39%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/idastar_search.cc.o
+[ 39%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/iterative_deepening_search.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/task_utils/incremental_successor_generator.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/depth_first_search.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_eager.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_eager_greedy.cc.o
+[ 41%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_eager_wastar.cc.o
+[ 41%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_lazy.cc.o
+[ 41%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/lazy_search.cc.o
+[ 42%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_lazy_greedy.cc.o
+[ 42%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_lazy_wastar.cc.o
+[ 42%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/enforced_hill_climbing_search.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/iterated_search.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/heuristics/additive_heuristic.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/heuristics/relaxation_heuristic.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/tasks/default_value_axioms_task.cc.o
+[ 44%] Building CXX object search/CMakeFiles/downward.dir/tasks/cost_adapted_task.cc.o
+[ 44%] Building CXX object search/CMakeFiles/downward.dir/tasks/delegating_task.cc.o
+[ 44%] Building CXX object search/CMakeFiles/downward.dir/tasks/root_task.cc.o
+[ 45%] Building CXX object search/CMakeFiles/downward.dir/algorithms/sccs.cc.o
+[ 45%] Building CXX object search/CMakeFiles/downward.dir/heuristics/blind_search_heuristic.cc.o
+[ 45%] Building CXX object search/CMakeFiles/downward.dir/heuristics/cea_heuristic.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/domain_transition_graph.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/cg_heuristic.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/cg_cache.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/ff_heuristic.cc.o
+[ 47%] Building CXX object search/CMakeFiles/downward.dir/heuristics/goal_count_heuristic.cc.o
+[ 47%] Building CXX object search/CMakeFiles/downward.dir/heuristics/hm_heuristic.cc.o
+[ 47%] Building CXX object search/CMakeFiles/downward.dir/heuristics/lm_cut_heuristic.cc.o
+[ 48%] Building CXX object search/CMakeFiles/downward.dir/heuristics/lm_cut_landmarks.cc.o
+[ 48%] Building CXX object search/CMakeFiles/downward.dir/heuristics/max_heuristic.cc.o
+[ 48%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/abstraction.cc.o
+[ 49%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/abstract_state.cc.o
+[ 49%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/additive_cartesian_heuristic.cc.o
+[ 50%] Linking CXX executable ../bin/translate-cpp
+[ 50%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cartesian_heuristic_function.cc.o
+[ 50%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cartesian_set.cc.o
+[ 51%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cegar.cc.o
+[ 51%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cost_saturation.cc.o
+[ 51%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/flaw.cc.o
+[ 52%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/flaw_search.cc.o
+[ 52%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/match_tree.cc.o
+[ 52%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/refinement_hierarchy.cc.o
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/split_selector.cc.o
+[ 53%] Built target translate-cpp
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/shortest_paths.cc.o
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/subtask_generators.cc.o
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/transition_rewirer.cc.o
+[ 54%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/transition_system.cc.o
+[ 54%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/utils.cc.o
+[ 54%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/utils_landmarks.cc.o
+[ 55%] Building CXX object search/CMakeFiles/downward.dir/tasks/domain_abstracted_task.cc.o
+[ 55%] Building CXX object search/CMakeFiles/downward.dir/tasks/domain_abstracted_task_factory.cc.o
+[ 55%] Building CXX object search/CMakeFiles/downward.dir/tasks/inverted_task.cc.o
+[ 56%] Building CXX object search/CMakeFiles/downward.dir/tasks/modified_goals_task.cc.o
+[ 56%] Building CXX object search/CMakeFiles/downward.dir/tasks/modified_operator_costs_task.cc.o
+[ 56%] Building CXX object search/CMakeFiles/downward.dir/landmarks/exploration.cc.o
+[ 56%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark.cc.o
+[ 57%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_cost_partitioning_algorithms.cc.o
+[ 57%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_cost_partitioning_heuristic.cc.o
+[ 57%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory.cc.o
+[ 58%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_hm.cc.o
+[ 58%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_reasonable_orders_hps.cc.o
+[ 58%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_merged.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_relaxation.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_rpg_exhaust.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_rpg_sasp.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_zhu_givan.cc.o
+[ 60%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_graph.cc.o
+[ 60%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_heuristic.cc.o
+[ 60%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_status_manager.cc.o
+[ 61%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_sum_heuristic.cc.o
+[ 61%] Building CXX object search/CMakeFiles/downward.dir/landmarks/util.cc.o
+[ 61%] Building CXX object search/CMakeFiles/downward.dir/lp/lp_solver.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/lp/cplex_solver_interface.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/abstraction.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/abstraction_generator.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/canonical_heuristic.cc.o
+[ 63%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cartesian_abstraction.cc.o
+[ 63%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cartesian_abstraction_generator.cc.o
+[ 63%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cost_partitioning_heuristic.cc.o
+[ 64%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cost_partitioning_heuristic_collection_generator.cc.o
+[ 64%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/diversifier.cc.o
+[ 64%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/explicit_abstraction.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/explicit_projection_factory.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/greedy_order_utils.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/max_cost_partitioning_heuristic.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/max_heuristic.cc.o
+[ 66%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/optimal_cost_partitioning_heuristic.cc.o
+[ 66%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator.cc.o
+[ 66%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator_dynamic_greedy.cc.o
+[ 67%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator_greedy.cc.o
+[ 67%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator_random.cc.o
+[ 67%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_optimizer.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/pho_heuristic.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/plugin_group.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/projection.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/projection_generator.cc.o
+[ 69%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/saturated_cost_partitioning_heuristic.cc.o
+[ 69%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/saturated_cost_partitioning_online_heuristic.cc.o
+[ 69%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/structured_scp_order_generator.cc.o
+[ 70%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/structured_scp_order_generator_full.cc.o
+[ 70%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/structured_scp_order_heuristic.cc.o
+[ 70%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/uniform_cost_partitioning_heuristic.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/unsolvability_heuristic.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/utils.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/zero_one_cost_partitioning_heuristic.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/algorithms/connected_components.cc.o
+[ 72%] Building CXX object search/CMakeFiles/downward.dir/pdbs/canonical_pdbs.cc.o
+[ 72%] Building CXX object search/CMakeFiles/downward.dir/pdbs/abstract_operator.cc.o
+[ 72%] Building CXX object search/CMakeFiles/downward.dir/pdbs/canonical_pdbs_heuristic.cc.o
+[ 73%] Building CXX object search/CMakeFiles/downward.dir/pdbs/cegar.cc.o
+[ 73%] Building CXX object search/CMakeFiles/downward.dir/pdbs/dominance_pruning.cc.o
+[ 73%] Building CXX object search/CMakeFiles/downward.dir/pdbs/incremental_canonical_pdbs.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/match_tree.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_cliques.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_information.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_disjoint_cegar.cc.o
+[ 75%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_genetic.cc.o
+[ 75%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_hillclimbing.cc.o
+[ 75%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_manual.cc.o
+[ 76%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_multiple_cegar.cc.o
+[ 76%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_multiple_random.cc.o
+[ 76%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_multiple.cc.o
+[ 77%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_systematic.cc.o
+[ 77%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_systematic_scp.cc.o
+[ 77%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_database_factory.cc.o
+[ 78%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_evaluator.cc.o
+[ 78%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_database.cc.o
+[ 78%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_cegar.cc.o
+[ 78%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_greedy.cc.o
+[ 79%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_manual.cc.o
+[ 79%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator.cc.o
+[ 79%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_random.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_information.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pdb_heuristic.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/random_pattern.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/slim_match_tree.cc.o
+[ 81%] Building CXX object search/CMakeFiles/downward.dir/pdbs/subcategory.cc.o
+[ 81%] Building CXX object search/CMakeFiles/downward.dir/pdbs/validation.cc.o
+[ 81%] Building CXX object search/CMakeFiles/downward.dir/pdbs/utils.cc.o
+[ 82%] Building CXX object search/CMakeFiles/downward.dir/pdbs/zero_one_pdbs.cc.o
+[ 82%] Building CXX object search/CMakeFiles/downward.dir/pdbs/zero_one_pdbs_heuristic.cc.o
+[ 82%] Building CXX object search/CMakeFiles/downward.dir/algorithms/max_cliques.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/task_utils/sampling.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/task_utils/variable_order_finder.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/algorithms/partial_state_tree.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/distances.cc.o
+[ 84%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/factored_transition_system.cc.o
+[ 84%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/fts_factory.cc.o
+[ 84%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/label_reduction.cc.o
+[ 85%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/labels.cc.o
+[ 85%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_and_shrink_algorithm.cc.o
+[ 85%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_and_shrink_heuristic.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_and_shrink_representation.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_dfp.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_goal_relevance.cc.o
+[ 87%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_miasm.cc.o
+[ 87%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_miasm_utils.cc.o
+[ 87%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_single_random.cc.o
+[ 88%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_total_order.cc.o
+[ 88%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_selector.cc.o
+[ 88%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_selector_score_based_filtering.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory_precomputed.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory_sccs.cc.o
+[ 90%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory_stateless.cc.o
+[ 90%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_precomputed.cc.o
+[ 90%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_sccs.cc.o
+[ 91%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_stateless.cc.o
+[ 91%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_tree.cc.o
+[ 91%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_tree_factory.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_tree_factory_linear.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_bisimulation.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_bucket_based.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_fh.cc.o
+[ 93%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_random.cc.o
+[ 93%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_strategy.cc.o
+[ 93%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/transition_system.cc.o
+[ 94%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/types.cc.o
+[ 94%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/utils.cc.o
+[ 94%] Building CXX object search/CMakeFiles/downward.dir/algorithms/equivalence_relation.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/constraint_generator.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/delete_relaxation_if_constraints.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/delete_relaxation_rr_constraints.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/lm_cut_constraints.cc.o
+[ 96%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/operator_counting_heuristic.cc.o
+[ 96%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/pho_abstraction_constraints.cc.o
+[ 96%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/pho_constraints.cc.o
+[ 97%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/state_equation_constraints.cc.o
+[ 97%] Building CXX object search/CMakeFiles/downward.dir/potentials/diverse_potential_heuristics.cc.o
+[ 97%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_function.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_heuristic.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_max_heuristic.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_optimizer.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/sample_based_potential_heuristics.cc.o
+[ 99%] Building CXX object search/CMakeFiles/downward.dir/potentials/single_potential_heuristics.cc.o
+[ 99%] Building CXX object search/CMakeFiles/downward.dir/potentials/subcategory.cc.o
+[ 99%] Building CXX object search/CMakeFiles/downward.dir/potentials/util.cc.o
+[100%] Linking CXX executable ../bin/downward
+[100%] Built target downward
+Building configuration release.
+Executing command "cmake -S /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/edcb285f3f22eb67972ab5fb07c290136a12750c_e5e41175/./src -B /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/edcb285f3f22eb67972ab5fb07c290136a12750c_e5e41175/./builds/release -G Unix Makefiles -DCMAKE_BUILD_TYPE=Release"
+Executing command "cmake --build /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/edcb285f3f22eb67972ab5fb07c290136a12750c_e5e41175/./builds/release -j 32"
+Built configuration release successfully.
+2026-07-12 20:37:14,780 INFO     Executing git archive --format tar ce63324b8443a8b44c1bff8e2ae27c17179d5360 {'stdout': <_io.TextIOWrapper name='/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/ce63324b8443a8b44c1bff8e2ae27c17179d5360_e5e41175-tmp/solver.tgz' mode='w' encoding='UTF-8'>, 'cwd': PosixPath('/proj/dfsplan/users/x_jense/scorpion-dev')}
+2026-07-12 20:37:15,800 INFO     Executing ./build.py {'cwd': PosixPath('/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/ce63324b8443a8b44c1bff8e2ae27c17179d5360_e5e41175')}
+-- The C compiler identification is GNU 11.5.0
+-- The CXX compiler identification is GNU 11.5.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test FLAG_FOUND
+-- Performing Test FLAG_FOUND - Success
+Flag '-std=c++20' set for '/usr/bin/c++'
+-- Building for 64-bit.
+Building from a repository with uncommited changes.
+Git revision: "a52558092-dirty"
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Found Cplex: /home/x_jense/lib/cplex/cplex/include/ilcplex (found suitable version "22.1.1", minimum required is "12")
+-- Configuring done (2.1s)
+-- Generating done (0.1s)
+-- Build files have been written to: /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/ce63324b8443a8b44c1bff8e2ae27c17179d5360_e5e41175/builds/release
+Copying translator module into output directory
+[  0%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/axiom.cc.o
+[  1%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/causal_graph.cc.o
+[  1%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/h2_mutexes.cc.o
+[  2%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/types.cc.o
+[  2%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/variable.cc.o
+[  3%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/translator_main.cc.o
+[  3%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/translate_options.cc.o
+[  3%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/graph.cc.o
+[  3%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/planner.cc.o
+[  3%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/helper_functions.cc.o
+[  3%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/max_dag.cc.o
+[  4%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/mutex_group.cc.o
+[  3%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/logging.cc.o
+[  5%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/strings.cc.o
+[  5%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/operator.cc.o
+[  5%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/condition.cc.o
+[  5%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/effect.cc.o
+[  8%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/predicate.cc.o
+[  8%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/system.cc.o
+[  8%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/state.cc.o
+[  8%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/timer.cc.o
+[  8%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/f_expression.cc.o
+[  8%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/scc.cc.o
+[  8%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/task.cc.o
+[  8%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/parser/parser.cc.o
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/parser/lisp_parser.cc.o
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/normalize/normalize.cc.o
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/axiom.cc.o
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/program.cc.o
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/action.cc.o
+[  9%] Building CXX object search/CMakeFiles/downward.dir/planner.cc.o
+[  9%] Built target translate
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/build.cc.o
+[ 10%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/split.cc.o
+[ 10%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/model.cc.o
+[ 10%] Building CXX object search/CMakeFiles/downward.dir/abstract_task.cc.o
+[ 10%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/instantiate/instantiate.cc.o
+[ 10%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/invariants/constraints.cc.o
+[ 11%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/invariants/invariants.cc.o
+[ 11%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/invariants/invariant_finder.cc.o
+[ 11%] Building CXX object search/CMakeFiles/downward.dir/axioms.cc.o
+[ 12%] Building CXX object search/CMakeFiles/downward.dir/command_line.cc.o
+[ 12%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/fact_groups/fact_groups.cc.o
+[ 12%] Building CXX object search/CMakeFiles/downward.dir/evaluation_context.cc.o
+[ 13%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/sccs.cc.o
+[ 13%] Building CXX object search/CMakeFiles/downward.dir/evaluation_result.cc.o
+[ 14%] Building CXX object search/CMakeFiles/downward.dir/evaluator.cc.o
+[ 14%] Building CXX object search/CMakeFiles/downward.dir/evaluator_cache.cc.o
+[ 14%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/axioms/axiom_rules.cc.o
+[ 14%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/sas/sas_task.cc.o
+[ 14%] Building CXX object search/CMakeFiles/downward.dir/heuristic.cc.o
+[ 15%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/simplify/simplify.cc.o
+[ 16%] Building CXX object search/CMakeFiles/downward.dir/open_list_factory.cc.o
+[ 16%] Building CXX object search/CMakeFiles/downward.dir/operator_cost.cc.o
+[ 16%] Building CXX object search/CMakeFiles/downward.dir/operator_id.cc.o
+[ 16%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/simplify/variable_order.cc.o
+[ 16%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pipeline/translate.cc.o
+[ 16%] Building CXX object search/CMakeFiles/downward.dir/per_state_bitset.cc.o
+[ 17%] Building CXX object search/CMakeFiles/downward.dir/plan_manager.cc.o
+[ 17%] Building CXX object search/CMakeFiles/downward.dir/pruning_method.cc.o
+[ 17%] Building CXX object search/CMakeFiles/downward.dir/search_algorithm.cc.o
+[ 18%] Building CXX object search/CMakeFiles/downward.dir/search_node_info.cc.o
+[ 18%] Building CXX object search/CMakeFiles/downward.dir/search_progress.cc.o
+[ 18%] Building CXX object search/CMakeFiles/downward.dir/search_space.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/search_statistics.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/state_id.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/state_registry.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/task_proxy.cc.o
+[ 20%] Building CXX object search/CMakeFiles/downward.dir/task_utils/causal_graph.cc.o
+[ 20%] Building CXX object search/CMakeFiles/downward.dir/task_utils/successor_generator.cc.o
+[ 20%] Building CXX object search/CMakeFiles/downward.dir/algorithms/int_packer.cc.o
+[ 21%] Building CXX object search/CMakeFiles/downward.dir/task_utils/successor_generator_factory.cc.o
+[ 21%] Building CXX object search/CMakeFiles/downward.dir/task_utils/successor_generator_internals.cc.o
+[ 21%] Building CXX object search/CMakeFiles/downward.dir/task_utils/task_properties.cc.o
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/bounds.cc.o
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/doc_printer.cc.o
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/options.cc.o
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/plugin.cc.o
+[ 22%] Linking CXX executable ../bin/preprocess-h2
+[ 23%] Building CXX object search/CMakeFiles/downward.dir/plugins/plugin_info.cc.o
+[ 23%] Building CXX object search/CMakeFiles/downward.dir/plugins/raw_registry.cc.o
+[ 23%] Building CXX object search/CMakeFiles/downward.dir/plugins/registry.cc.o
+[ 24%] Building CXX object search/CMakeFiles/downward.dir/plugins/types.cc.o
+[ 24%] Building CXX object search/CMakeFiles/downward.dir/parser/abstract_syntax_tree.cc.o
+[ 24%] Built target preprocess-h2
+[ 24%] Building CXX object search/CMakeFiles/downward.dir/parser/decorated_abstract_syntax_tree.cc.o
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/parser/lexical_analyzer.cc.o
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/parser/syntax_analyzer.cc.o
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/parser/token_stream.cc.o
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/utils/countdown_timer.cc.o
+[ 26%] Building CXX object search/CMakeFiles/downward.dir/utils/component_errors.cc.o
+[ 26%] Building CXX object search/CMakeFiles/downward.dir/utils/exceptions.cc.o
+[ 26%] Building CXX object search/CMakeFiles/downward.dir/utils/logging.cc.o
+[ 27%] Building CXX object search/CMakeFiles/downward.dir/utils/markup.cc.o
+[ 27%] Building CXX object search/CMakeFiles/downward.dir/utils/math.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/murmurhash3.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/memory.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/rng.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/rng_options.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/strings.cc.o
+[ 29%] Building CXX object search/CMakeFiles/downward.dir/utils/system.cc.o
+[ 29%] Building CXX object search/CMakeFiles/downward.dir/utils/system_unix.cc.o
+[ 29%] Building CXX object search/CMakeFiles/downward.dir/utils/system_windows.cc.o
+[ 30%] Building CXX object search/CMakeFiles/downward.dir/utils/task_lexer.cc.o
+[ 30%] Building CXX object search/CMakeFiles/downward.dir/utils/timer.cc.o
+[ 30%] Building CXX object search/CMakeFiles/downward.dir/open_lists/alternation_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/best_first_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/epsilon_greedy_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/pareto_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/tiebreaking_open_list.cc.o
+[ 32%] Building CXX object search/CMakeFiles/downward.dir/open_lists/type_based_open_list.cc.o
+[ 32%] Building CXX object search/CMakeFiles/downward.dir/evaluators/subcategory.cc.o
+[ 32%] Building CXX object search/CMakeFiles/downward.dir/evaluators/const_evaluator.cc.o
+[ 33%] Building CXX object search/CMakeFiles/downward.dir/evaluators/g_evaluator.cc.o
+[ 33%] Building CXX object search/CMakeFiles/downward.dir/evaluators/max_evaluator.cc.o
+[ 33%] Building CXX object search/CMakeFiles/downward.dir/evaluators/combining_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/evaluators/pref_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/evaluators/weighted_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/evaluators/sum_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/pruning/limited_pruning.cc.o
+[ 35%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_atom_centric.cc.o
+[ 35%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets.cc.o
+[ 35%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_simple.cc.o
+[ 36%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_action_centric.cc.o
+[ 36%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_ec.cc.o
+[ 36%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/iterative_width_search.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/novelty/novelty_evaluator.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/novelty/novelty_table.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_astar.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/eager_search.cc.o
+[ 38%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/search_common.cc.o
+[ 38%] Building CXX object search/CMakeFiles/downward.dir/pruning/null_pruning_method.cc.o
+[ 38%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/breadth_first_search.cc.o
+[ 38%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/idastar_search.cc.o
+[ 39%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/exhaustive_search.cc.o
+[ 39%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/iterative_deepening_search.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/task_utils/incremental_successor_generator.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/depth_first_search.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_eager.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_eager_greedy.cc.o
+[ 41%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_eager_wastar.cc.o
+[ 41%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_lazy.cc.o
+[ 41%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/lazy_search.cc.o
+[ 42%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_lazy_greedy.cc.o
+[ 42%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_lazy_wastar.cc.o
+[ 42%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/enforced_hill_climbing_search.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/iterated_search.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/heuristics/additive_heuristic.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/heuristics/relaxation_heuristic.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/tasks/default_value_axioms_task.cc.o
+[ 44%] Building CXX object search/CMakeFiles/downward.dir/tasks/cost_adapted_task.cc.o
+[ 44%] Building CXX object search/CMakeFiles/downward.dir/tasks/delegating_task.cc.o
+[ 44%] Building CXX object search/CMakeFiles/downward.dir/tasks/root_task.cc.o
+[ 45%] Building CXX object search/CMakeFiles/downward.dir/algorithms/sccs.cc.o
+[ 45%] Building CXX object search/CMakeFiles/downward.dir/heuristics/blind_search_heuristic.cc.o
+[ 45%] Building CXX object search/CMakeFiles/downward.dir/heuristics/cea_heuristic.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/domain_transition_graph.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/cg_heuristic.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/cg_cache.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/ff_heuristic.cc.o
+[ 47%] Building CXX object search/CMakeFiles/downward.dir/heuristics/goal_count_heuristic.cc.o
+[ 47%] Building CXX object search/CMakeFiles/downward.dir/heuristics/hm_heuristic.cc.o
+[ 47%] Building CXX object search/CMakeFiles/downward.dir/heuristics/lm_cut_heuristic.cc.o
+[ 48%] Building CXX object search/CMakeFiles/downward.dir/heuristics/lm_cut_landmarks.cc.o
+[ 48%] Building CXX object search/CMakeFiles/downward.dir/heuristics/max_heuristic.cc.o
+[ 48%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/abstraction.cc.o
+[ 49%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/abstract_state.cc.o
+[ 50%] Linking CXX executable ../bin/translate-cpp
+[ 50%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/additive_cartesian_heuristic.cc.o
+[ 50%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cartesian_heuristic_function.cc.o
+[ 50%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cartesian_set.cc.o
+[ 51%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cegar.cc.o
+[ 51%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cost_saturation.cc.o
+[ 51%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/flaw.cc.o
+[ 52%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/flaw_search.cc.o
+[ 52%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/match_tree.cc.o
+[ 52%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/refinement_hierarchy.cc.o
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/split_selector.cc.o
+[ 53%] Built target translate-cpp
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/shortest_paths.cc.o
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/subtask_generators.cc.o
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/transition_rewirer.cc.o
+[ 54%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/transition_system.cc.o
+[ 54%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/utils.cc.o
+[ 54%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/utils_landmarks.cc.o
+[ 55%] Building CXX object search/CMakeFiles/downward.dir/tasks/domain_abstracted_task.cc.o
+[ 55%] Building CXX object search/CMakeFiles/downward.dir/tasks/domain_abstracted_task_factory.cc.o
+[ 55%] Building CXX object search/CMakeFiles/downward.dir/tasks/inverted_task.cc.o
+[ 56%] Building CXX object search/CMakeFiles/downward.dir/tasks/modified_goals_task.cc.o
+[ 56%] Building CXX object search/CMakeFiles/downward.dir/tasks/modified_operator_costs_task.cc.o
+[ 56%] Building CXX object search/CMakeFiles/downward.dir/landmarks/exploration.cc.o
+[ 56%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark.cc.o
+[ 57%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_cost_partitioning_algorithms.cc.o
+[ 57%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_cost_partitioning_heuristic.cc.o
+[ 57%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory.cc.o
+[ 57%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_reasonable_orders_hps.cc.o
+[ 58%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_hm.cc.o
+[ 58%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_merged.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_relaxation.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_rpg_exhaust.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_rpg_sasp.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_zhu_givan.cc.o
+[ 60%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_graph.cc.o
+[ 60%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_heuristic.cc.o
+[ 60%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_status_manager.cc.o
+[ 61%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_sum_heuristic.cc.o
+[ 61%] Building CXX object search/CMakeFiles/downward.dir/landmarks/util.cc.o
+[ 61%] Building CXX object search/CMakeFiles/downward.dir/lp/lp_solver.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/lp/cplex_solver_interface.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/abstraction.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/abstraction_generator.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/canonical_heuristic.cc.o
+[ 63%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cartesian_abstraction.cc.o
+[ 63%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cartesian_abstraction_generator.cc.o
+[ 63%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cost_partitioning_heuristic.cc.o
+[ 64%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cost_partitioning_heuristic_collection_generator.cc.o
+[ 64%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/diversifier.cc.o
+[ 64%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/explicit_abstraction.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/explicit_projection_factory.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/greedy_order_utils.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/max_cost_partitioning_heuristic.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/max_heuristic.cc.o
+[ 66%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/optimal_cost_partitioning_heuristic.cc.o
+[ 66%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator.cc.o
+[ 66%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator_dynamic_greedy.cc.o
+[ 67%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator_greedy.cc.o
+[ 67%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator_random.cc.o
+[ 67%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_optimizer.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/pho_heuristic.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/plugin_group.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/projection.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/projection_generator.cc.o
+[ 69%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/saturated_cost_partitioning_heuristic.cc.o
+[ 69%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/saturated_cost_partitioning_online_heuristic.cc.o
+[ 69%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/structured_scp_order_generator.cc.o
+[ 70%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/structured_scp_order_generator_full.cc.o
+[ 70%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/structured_scp_order_heuristic.cc.o
+[ 70%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/uniform_cost_partitioning_heuristic.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/unsolvability_heuristic.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/utils.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/zero_one_cost_partitioning_heuristic.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/algorithms/connected_components.cc.o
+[ 72%] Building CXX object search/CMakeFiles/downward.dir/pdbs/abstract_operator.cc.o
+[ 72%] Building CXX object search/CMakeFiles/downward.dir/pdbs/canonical_pdbs.cc.o
+[ 72%] Building CXX object search/CMakeFiles/downward.dir/pdbs/canonical_pdbs_heuristic.cc.o
+[ 73%] Building CXX object search/CMakeFiles/downward.dir/pdbs/cegar.cc.o
+[ 73%] Building CXX object search/CMakeFiles/downward.dir/pdbs/dominance_pruning.cc.o
+[ 73%] Building CXX object search/CMakeFiles/downward.dir/pdbs/incremental_canonical_pdbs.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/match_tree.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_cliques.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_information.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_disjoint_cegar.cc.o
+[ 75%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_genetic.cc.o
+[ 75%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_hillclimbing.cc.o
+[ 75%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_manual.cc.o
+[ 76%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_multiple_cegar.cc.o
+[ 76%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_multiple_random.cc.o
+[ 76%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_multiple.cc.o
+[ 77%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_systematic.cc.o
+[ 77%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_systematic_scp.cc.o
+[ 77%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_database_factory.cc.o
+[ 77%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_database.cc.o
+[ 78%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_evaluator.cc.o
+[ 78%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_cegar.cc.o
+[ 78%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_greedy.cc.o
+[ 79%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_manual.cc.o
+[ 79%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_random.cc.o
+[ 79%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_information.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pdb_heuristic.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/random_pattern.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/slim_match_tree.cc.o
+[ 81%] Building CXX object search/CMakeFiles/downward.dir/pdbs/subcategory.cc.o
+[ 81%] Building CXX object search/CMakeFiles/downward.dir/pdbs/utils.cc.o
+[ 81%] Building CXX object search/CMakeFiles/downward.dir/pdbs/validation.cc.o
+[ 82%] Building CXX object search/CMakeFiles/downward.dir/pdbs/zero_one_pdbs.cc.o
+[ 82%] Building CXX object search/CMakeFiles/downward.dir/pdbs/zero_one_pdbs_heuristic.cc.o
+[ 82%] Building CXX object search/CMakeFiles/downward.dir/algorithms/max_cliques.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/task_utils/sampling.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/task_utils/variable_order_finder.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/algorithms/partial_state_tree.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/distances.cc.o
+[ 84%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/factored_transition_system.cc.o
+[ 84%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/fts_factory.cc.o
+[ 84%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/label_reduction.cc.o
+[ 85%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/labels.cc.o
+[ 85%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_and_shrink_algorithm.cc.o
+[ 85%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_and_shrink_heuristic.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_and_shrink_representation.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_dfp.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_goal_relevance.cc.o
+[ 87%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_miasm.cc.o
+[ 87%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_miasm_utils.cc.o
+[ 87%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_single_random.cc.o
+[ 88%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_total_order.cc.o
+[ 88%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_selector.cc.o
+[ 88%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_selector_score_based_filtering.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory_precomputed.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory_sccs.cc.o
+[ 90%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory_stateless.cc.o
+[ 90%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_precomputed.cc.o
+[ 90%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_sccs.cc.o
+[ 91%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_stateless.cc.o
+[ 91%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_tree.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_tree_factory_linear.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_tree_factory.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_bisimulation.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_bucket_based.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_fh.cc.o
+[ 93%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_random.cc.o
+[ 93%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_strategy.cc.o
+[ 93%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/transition_system.cc.o
+[ 94%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/types.cc.o
+[ 94%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/utils.cc.o
+[ 94%] Building CXX object search/CMakeFiles/downward.dir/algorithms/equivalence_relation.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/constraint_generator.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/delete_relaxation_if_constraints.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/delete_relaxation_rr_constraints.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/lm_cut_constraints.cc.o
+[ 96%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/operator_counting_heuristic.cc.o
+[ 96%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/pho_abstraction_constraints.cc.o
+[ 96%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/pho_constraints.cc.o
+[ 97%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/state_equation_constraints.cc.o
+[ 97%] Building CXX object search/CMakeFiles/downward.dir/potentials/diverse_potential_heuristics.cc.o
+[ 97%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_function.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_heuristic.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_max_heuristic.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_optimizer.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/sample_based_potential_heuristics.cc.o
+[ 99%] Building CXX object search/CMakeFiles/downward.dir/potentials/single_potential_heuristics.cc.o
+[ 99%] Building CXX object search/CMakeFiles/downward.dir/potentials/subcategory.cc.o
+[ 99%] Building CXX object search/CMakeFiles/downward.dir/potentials/util.cc.o
+[100%] Linking CXX executable ../bin/downward
+[100%] Built target downward
+Building configuration release.
+Executing command "cmake -S /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/ce63324b8443a8b44c1bff8e2ae27c17179d5360_e5e41175/./src -B /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/ce63324b8443a8b44c1bff8e2ae27c17179d5360_e5e41175/./builds/release -G Unix Makefiles -DCMAKE_BUILD_TYPE=Release"
+Executing command "cmake --build /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/ce63324b8443a8b44c1bff8e2ae27c17179d5360_e5e41175/./builds/release -j 32"
+Built configuration release successfully.
+2026-07-12 20:38:04,782 INFO     Executing git archive --format tar 142b89589ae836ec32e74ce4ce236605aae67e63 {'stdout': <_io.TextIOWrapper name='/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/142b89589ae836ec32e74ce4ce236605aae67e63_e5e41175-tmp/solver.tgz' mode='w' encoding='UTF-8'>, 'cwd': PosixPath('/proj/dfsplan/users/x_jense/scorpion-dev')}
+2026-07-12 20:38:05,722 INFO     Executing ./build.py {'cwd': PosixPath('/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/142b89589ae836ec32e74ce4ce236605aae67e63_e5e41175')}
+-- The C compiler identification is GNU 11.5.0
+-- The CXX compiler identification is GNU 11.5.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test FLAG_FOUND
+-- Performing Test FLAG_FOUND - Success
+Flag '-std=c++20' set for '/usr/bin/c++'
+-- Building for 64-bit.
+Building from a repository with uncommited changes.
+Git revision: "a52558092-dirty"
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Found Cplex: /home/x_jense/lib/cplex/cplex/include/ilcplex (found suitable version "22.1.1", minimum required is "12")
+-- Configuring done (2.1s)
+-- Generating done (0.2s)
+-- Build files have been written to: /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/142b89589ae836ec32e74ce4ce236605aae67e63_e5e41175/builds/release
+Copying translator module into output directory
+[  0%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/planner.cc.o
+[  1%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/translator_main.cc.o
+[  1%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/h2_mutexes.cc.o
+[  1%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/axiom.cc.o
+[  2%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/causal_graph.cc.o
+[  2%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/helper_functions.cc.o
+[  2%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/condition.cc.o
+[  2%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/effect.cc.o
+[  2%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/graph.cc.o
+[  3%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/max_dag.cc.o
+[  3%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/mutex_group.cc.o
+[  3%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/translate_options.cc.o
+[  3%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/scc.cc.o
+[  3%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/operator.cc.o
+[  3%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/logging.cc.o
+[  4%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/f_expression.cc.o
+[  6%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/variable.cc.o
+[  6%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/strings.cc.o
+[  6%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/timer.cc.o
+[  7%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/types.cc.o
+[  7%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/state.cc.o
+[  6%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/system.cc.o
+[  7%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/predicate.cc.o
+[  7%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/action.cc.o
+[  7%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/parser/lisp_parser.cc.o
+[  8%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/parser/parser.cc.o
+[  8%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/task.cc.o
+[  8%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/axiom.cc.o
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/normalize/normalize.cc.o
+[  9%] Building CXX object search/CMakeFiles/downward.dir/abstract_task.cc.o
+[  9%] Building CXX object search/CMakeFiles/downward.dir/planner.cc.o
+[  9%] Built target translate
+[  9%] Building CXX object search/CMakeFiles/downward.dir/axioms.cc.o
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/program.cc.o
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/build.cc.o
+[ 10%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/split.cc.o
+[ 10%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/model.cc.o
+[ 10%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/instantiate/instantiate.cc.o
+[ 10%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/invariants/constraints.cc.o
+[ 11%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/invariants/invariants.cc.o
+[ 11%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/invariants/invariant_finder.cc.o
+[ 11%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/fact_groups/fact_groups.cc.o
+[ 12%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/sccs.cc.o
+[ 13%] Building CXX object search/CMakeFiles/downward.dir/command_line.cc.o
+[ 13%] Building CXX object search/CMakeFiles/downward.dir/evaluation_context.cc.o
+[ 13%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/axioms/axiom_rules.cc.o
+[ 13%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/sas/sas_task.cc.o
+[ 14%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/simplify/simplify.cc.o
+[ 14%] Building CXX object search/CMakeFiles/downward.dir/evaluation_result.cc.o
+[ 15%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/simplify/variable_order.cc.o
+[ 15%] Building CXX object search/CMakeFiles/downward.dir/evaluator.cc.o
+[ 15%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pipeline/translate.cc.o
+[ 15%] Building CXX object search/CMakeFiles/downward.dir/evaluator_cache.cc.o
+[ 15%] Building CXX object search/CMakeFiles/downward.dir/heuristic.cc.o
+[ 16%] Building CXX object search/CMakeFiles/downward.dir/open_list_factory.cc.o
+[ 16%] Building CXX object search/CMakeFiles/downward.dir/operator_cost.cc.o
+[ 16%] Building CXX object search/CMakeFiles/downward.dir/operator_id.cc.o
+[ 16%] Building CXX object search/CMakeFiles/downward.dir/per_state_bitset.cc.o
+[ 17%] Building CXX object search/CMakeFiles/downward.dir/plan_manager.cc.o
+[ 17%] Building CXX object search/CMakeFiles/downward.dir/pruning_method.cc.o
+[ 17%] Building CXX object search/CMakeFiles/downward.dir/search_algorithm.cc.o
+[ 18%] Building CXX object search/CMakeFiles/downward.dir/search_node_info.cc.o
+[ 18%] Building CXX object search/CMakeFiles/downward.dir/search_progress.cc.o
+[ 18%] Building CXX object search/CMakeFiles/downward.dir/search_space.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/search_statistics.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/state_id.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/state_registry.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/task_proxy.cc.o
+[ 20%] Building CXX object search/CMakeFiles/downward.dir/task_utils/causal_graph.cc.o
+[ 20%] Building CXX object search/CMakeFiles/downward.dir/algorithms/int_packer.cc.o
+[ 20%] Building CXX object search/CMakeFiles/downward.dir/task_utils/successor_generator.cc.o
+[ 20%] Building CXX object search/CMakeFiles/downward.dir/task_utils/successor_generator_internals.cc.o
+[ 21%] Building CXX object search/CMakeFiles/downward.dir/task_utils/successor_generator_factory.cc.o
+[ 21%] Building CXX object search/CMakeFiles/downward.dir/task_utils/task_properties.cc.o
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/bounds.cc.o
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/doc_printer.cc.o
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/options.cc.o
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/plugin.cc.o
+[ 23%] Building CXX object search/CMakeFiles/downward.dir/plugins/plugin_info.cc.o
+[ 23%] Linking CXX executable ../bin/preprocess-h2
+[ 23%] Building CXX object search/CMakeFiles/downward.dir/plugins/raw_registry.cc.o
+[ 23%] Building CXX object search/CMakeFiles/downward.dir/plugins/registry.cc.o
+[ 24%] Building CXX object search/CMakeFiles/downward.dir/plugins/types.cc.o
+[ 24%] Building CXX object search/CMakeFiles/downward.dir/parser/abstract_syntax_tree.cc.o
+[ 24%] Built target preprocess-h2
+[ 24%] Building CXX object search/CMakeFiles/downward.dir/parser/decorated_abstract_syntax_tree.cc.o
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/parser/lexical_analyzer.cc.o
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/parser/syntax_analyzer.cc.o
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/parser/token_stream.cc.o
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/utils/countdown_timer.cc.o
+[ 26%] Building CXX object search/CMakeFiles/downward.dir/utils/component_errors.cc.o
+[ 26%] Building CXX object search/CMakeFiles/downward.dir/utils/exceptions.cc.o
+[ 26%] Building CXX object search/CMakeFiles/downward.dir/utils/logging.cc.o
+[ 27%] Building CXX object search/CMakeFiles/downward.dir/utils/markup.cc.o
+[ 27%] Building CXX object search/CMakeFiles/downward.dir/utils/math.cc.o
+[ 27%] Building CXX object search/CMakeFiles/downward.dir/utils/memory.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/murmurhash3.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/rng.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/rng_options.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/strings.cc.o
+[ 29%] Building CXX object search/CMakeFiles/downward.dir/utils/system.cc.o
+[ 29%] Building CXX object search/CMakeFiles/downward.dir/utils/system_unix.cc.o
+[ 29%] Building CXX object search/CMakeFiles/downward.dir/utils/system_windows.cc.o
+[ 30%] Building CXX object search/CMakeFiles/downward.dir/utils/task_lexer.cc.o
+[ 30%] Building CXX object search/CMakeFiles/downward.dir/utils/timer.cc.o
+[ 30%] Building CXX object search/CMakeFiles/downward.dir/open_lists/alternation_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/best_first_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/epsilon_greedy_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/pareto_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/tiebreaking_open_list.cc.o
+[ 32%] Building CXX object search/CMakeFiles/downward.dir/open_lists/type_based_open_list.cc.o
+[ 32%] Building CXX object search/CMakeFiles/downward.dir/evaluators/subcategory.cc.o
+[ 32%] Building CXX object search/CMakeFiles/downward.dir/evaluators/const_evaluator.cc.o
+[ 33%] Building CXX object search/CMakeFiles/downward.dir/evaluators/g_evaluator.cc.o
+[ 33%] Building CXX object search/CMakeFiles/downward.dir/evaluators/max_evaluator.cc.o
+[ 33%] Building CXX object search/CMakeFiles/downward.dir/evaluators/combining_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/evaluators/pref_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/evaluators/weighted_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/evaluators/sum_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/pruning/limited_pruning.cc.o
+[ 35%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_atom_centric.cc.o
+[ 35%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets.cc.o
+[ 35%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_simple.cc.o
+[ 36%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_action_centric.cc.o
+[ 36%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_ec.cc.o
+[ 36%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/iterative_width_search.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/novelty/novelty_evaluator.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/novelty/novelty_table.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_astar.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/eager_search.cc.o
+[ 38%] Building CXX object search/CMakeFiles/downward.dir/pruning/null_pruning_method.cc.o
+[ 38%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/search_common.cc.o
+[ 38%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/breadth_first_search.cc.o
+[ 39%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/exhaustive_search.cc.o
+[ 39%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/idastar_search.cc.o
+[ 39%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/iterative_deepening_search.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/task_utils/incremental_successor_generator.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/depth_first_search.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_eager.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_eager_greedy.cc.o
+[ 41%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_eager_wastar.cc.o
+[ 41%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_lazy.cc.o
+[ 41%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/lazy_search.cc.o
+[ 42%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_lazy_greedy.cc.o
+[ 42%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_lazy_wastar.cc.o
+[ 42%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/enforced_hill_climbing_search.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/iterated_search.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/heuristics/additive_heuristic.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/heuristics/relaxation_heuristic.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/tasks/default_value_axioms_task.cc.o
+[ 44%] Building CXX object search/CMakeFiles/downward.dir/tasks/cost_adapted_task.cc.o
+[ 44%] Building CXX object search/CMakeFiles/downward.dir/tasks/delegating_task.cc.o
+[ 44%] Building CXX object search/CMakeFiles/downward.dir/tasks/root_task.cc.o
+[ 45%] Building CXX object search/CMakeFiles/downward.dir/algorithms/sccs.cc.o
+[ 45%] Building CXX object search/CMakeFiles/downward.dir/heuristics/blind_search_heuristic.cc.o
+[ 45%] Building CXX object search/CMakeFiles/downward.dir/heuristics/cea_heuristic.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/domain_transition_graph.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/cg_heuristic.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/cg_cache.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/ff_heuristic.cc.o
+[ 47%] Building CXX object search/CMakeFiles/downward.dir/heuristics/goal_count_heuristic.cc.o
+[ 47%] Building CXX object search/CMakeFiles/downward.dir/heuristics/hm_heuristic.cc.o
+[ 47%] Building CXX object search/CMakeFiles/downward.dir/heuristics/lm_cut_heuristic.cc.o
+[ 48%] Building CXX object search/CMakeFiles/downward.dir/heuristics/lm_cut_landmarks.cc.o
+[ 48%] Building CXX object search/CMakeFiles/downward.dir/heuristics/max_heuristic.cc.o
+[ 48%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/abstraction.cc.o
+[ 49%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/abstract_state.cc.o
+[ 50%] Linking CXX executable ../bin/translate-cpp
+[ 50%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/additive_cartesian_heuristic.cc.o
+[ 50%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cartesian_heuristic_function.cc.o
+[ 50%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cartesian_set.cc.o
+[ 51%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cegar.cc.o
+[ 51%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cost_saturation.cc.o
+[ 51%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/flaw.cc.o
+[ 52%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/flaw_search.cc.o
+[ 52%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/match_tree.cc.o
+[ 52%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/refinement_hierarchy.cc.o
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/split_selector.cc.o
+[ 53%] Built target translate-cpp
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/shortest_paths.cc.o
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/subtask_generators.cc.o
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/transition_rewirer.cc.o
+[ 54%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/transition_system.cc.o
+[ 54%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/utils.cc.o
+[ 54%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/utils_landmarks.cc.o
+[ 55%] Building CXX object search/CMakeFiles/downward.dir/tasks/domain_abstracted_task.cc.o
+[ 55%] Building CXX object search/CMakeFiles/downward.dir/tasks/domain_abstracted_task_factory.cc.o
+[ 55%] Building CXX object search/CMakeFiles/downward.dir/tasks/inverted_task.cc.o
+[ 56%] Building CXX object search/CMakeFiles/downward.dir/tasks/modified_goals_task.cc.o
+[ 56%] Building CXX object search/CMakeFiles/downward.dir/tasks/modified_operator_costs_task.cc.o
+[ 56%] Building CXX object search/CMakeFiles/downward.dir/landmarks/exploration.cc.o
+[ 56%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark.cc.o
+[ 57%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_cost_partitioning_algorithms.cc.o
+[ 57%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_cost_partitioning_heuristic.cc.o
+[ 57%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory.cc.o
+[ 58%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_hm.cc.o
+[ 58%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_reasonable_orders_hps.cc.o
+[ 58%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_merged.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_relaxation.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_rpg_exhaust.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_rpg_sasp.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_zhu_givan.cc.o
+[ 60%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_graph.cc.o
+[ 60%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_heuristic.cc.o
+[ 60%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_status_manager.cc.o
+[ 61%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_sum_heuristic.cc.o
+[ 61%] Building CXX object search/CMakeFiles/downward.dir/landmarks/util.cc.o
+[ 61%] Building CXX object search/CMakeFiles/downward.dir/lp/lp_solver.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/lp/cplex_solver_interface.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/abstraction.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/abstraction_generator.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/canonical_heuristic.cc.o
+[ 63%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cartesian_abstraction.cc.o
+[ 63%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cartesian_abstraction_generator.cc.o
+[ 63%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cost_partitioning_heuristic.cc.o
+[ 64%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cost_partitioning_heuristic_collection_generator.cc.o
+[ 64%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/diversifier.cc.o
+[ 64%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/explicit_abstraction.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/explicit_projection_factory.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/greedy_order_utils.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/max_cost_partitioning_heuristic.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/max_heuristic.cc.o
+[ 66%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/optimal_cost_partitioning_heuristic.cc.o
+[ 66%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator.cc.o
+[ 66%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator_dynamic_greedy.cc.o
+[ 67%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator_greedy.cc.o
+[ 67%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator_random.cc.o
+[ 67%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_optimizer.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/pho_heuristic.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/plugin_group.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/projection.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/projection_generator.cc.o
+[ 69%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/saturated_cost_partitioning_heuristic.cc.o
+[ 69%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/saturated_cost_partitioning_online_heuristic.cc.o
+[ 69%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/structured_scp_order_generator.cc.o
+[ 70%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/structured_scp_order_generator_full.cc.o
+[ 70%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/structured_scp_order_heuristic.cc.o
+[ 70%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/uniform_cost_partitioning_heuristic.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/unsolvability_heuristic.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/utils.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/zero_one_cost_partitioning_heuristic.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/algorithms/connected_components.cc.o
+[ 72%] Building CXX object search/CMakeFiles/downward.dir/pdbs/abstract_operator.cc.o
+[ 72%] Building CXX object search/CMakeFiles/downward.dir/pdbs/canonical_pdbs.cc.o
+[ 72%] Building CXX object search/CMakeFiles/downward.dir/pdbs/canonical_pdbs_heuristic.cc.o
+[ 73%] Building CXX object search/CMakeFiles/downward.dir/pdbs/dominance_pruning.cc.o
+[ 73%] Building CXX object search/CMakeFiles/downward.dir/pdbs/cegar.cc.o
+[ 73%] Building CXX object search/CMakeFiles/downward.dir/pdbs/incremental_canonical_pdbs.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/match_tree.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_cliques.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_information.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_disjoint_cegar.cc.o
+[ 75%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_genetic.cc.o
+[ 75%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_hillclimbing.cc.o
+[ 75%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_manual.cc.o
+[ 76%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_multiple_cegar.cc.o
+[ 76%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_multiple_random.cc.o
+[ 76%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_multiple.cc.o
+[ 77%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_systematic.cc.o
+[ 77%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_systematic_scp.cc.o
+[ 77%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_database_factory.cc.o
+[ 78%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_evaluator.cc.o
+[ 78%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_database.cc.o
+[ 78%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_cegar.cc.o
+[ 78%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_greedy.cc.o
+[ 79%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_manual.cc.o
+[ 79%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_random.cc.o
+[ 79%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_information.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pdb_heuristic.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/random_pattern.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/slim_match_tree.cc.o
+[ 81%] Building CXX object search/CMakeFiles/downward.dir/pdbs/subcategory.cc.o
+[ 81%] Building CXX object search/CMakeFiles/downward.dir/pdbs/utils.cc.o
+[ 81%] Building CXX object search/CMakeFiles/downward.dir/pdbs/validation.cc.o
+[ 82%] Building CXX object search/CMakeFiles/downward.dir/pdbs/zero_one_pdbs.cc.o
+[ 82%] Building CXX object search/CMakeFiles/downward.dir/pdbs/zero_one_pdbs_heuristic.cc.o
+[ 82%] Building CXX object search/CMakeFiles/downward.dir/algorithms/max_cliques.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/task_utils/sampling.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/task_utils/variable_order_finder.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/algorithms/partial_state_tree.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/distances.cc.o
+[ 84%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/factored_transition_system.cc.o
+[ 84%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/fts_factory.cc.o
+[ 84%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/label_reduction.cc.o
+[ 85%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/labels.cc.o
+[ 85%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_and_shrink_algorithm.cc.o
+[ 85%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_and_shrink_heuristic.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_and_shrink_representation.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_dfp.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_goal_relevance.cc.o
+[ 87%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_miasm.cc.o
+[ 87%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_miasm_utils.cc.o
+[ 87%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_single_random.cc.o
+[ 88%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_total_order.cc.o
+[ 88%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_selector.cc.o
+[ 88%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_selector_score_based_filtering.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory_precomputed.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory_sccs.cc.o
+[ 90%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory_stateless.cc.o
+[ 90%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_precomputed.cc.o
+[ 90%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_sccs.cc.o
+[ 91%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_stateless.cc.o
+[ 91%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_tree.cc.o
+[ 91%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_tree_factory.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_tree_factory_linear.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_bisimulation.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_bucket_based.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_fh.cc.o
+[ 93%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_random.cc.o
+[ 93%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_strategy.cc.o
+[ 93%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/transition_system.cc.o
+[ 94%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/types.cc.o
+[ 94%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/utils.cc.o
+[ 94%] Building CXX object search/CMakeFiles/downward.dir/algorithms/equivalence_relation.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/constraint_generator.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/delete_relaxation_if_constraints.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/delete_relaxation_rr_constraints.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/lm_cut_constraints.cc.o
+[ 96%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/operator_counting_heuristic.cc.o
+[ 96%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/pho_abstraction_constraints.cc.o
+[ 96%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/pho_constraints.cc.o
+[ 97%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/state_equation_constraints.cc.o
+[ 97%] Building CXX object search/CMakeFiles/downward.dir/potentials/diverse_potential_heuristics.cc.o
+[ 97%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_function.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_heuristic.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_max_heuristic.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_optimizer.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/sample_based_potential_heuristics.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/subcategory.cc.o
+[ 99%] Building CXX object search/CMakeFiles/downward.dir/potentials/single_potential_heuristics.cc.o
+[ 99%] Building CXX object search/CMakeFiles/downward.dir/potentials/util.cc.o
+[100%] Linking CXX executable ../bin/downward
+[100%] Built target downward
+Building configuration release.
+Executing command "cmake -S /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/142b89589ae836ec32e74ce4ce236605aae67e63_e5e41175/./src -B /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/142b89589ae836ec32e74ce4ce236605aae67e63_e5e41175/./builds/release -G Unix Makefiles -DCMAKE_BUILD_TYPE=Release"
+Executing command "cmake --build /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/142b89589ae836ec32e74ce4ce236605aae67e63_e5e41175/./builds/release -j 32"
+Built configuration release successfully.
+2026-07-12 20:38:54,484 INFO     Executing git archive --format tar 42f02ccf2c51a63dc5f69ae1ed6d8d87d7b90281 {'stdout': <_io.TextIOWrapper name='/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/42f02ccf2c51a63dc5f69ae1ed6d8d87d7b90281_e5e41175-tmp/solver.tgz' mode='w' encoding='UTF-8'>, 'cwd': PosixPath('/proj/dfsplan/users/x_jense/scorpion-dev')}
+2026-07-12 20:38:55,223 INFO     Executing ./build.py {'cwd': PosixPath('/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/42f02ccf2c51a63dc5f69ae1ed6d8d87d7b90281_e5e41175')}
+-- The C compiler identification is GNU 11.5.0
+-- The CXX compiler identification is GNU 11.5.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test FLAG_FOUND
+-- Performing Test FLAG_FOUND - Success
+Flag '-std=c++20' set for '/usr/bin/c++'
+-- Building for 64-bit.
+Building from a repository with uncommited changes.
+Git revision: "a52558092-dirty"
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Found Cplex: /home/x_jense/lib/cplex/cplex/include/ilcplex (found suitable version "22.1.1", minimum required is "12")
+-- Configuring done (2.1s)
+-- Generating done (0.1s)
+-- Build files have been written to: /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/42f02ccf2c51a63dc5f69ae1ed6d8d87d7b90281_e5e41175/builds/release
+[  0%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/planner.cc.o
+Copying translator module into output directory
+[  0%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/helper_functions.cc.o
+[  0%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/axiom.cc.o
+[  1%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/causal_graph.cc.o
+[  2%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/operator.cc.o
+[  2%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/translator_main.cc.o
+[  2%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/h2_mutexes.cc.o
+[  2%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/translate_options.cc.o
+[  3%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/graph.cc.o
+[  3%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/logging.cc.o
+[  3%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/parser/lisp_parser.cc.o
+[  3%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/max_dag.cc.o
+[  4%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/strings.cc.o
+[  4%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/axiom.cc.o
+[  4%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/scc.cc.o
+[  4%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/mutex_group.cc.o
+[  4%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/system.cc.o
+[  4%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/variable.cc.o
+[  5%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/timer.cc.o
+[  5%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/state.cc.o
+[  6%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/predicate.cc.o
+[  6%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/types.cc.o
+[  6%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/condition.cc.o
+[  7%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/f_expression.cc.o
+[  7%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/effect.cc.o
+[  7%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/parser/parser.cc.o
+[  7%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/program.cc.o
+[  7%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/action.cc.o
+[  8%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/normalize/normalize.cc.o
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/task.cc.o
+[  9%] Building CXX object search/CMakeFiles/downward.dir/planner.cc.o
+[  9%] Built target translate
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/build.cc.o
+[ 10%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/split.cc.o
+[ 10%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/model.cc.o
+[ 10%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/instantiate/instantiate.cc.o
+[ 10%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/invariants/constraints.cc.o
+[ 11%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/invariants/invariants.cc.o
+[ 11%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/invariants/invariant_finder.cc.o
+[ 11%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/fact_groups/fact_groups.cc.o
+[ 12%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/sccs.cc.o
+[ 12%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/axioms/axiom_rules.cc.o
+[ 12%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/sas/sas_task.cc.o
+[ 13%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/simplify/simplify.cc.o
+[ 13%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/simplify/variable_order.cc.o
+[ 13%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pipeline/translate.cc.o
+[ 13%] Building CXX object search/CMakeFiles/downward.dir/abstract_task.cc.o
+[ 13%] Building CXX object search/CMakeFiles/downward.dir/axioms.cc.o
+[ 14%] Building CXX object search/CMakeFiles/downward.dir/command_line.cc.o
+[ 14%] Building CXX object search/CMakeFiles/downward.dir/evaluation_context.cc.o
+[ 14%] Building CXX object search/CMakeFiles/downward.dir/evaluation_result.cc.o
+[ 15%] Building CXX object search/CMakeFiles/downward.dir/evaluator.cc.o
+[ 15%] Building CXX object search/CMakeFiles/downward.dir/evaluator_cache.cc.o
+[ 16%] Building CXX object search/CMakeFiles/downward.dir/open_list_factory.cc.o
+[ 16%] Building CXX object search/CMakeFiles/downward.dir/heuristic.cc.o
+[ 16%] Building CXX object search/CMakeFiles/downward.dir/operator_cost.cc.o
+[ 16%] Building CXX object search/CMakeFiles/downward.dir/operator_id.cc.o
+[ 16%] Building CXX object search/CMakeFiles/downward.dir/per_state_bitset.cc.o
+[ 17%] Building CXX object search/CMakeFiles/downward.dir/plan_manager.cc.o
+[ 17%] Building CXX object search/CMakeFiles/downward.dir/pruning_method.cc.o
+[ 17%] Building CXX object search/CMakeFiles/downward.dir/search_algorithm.cc.o
+[ 18%] Building CXX object search/CMakeFiles/downward.dir/search_node_info.cc.o
+[ 18%] Building CXX object search/CMakeFiles/downward.dir/search_progress.cc.o
+[ 18%] Building CXX object search/CMakeFiles/downward.dir/search_space.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/search_statistics.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/state_id.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/state_registry.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/task_proxy.cc.o
+[ 20%] Building CXX object search/CMakeFiles/downward.dir/task_utils/causal_graph.cc.o
+[ 20%] Building CXX object search/CMakeFiles/downward.dir/algorithms/int_packer.cc.o
+[ 20%] Building CXX object search/CMakeFiles/downward.dir/task_utils/successor_generator.cc.o
+[ 21%] Building CXX object search/CMakeFiles/downward.dir/task_utils/successor_generator_factory.cc.o
+[ 21%] Building CXX object search/CMakeFiles/downward.dir/task_utils/successor_generator_internals.cc.o
+[ 21%] Building CXX object search/CMakeFiles/downward.dir/task_utils/task_properties.cc.o
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/bounds.cc.o
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/doc_printer.cc.o
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/options.cc.o
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/plugin.cc.o
+[ 23%] Building CXX object search/CMakeFiles/downward.dir/plugins/plugin_info.cc.o
+[ 23%] Building CXX object search/CMakeFiles/downward.dir/plugins/raw_registry.cc.o
+[ 23%] Linking CXX executable ../bin/preprocess-h2
+[ 23%] Building CXX object search/CMakeFiles/downward.dir/plugins/registry.cc.o
+[ 24%] Building CXX object search/CMakeFiles/downward.dir/plugins/types.cc.o
+[ 24%] Building CXX object search/CMakeFiles/downward.dir/parser/decorated_abstract_syntax_tree.cc.o
+[ 24%] Building CXX object search/CMakeFiles/downward.dir/parser/abstract_syntax_tree.cc.o
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/parser/lexical_analyzer.cc.o
+[ 25%] Built target preprocess-h2
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/parser/syntax_analyzer.cc.o
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/parser/token_stream.cc.o
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/utils/countdown_timer.cc.o
+[ 26%] Building CXX object search/CMakeFiles/downward.dir/utils/component_errors.cc.o
+[ 26%] Building CXX object search/CMakeFiles/downward.dir/utils/exceptions.cc.o
+[ 26%] Building CXX object search/CMakeFiles/downward.dir/utils/logging.cc.o
+[ 27%] Building CXX object search/CMakeFiles/downward.dir/utils/markup.cc.o
+[ 27%] Building CXX object search/CMakeFiles/downward.dir/utils/math.cc.o
+[ 27%] Building CXX object search/CMakeFiles/downward.dir/utils/memory.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/murmurhash3.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/rng.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/rng_options.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/strings.cc.o
+[ 29%] Building CXX object search/CMakeFiles/downward.dir/utils/system.cc.o
+[ 29%] Building CXX object search/CMakeFiles/downward.dir/utils/system_unix.cc.o
+[ 29%] Building CXX object search/CMakeFiles/downward.dir/utils/system_windows.cc.o
+[ 30%] Building CXX object search/CMakeFiles/downward.dir/utils/task_lexer.cc.o
+[ 30%] Building CXX object search/CMakeFiles/downward.dir/utils/timer.cc.o
+[ 30%] Building CXX object search/CMakeFiles/downward.dir/open_lists/alternation_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/best_first_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/epsilon_greedy_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/pareto_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/tiebreaking_open_list.cc.o
+[ 32%] Building CXX object search/CMakeFiles/downward.dir/open_lists/type_based_open_list.cc.o
+[ 32%] Building CXX object search/CMakeFiles/downward.dir/evaluators/subcategory.cc.o
+[ 32%] Building CXX object search/CMakeFiles/downward.dir/evaluators/const_evaluator.cc.o
+[ 33%] Building CXX object search/CMakeFiles/downward.dir/evaluators/g_evaluator.cc.o
+[ 33%] Building CXX object search/CMakeFiles/downward.dir/evaluators/max_evaluator.cc.o
+[ 33%] Building CXX object search/CMakeFiles/downward.dir/evaluators/combining_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/evaluators/pref_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/evaluators/weighted_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/evaluators/sum_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/pruning/limited_pruning.cc.o
+[ 35%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_atom_centric.cc.o
+[ 35%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets.cc.o
+[ 35%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_simple.cc.o
+[ 36%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_action_centric.cc.o
+[ 36%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_ec.cc.o
+[ 36%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/iterative_width_search.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/novelty/novelty_evaluator.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/novelty/novelty_table.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_astar.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/eager_search.cc.o
+[ 38%] Building CXX object search/CMakeFiles/downward.dir/pruning/null_pruning_method.cc.o
+[ 38%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/search_common.cc.o
+[ 38%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/breadth_first_search.cc.o
+[ 39%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/exhaustive_search.cc.o
+[ 39%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/idastar_search.cc.o
+[ 39%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/iterative_deepening_search.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/task_utils/incremental_successor_generator.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/depth_first_search.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_eager.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_eager_greedy.cc.o
+[ 41%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_eager_wastar.cc.o
+[ 41%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_lazy.cc.o
+[ 41%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/lazy_search.cc.o
+[ 42%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_lazy_greedy.cc.o
+[ 42%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_lazy_wastar.cc.o
+[ 42%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/enforced_hill_climbing_search.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/iterated_search.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/heuristics/additive_heuristic.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/heuristics/relaxation_heuristic.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/tasks/default_value_axioms_task.cc.o
+[ 44%] Building CXX object search/CMakeFiles/downward.dir/tasks/cost_adapted_task.cc.o
+[ 44%] Building CXX object search/CMakeFiles/downward.dir/tasks/delegating_task.cc.o
+[ 44%] Building CXX object search/CMakeFiles/downward.dir/tasks/root_task.cc.o
+[ 45%] Building CXX object search/CMakeFiles/downward.dir/algorithms/sccs.cc.o
+[ 45%] Building CXX object search/CMakeFiles/downward.dir/heuristics/blind_search_heuristic.cc.o
+[ 45%] Building CXX object search/CMakeFiles/downward.dir/heuristics/cea_heuristic.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/domain_transition_graph.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/cg_heuristic.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/cg_cache.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/ff_heuristic.cc.o
+[ 47%] Building CXX object search/CMakeFiles/downward.dir/heuristics/goal_count_heuristic.cc.o
+[ 47%] Building CXX object search/CMakeFiles/downward.dir/heuristics/hm_heuristic.cc.o
+[ 47%] Building CXX object search/CMakeFiles/downward.dir/heuristics/lm_cut_heuristic.cc.o
+[ 48%] Building CXX object search/CMakeFiles/downward.dir/heuristics/lm_cut_landmarks.cc.o
+[ 48%] Building CXX object search/CMakeFiles/downward.dir/heuristics/max_heuristic.cc.o
+[ 48%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/abstraction.cc.o
+[ 49%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/abstract_state.cc.o
+[ 49%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/additive_cartesian_heuristic.cc.o
+[ 49%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cartesian_heuristic_function.cc.o
+[ 49%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cartesian_set.cc.o
+[ 50%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cegar.cc.o
+[ 50%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cost_saturation.cc.o
+[ 50%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/flaw.cc.o
+[ 51%] Linking CXX executable ../bin/translate-cpp
+[ 52%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/flaw_search.cc.o
+[ 52%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/match_tree.cc.o
+[ 52%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/refinement_hierarchy.cc.o
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/split_selector.cc.o
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/shortest_paths.cc.o
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/transition_rewirer.cc.o
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/subtask_generators.cc.o
+[ 54%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/transition_system.cc.o
+[ 54%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/utils.cc.o
+[ 54%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/utils_landmarks.cc.o
+[ 54%] Built target translate-cpp
+[ 55%] Building CXX object search/CMakeFiles/downward.dir/tasks/domain_abstracted_task.cc.o
+[ 55%] Building CXX object search/CMakeFiles/downward.dir/tasks/domain_abstracted_task_factory.cc.o
+[ 55%] Building CXX object search/CMakeFiles/downward.dir/tasks/inverted_task.cc.o
+[ 55%] Building CXX object search/CMakeFiles/downward.dir/tasks/modified_operator_costs_task.cc.o
+[ 56%] Building CXX object search/CMakeFiles/downward.dir/tasks/modified_goals_task.cc.o
+[ 56%] Building CXX object search/CMakeFiles/downward.dir/landmarks/exploration.cc.o
+[ 56%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark.cc.o
+[ 57%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_cost_partitioning_algorithms.cc.o
+[ 57%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_cost_partitioning_heuristic.cc.o
+[ 57%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory.cc.o
+[ 58%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_hm.cc.o
+[ 58%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_reasonable_orders_hps.cc.o
+[ 58%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_merged.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_relaxation.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_rpg_exhaust.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_rpg_sasp.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_zhu_givan.cc.o
+[ 60%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_graph.cc.o
+[ 60%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_heuristic.cc.o
+[ 60%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_status_manager.cc.o
+[ 61%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_sum_heuristic.cc.o
+[ 61%] Building CXX object search/CMakeFiles/downward.dir/landmarks/util.cc.o
+[ 61%] Building CXX object search/CMakeFiles/downward.dir/lp/lp_solver.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/lp/cplex_solver_interface.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/abstraction.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/abstraction_generator.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/canonical_heuristic.cc.o
+[ 63%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cartesian_abstraction.cc.o
+[ 63%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cartesian_abstraction_generator.cc.o
+[ 63%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cost_partitioning_heuristic.cc.o
+[ 64%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cost_partitioning_heuristic_collection_generator.cc.o
+[ 64%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/diversifier.cc.o
+[ 64%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/explicit_abstraction.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/explicit_projection_factory.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/greedy_order_utils.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/max_cost_partitioning_heuristic.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/max_heuristic.cc.o
+[ 66%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/optimal_cost_partitioning_heuristic.cc.o
+[ 66%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator.cc.o
+[ 66%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator_dynamic_greedy.cc.o
+[ 67%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator_greedy.cc.o
+[ 67%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator_random.cc.o
+[ 67%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_optimizer.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/pho_heuristic.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/plugin_group.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/projection.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/projection_generator.cc.o
+[ 69%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/saturated_cost_partitioning_heuristic.cc.o
+[ 69%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/structured_scp_order_generator.cc.o
+[ 69%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/saturated_cost_partitioning_online_heuristic.cc.o
+[ 70%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/structured_scp_order_generator_full.cc.o
+[ 70%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/structured_scp_order_heuristic.cc.o
+[ 70%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/uniform_cost_partitioning_heuristic.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/unsolvability_heuristic.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/utils.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/zero_one_cost_partitioning_heuristic.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/algorithms/connected_components.cc.o
+[ 72%] Building CXX object search/CMakeFiles/downward.dir/pdbs/abstract_operator.cc.o
+[ 72%] Building CXX object search/CMakeFiles/downward.dir/pdbs/canonical_pdbs.cc.o
+[ 72%] Building CXX object search/CMakeFiles/downward.dir/pdbs/canonical_pdbs_heuristic.cc.o
+[ 73%] Building CXX object search/CMakeFiles/downward.dir/pdbs/cegar.cc.o
+[ 73%] Building CXX object search/CMakeFiles/downward.dir/pdbs/dominance_pruning.cc.o
+[ 73%] Building CXX object search/CMakeFiles/downward.dir/pdbs/incremental_canonical_pdbs.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/match_tree.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_cliques.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_information.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_disjoint_cegar.cc.o
+[ 75%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_genetic.cc.o
+[ 75%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_hillclimbing.cc.o
+[ 75%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_manual.cc.o
+[ 76%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_multiple_cegar.cc.o
+[ 76%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_multiple_random.cc.o
+[ 76%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_multiple.cc.o
+[ 77%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_systematic.cc.o
+[ 77%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_systematic_scp.cc.o
+[ 77%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_database_factory.cc.o
+[ 77%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_database.cc.o
+[ 78%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_evaluator.cc.o
+[ 78%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_cegar.cc.o
+[ 78%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_greedy.cc.o
+[ 79%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_manual.cc.o
+[ 79%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_random.cc.o
+[ 79%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_information.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pdb_heuristic.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/random_pattern.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/slim_match_tree.cc.o
+[ 81%] Building CXX object search/CMakeFiles/downward.dir/pdbs/subcategory.cc.o
+[ 81%] Building CXX object search/CMakeFiles/downward.dir/pdbs/utils.cc.o
+[ 81%] Building CXX object search/CMakeFiles/downward.dir/pdbs/validation.cc.o
+[ 82%] Building CXX object search/CMakeFiles/downward.dir/pdbs/zero_one_pdbs.cc.o
+[ 82%] Building CXX object search/CMakeFiles/downward.dir/pdbs/zero_one_pdbs_heuristic.cc.o
+[ 82%] Building CXX object search/CMakeFiles/downward.dir/algorithms/max_cliques.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/task_utils/sampling.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/task_utils/variable_order_finder.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/algorithms/partial_state_tree.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/distances.cc.o
+[ 84%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/factored_transition_system.cc.o
+[ 84%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/fts_factory.cc.o
+[ 84%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/label_reduction.cc.o
+[ 85%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/labels.cc.o
+[ 85%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_and_shrink_algorithm.cc.o
+[ 85%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_and_shrink_heuristic.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_and_shrink_representation.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_dfp.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_goal_relevance.cc.o
+[ 87%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_miasm.cc.o
+[ 87%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_miasm_utils.cc.o
+[ 87%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_single_random.cc.o
+[ 88%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_total_order.cc.o
+[ 88%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_selector.cc.o
+[ 88%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_selector_score_based_filtering.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory_precomputed.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory_sccs.cc.o
+[ 90%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory_stateless.cc.o
+[ 90%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_precomputed.cc.o
+[ 90%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_sccs.cc.o
+[ 91%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_stateless.cc.o
+[ 91%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_tree.cc.o
+[ 91%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_tree_factory.cc.o
+/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/42f02ccf2c51a63dc5f69ae1ed6d8d87d7b90281_e5e41175/src/search/cost_saturation/structured_scp_order_generator.cc: In member function ‘cost_saturation::NodeId cost_saturation::StructuredSCPOrderGenerator::create_lookup_node(const Costs&, cost_saturation::CostKey, int)’:
+/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/42f02ccf2c51a63dc5f69ae1ed6d8d87d7b90281_e5e41175/src/search/cost_saturation/structured_scp_order_generator.cc:333:39: warning: ‘restricted_it.gtl::priv::raw_hash_set<gtl::priv::FlatHashMapPolicy<std::vector<int>, int>, cost_saturation::VectorIntMurmurHash, gtl::EqualTo<std::vector<int> >, std::allocator<std::pair<const std::vector<int>, int> > >::iterator::<anonymous>.gtl::priv::raw_hash_set<gtl::priv::FlatHashMapPolicy<std::vector<int>, int>, cost_saturation::VectorIntMurmurHash, gtl::EqualTo<std::vector<int> >, std::allocator<std::pair<const std::vector<int>, int> > >::iterator::<unnamed union>::slot_’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+  333 |                 restricted_it->second = table_id;
+      |                 ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_tree_factory_linear.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_bisimulation.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_bucket_based.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_fh.cc.o
+[ 93%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_random.cc.o
+[ 93%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_strategy.cc.o
+[ 93%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/transition_system.cc.o
+[ 94%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/types.cc.o
+[ 94%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/utils.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/constraint_generator.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/delete_relaxation_if_constraints.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/algorithms/equivalence_relation.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/delete_relaxation_rr_constraints.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/lm_cut_constraints.cc.o
+[ 96%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/operator_counting_heuristic.cc.o
+[ 96%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/pho_abstraction_constraints.cc.o
+[ 96%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/pho_constraints.cc.o
+[ 97%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/state_equation_constraints.cc.o
+[ 97%] Building CXX object search/CMakeFiles/downward.dir/potentials/diverse_potential_heuristics.cc.o
+[ 97%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_function.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_heuristic.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_max_heuristic.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_optimizer.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/sample_based_potential_heuristics.cc.o
+[ 99%] Building CXX object search/CMakeFiles/downward.dir/potentials/single_potential_heuristics.cc.o
+[ 99%] Building CXX object search/CMakeFiles/downward.dir/potentials/subcategory.cc.o
+[ 99%] Building CXX object search/CMakeFiles/downward.dir/potentials/util.cc.o
+[100%] Linking CXX executable ../bin/downward
+[100%] Built target downward
+Building configuration release.
+Executing command "cmake -S /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/42f02ccf2c51a63dc5f69ae1ed6d8d87d7b90281_e5e41175/./src -B /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/42f02ccf2c51a63dc5f69ae1ed6d8d87d7b90281_e5e41175/./builds/release -G Unix Makefiles -DCMAKE_BUILD_TYPE=Release"
+Executing command "cmake --build /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/42f02ccf2c51a63dc5f69ae1ed6d8d87d7b90281_e5e41175/./builds/release -j 32"
+Built configuration release successfully.
+2026-07-12 20:39:44,684 INFO     Executing git archive --format tar a525580925207bd9d4e9abe98570cc6835b520ed {'stdout': <_io.TextIOWrapper name='/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/a525580925207bd9d4e9abe98570cc6835b520ed_e5e41175-tmp/solver.tgz' mode='w' encoding='UTF-8'>, 'cwd': PosixPath('/proj/dfsplan/users/x_jense/scorpion-dev')}
+2026-07-12 20:39:45,444 INFO     Executing ./build.py {'cwd': PosixPath('/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/a525580925207bd9d4e9abe98570cc6835b520ed_e5e41175')}
+-- The C compiler identification is GNU 11.5.0
+-- The CXX compiler identification is GNU 11.5.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test FLAG_FOUND
+-- Performing Test FLAG_FOUND - Success
+Flag '-std=c++20' set for '/usr/bin/c++'
+-- Building for 64-bit.
+Building from a repository with uncommited changes.
+Git revision: "a52558092-dirty"
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Found Cplex: /home/x_jense/lib/cplex/cplex/include/ilcplex (found suitable version "22.1.1", minimum required is "12")
+-- Configuring done (2.1s)
+-- Generating done (0.1s)
+-- Build files have been written to: /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/a525580925207bd9d4e9abe98570cc6835b520ed_e5e41175/builds/release
+[  0%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/axiom.cc.o
+[  0%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/timer.cc.o
+Copying translator module into output directory
+[  2%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/planner.cc.o
+[  2%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/translator_main.cc.o
+[  2%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/h2_mutexes.cc.o
+[  3%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/causal_graph.cc.o
+[  4%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/helper_functions.cc.o
+[  4%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/task.cc.o
+[  5%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/system.cc.o
+[  5%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/strings.cc.o
+[  5%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/logging.cc.o
+[  5%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/mutex_group.cc.o
+[  5%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/max_dag.cc.o
+[  4%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/graph.cc.o
+[  5%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/translate_options.cc.o
+[  5%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/scc.cc.o
+[  4%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/state.cc.o
+[  6%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/predicate.cc.o
+[  6%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/operator.cc.o
+[  6%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/types.cc.o
+[  7%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/normalize/normalize.cc.o
+[  7%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/condition.cc.o
+[  7%] Building CXX object preprocess_h2/CMakeFiles/preprocess-h2.dir/variable.cc.o
+[  7%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/effect.cc.o
+[  7%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/parser/lisp_parser.cc.o
+[  7%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/action.cc.o
+[  8%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/f_expression.cc.o
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pddl/axiom.cc.o
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/parser/parser.cc.o
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/program.cc.o
+[  9%] Building CXX object search/CMakeFiles/downward.dir/planner.cc.o
+[  9%] Built target translate
+[  9%] Building CXX object search/CMakeFiles/downward.dir/abstract_task.cc.o
+[  9%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/build.cc.o
+[ 10%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/split.cc.o
+[ 10%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/grounding/model.cc.o
+[ 10%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/instantiate/instantiate.cc.o
+[ 10%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/invariants/invariants.cc.o
+[ 11%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/invariants/constraints.cc.o
+[ 11%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/invariants/invariant_finder.cc.o
+[ 11%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/fact_groups/fact_groups.cc.o
+[ 11%] Building CXX object search/CMakeFiles/downward.dir/axioms.cc.o
+[ 12%] Building CXX object search/CMakeFiles/downward.dir/command_line.cc.o
+[ 13%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/axioms/axiom_rules.cc.o
+[ 13%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/utils/sccs.cc.o
+[ 13%] Building CXX object search/CMakeFiles/downward.dir/evaluation_context.cc.o
+[ 13%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/sas/sas_task.cc.o
+[ 14%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/simplify/simplify.cc.o
+[ 14%] Building CXX object search/CMakeFiles/downward.dir/evaluation_result.cc.o
+[ 15%] Building CXX object search/CMakeFiles/downward.dir/evaluator.cc.o
+[ 15%] Building CXX object search/CMakeFiles/downward.dir/evaluator_cache.cc.o
+[ 15%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/simplify/variable_order.cc.o
+[ 15%] Building CXX object translate-cpp/CMakeFiles/translate-cpp.dir/pipeline/translate.cc.o
+[ 15%] Building CXX object search/CMakeFiles/downward.dir/heuristic.cc.o
+[ 15%] Building CXX object search/CMakeFiles/downward.dir/open_list_factory.cc.o
+[ 16%] Building CXX object search/CMakeFiles/downward.dir/operator_cost.cc.o
+[ 16%] Building CXX object search/CMakeFiles/downward.dir/operator_id.cc.o
+[ 16%] Building CXX object search/CMakeFiles/downward.dir/per_state_bitset.cc.o
+[ 17%] Building CXX object search/CMakeFiles/downward.dir/plan_manager.cc.o
+[ 17%] Building CXX object search/CMakeFiles/downward.dir/pruning_method.cc.o
+[ 17%] Building CXX object search/CMakeFiles/downward.dir/search_algorithm.cc.o
+[ 18%] Building CXX object search/CMakeFiles/downward.dir/search_node_info.cc.o
+[ 18%] Building CXX object search/CMakeFiles/downward.dir/search_progress.cc.o
+[ 18%] Building CXX object search/CMakeFiles/downward.dir/search_space.cc.o
+[ 18%] Building CXX object search/CMakeFiles/downward.dir/search_statistics.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/state_id.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/state_registry.cc.o
+[ 19%] Building CXX object search/CMakeFiles/downward.dir/task_proxy.cc.o
+[ 20%] Building CXX object search/CMakeFiles/downward.dir/task_utils/causal_graph.cc.o
+[ 20%] Building CXX object search/CMakeFiles/downward.dir/algorithms/int_packer.cc.o
+[ 20%] Building CXX object search/CMakeFiles/downward.dir/task_utils/successor_generator.cc.o
+[ 21%] Building CXX object search/CMakeFiles/downward.dir/task_utils/successor_generator_factory.cc.o
+[ 21%] Building CXX object search/CMakeFiles/downward.dir/task_utils/successor_generator_internals.cc.o
+[ 21%] Building CXX object search/CMakeFiles/downward.dir/task_utils/task_properties.cc.o
+[ 21%] Building CXX object search/CMakeFiles/downward.dir/plugins/bounds.cc.o
+[ 21%] Linking CXX executable ../bin/preprocess-h2
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/doc_printer.cc.o
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/options.cc.o
+[ 22%] Building CXX object search/CMakeFiles/downward.dir/plugins/plugin.cc.o
+[ 23%] Building CXX object search/CMakeFiles/downward.dir/plugins/plugin_info.cc.o
+[ 23%] Building CXX object search/CMakeFiles/downward.dir/plugins/raw_registry.cc.o
+[ 23%] Built target preprocess-h2
+[ 24%] Building CXX object search/CMakeFiles/downward.dir/plugins/types.cc.o
+[ 24%] Building CXX object search/CMakeFiles/downward.dir/plugins/registry.cc.o
+[ 24%] Building CXX object search/CMakeFiles/downward.dir/parser/abstract_syntax_tree.cc.o
+[ 24%] Building CXX object search/CMakeFiles/downward.dir/parser/decorated_abstract_syntax_tree.cc.o
+[ 24%] Building CXX object search/CMakeFiles/downward.dir/parser/lexical_analyzer.cc.o
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/parser/syntax_analyzer.cc.o
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/parser/token_stream.cc.o
+[ 25%] Building CXX object search/CMakeFiles/downward.dir/utils/countdown_timer.cc.o
+[ 26%] Building CXX object search/CMakeFiles/downward.dir/utils/exceptions.cc.o
+[ 26%] Building CXX object search/CMakeFiles/downward.dir/utils/component_errors.cc.o
+[ 26%] Building CXX object search/CMakeFiles/downward.dir/utils/logging.cc.o
+[ 27%] Building CXX object search/CMakeFiles/downward.dir/utils/markup.cc.o
+[ 27%] Building CXX object search/CMakeFiles/downward.dir/utils/math.cc.o
+[ 27%] Building CXX object search/CMakeFiles/downward.dir/utils/memory.cc.o
+[ 27%] Building CXX object search/CMakeFiles/downward.dir/utils/murmurhash3.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/rng.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/rng_options.cc.o
+[ 28%] Building CXX object search/CMakeFiles/downward.dir/utils/strings.cc.o
+[ 29%] Building CXX object search/CMakeFiles/downward.dir/utils/system.cc.o
+[ 29%] Building CXX object search/CMakeFiles/downward.dir/utils/system_windows.cc.o
+[ 30%] Building CXX object search/CMakeFiles/downward.dir/utils/task_lexer.cc.o
+[ 30%] Building CXX object search/CMakeFiles/downward.dir/utils/system_unix.cc.o
+[ 30%] Building CXX object search/CMakeFiles/downward.dir/utils/timer.cc.o
+[ 30%] Building CXX object search/CMakeFiles/downward.dir/open_lists/alternation_open_list.cc.o
+[ 30%] Building CXX object search/CMakeFiles/downward.dir/open_lists/best_first_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/epsilon_greedy_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/pareto_open_list.cc.o
+[ 31%] Building CXX object search/CMakeFiles/downward.dir/open_lists/tiebreaking_open_list.cc.o
+[ 32%] Building CXX object search/CMakeFiles/downward.dir/open_lists/type_based_open_list.cc.o
+[ 32%] Building CXX object search/CMakeFiles/downward.dir/evaluators/subcategory.cc.o
+[ 32%] Building CXX object search/CMakeFiles/downward.dir/evaluators/const_evaluator.cc.o
+[ 33%] Building CXX object search/CMakeFiles/downward.dir/evaluators/g_evaluator.cc.o
+[ 33%] Building CXX object search/CMakeFiles/downward.dir/evaluators/max_evaluator.cc.o
+[ 33%] Building CXX object search/CMakeFiles/downward.dir/evaluators/combining_evaluator.cc.o
+[ 33%] Building CXX object search/CMakeFiles/downward.dir/evaluators/pref_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/evaluators/weighted_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/evaluators/sum_evaluator.cc.o
+[ 34%] Building CXX object search/CMakeFiles/downward.dir/pruning/limited_pruning.cc.o
+[ 35%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_atom_centric.cc.o
+[ 35%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets.cc.o
+[ 35%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_simple.cc.o
+[ 36%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_action_centric.cc.o
+[ 36%] Building CXX object search/CMakeFiles/downward.dir/pruning/stubborn_sets_ec.cc.o
+[ 36%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/iterative_width_search.cc.o
+[ 36%] Building CXX object search/CMakeFiles/downward.dir/novelty/novelty_evaluator.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/novelty/novelty_table.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_astar.cc.o
+[ 37%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/eager_search.cc.o
+[ 38%] Building CXX object search/CMakeFiles/downward.dir/pruning/null_pruning_method.cc.o
+[ 38%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/search_common.cc.o
+[ 38%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/breadth_first_search.cc.o
+[ 39%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/idastar_search.cc.o
+[ 39%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/exhaustive_search.cc.o
+[ 39%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/iterative_deepening_search.cc.o
+[ 39%] Building CXX object search/CMakeFiles/downward.dir/task_utils/incremental_successor_generator.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/depth_first_search.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_eager.cc.o
+[ 40%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_eager_greedy.cc.o
+[ 41%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_eager_wastar.cc.o
+[ 41%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_lazy.cc.o
+[ 41%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/lazy_search.cc.o
+[ 42%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_lazy_greedy.cc.o
+[ 42%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/plugin_lazy_wastar.cc.o
+[ 42%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/enforced_hill_climbing_search.cc.o
+[ 42%] Building CXX object search/CMakeFiles/downward.dir/search_algorithms/iterated_search.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/heuristics/additive_heuristic.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/heuristics/relaxation_heuristic.cc.o
+[ 43%] Building CXX object search/CMakeFiles/downward.dir/tasks/default_value_axioms_task.cc.o
+[ 44%] Building CXX object search/CMakeFiles/downward.dir/tasks/cost_adapted_task.cc.o
+[ 44%] Building CXX object search/CMakeFiles/downward.dir/tasks/delegating_task.cc.o
+[ 44%] Building CXX object search/CMakeFiles/downward.dir/tasks/root_task.cc.o
+[ 45%] Building CXX object search/CMakeFiles/downward.dir/algorithms/sccs.cc.o
+[ 45%] Building CXX object search/CMakeFiles/downward.dir/heuristics/blind_search_heuristic.cc.o
+[ 45%] Building CXX object search/CMakeFiles/downward.dir/heuristics/cea_heuristic.cc.o
+[ 45%] Building CXX object search/CMakeFiles/downward.dir/heuristics/domain_transition_graph.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/cg_heuristic.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/cg_cache.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/ff_heuristic.cc.o
+[ 46%] Building CXX object search/CMakeFiles/downward.dir/heuristics/hm_heuristic.cc.o
+[ 47%] Building CXX object search/CMakeFiles/downward.dir/heuristics/goal_count_heuristic.cc.o
+[ 47%] Building CXX object search/CMakeFiles/downward.dir/heuristics/lm_cut_heuristic.cc.o
+[ 48%] Building CXX object search/CMakeFiles/downward.dir/heuristics/lm_cut_landmarks.cc.o
+[ 49%] Linking CXX executable ../bin/translate-cpp
+[ 49%] Building CXX object search/CMakeFiles/downward.dir/heuristics/max_heuristic.cc.o
+[ 49%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/abstraction.cc.o
+[ 49%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/abstract_state.cc.o
+[ 50%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/additive_cartesian_heuristic.cc.o
+[ 50%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cartesian_heuristic_function.cc.o
+[ 50%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cartesian_set.cc.o
+[ 51%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cegar.cc.o
+[ 51%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/cost_saturation.cc.o
+[ 51%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/flaw.cc.o
+[ 52%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/flaw_search.cc.o
+[ 52%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/match_tree.cc.o
+[ 52%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/refinement_hierarchy.cc.o
+[ 52%] Built target translate-cpp
+[ 52%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/split_selector.cc.o
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/shortest_paths.cc.o
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/subtask_generators.cc.o
+[ 53%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/transition_rewirer.cc.o
+[ 54%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/transition_system.cc.o
+[ 54%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/utils.cc.o
+[ 54%] Building CXX object search/CMakeFiles/downward.dir/cartesian_abstractions/utils_landmarks.cc.o
+[ 55%] Building CXX object search/CMakeFiles/downward.dir/tasks/domain_abstracted_task.cc.o
+[ 55%] Building CXX object search/CMakeFiles/downward.dir/tasks/domain_abstracted_task_factory.cc.o
+[ 55%] Building CXX object search/CMakeFiles/downward.dir/tasks/inverted_task.cc.o
+[ 55%] Building CXX object search/CMakeFiles/downward.dir/tasks/modified_goals_task.cc.o
+[ 56%] Building CXX object search/CMakeFiles/downward.dir/tasks/modified_operator_costs_task.cc.o
+[ 56%] Building CXX object search/CMakeFiles/downward.dir/landmarks/exploration.cc.o
+[ 56%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark.cc.o
+[ 57%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_cost_partitioning_algorithms.cc.o
+[ 57%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_cost_partitioning_heuristic.cc.o
+[ 57%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory.cc.o
+[ 58%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_hm.cc.o
+[ 58%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_reasonable_orders_hps.cc.o
+[ 58%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_merged.cc.o
+[ 58%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_relaxation.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_rpg_exhaust.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_rpg_sasp.cc.o
+[ 59%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_factory_zhu_givan.cc.o
+[ 60%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_graph.cc.o
+[ 60%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_heuristic.cc.o
+[ 60%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_status_manager.cc.o
+[ 61%] Building CXX object search/CMakeFiles/downward.dir/landmarks/landmark_sum_heuristic.cc.o
+[ 61%] Building CXX object search/CMakeFiles/downward.dir/landmarks/util.cc.o
+[ 61%] Building CXX object search/CMakeFiles/downward.dir/lp/lp_solver.cc.o
+[ 61%] Building CXX object search/CMakeFiles/downward.dir/lp/cplex_solver_interface.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/abstraction.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/abstraction_generator.cc.o
+[ 62%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/canonical_heuristic.cc.o
+[ 63%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cartesian_abstraction.cc.o
+[ 63%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cartesian_abstraction_generator.cc.o
+[ 63%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cost_function_registry.cc.o
+[ 64%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cost_partitioning_heuristic.cc.o
+[ 64%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/cost_partitioning_heuristic_collection_generator.cc.o
+[ 64%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/diversifier.cc.o
+[ 64%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/explicit_abstraction.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/explicit_projection_factory.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/greedy_order_utils.cc.o
+[ 65%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/max_cost_partitioning_heuristic.cc.o
+[ 66%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/max_heuristic.cc.o
+[ 66%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/optimal_cost_partitioning_heuristic.cc.o
+[ 66%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator.cc.o
+[ 66%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator_dynamic_greedy.cc.o
+[ 67%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator_greedy.cc.o
+[ 67%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_generator_random.cc.o
+[ 67%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/order_optimizer.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/pho_heuristic.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/plugin_group.cc.o
+[ 68%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/projection.cc.o
+[ 69%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/projection_generator.cc.o
+[ 69%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/saturated_cost_partitioning_heuristic.cc.o
+[ 69%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/saturated_cost_partitioning_online_heuristic.cc.o
+[ 69%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/structured_scp_order_generator.cc.o
+[ 70%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/structured_scp_order_generator_full.cc.o
+[ 70%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/structured_scp_order_heuristic.cc.o
+[ 70%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/uniform_cost_partitioning_heuristic.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/unsolvability_heuristic.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/utils.cc.o
+[ 71%] Building CXX object search/CMakeFiles/downward.dir/cost_saturation/zero_one_cost_partitioning_heuristic.cc.o
+[ 72%] Building CXX object search/CMakeFiles/downward.dir/algorithms/connected_components.cc.o
+[ 72%] Building CXX object search/CMakeFiles/downward.dir/pdbs/abstract_operator.cc.o
+[ 72%] Building CXX object search/CMakeFiles/downward.dir/pdbs/canonical_pdbs.cc.o
+[ 72%] Building CXX object search/CMakeFiles/downward.dir/pdbs/canonical_pdbs_heuristic.cc.o
+[ 73%] Building CXX object search/CMakeFiles/downward.dir/pdbs/cegar.cc.o
+[ 73%] Building CXX object search/CMakeFiles/downward.dir/pdbs/dominance_pruning.cc.o
+[ 73%] Building CXX object search/CMakeFiles/downward.dir/pdbs/incremental_canonical_pdbs.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/match_tree.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_cliques.cc.o
+[ 74%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_information.cc.o
+[ 75%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_disjoint_cegar.cc.o
+[ 75%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_genetic.cc.o
+[ 75%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_hillclimbing.cc.o
+[ 75%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_manual.cc.o
+[ 76%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_multiple_cegar.cc.o
+[ 76%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_multiple_random.cc.o
+[ 76%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_multiple.cc.o
+[ 77%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_systematic.cc.o
+[ 77%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_collection_generator_systematic_scp.cc.o
+[ 77%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_database_factory.cc.o
+[ 78%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_database.cc.o
+[ 78%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_evaluator.cc.o
+[ 78%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_cegar.cc.o
+[ 78%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_greedy.cc.o
+[ 79%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_manual.cc.o
+[ 79%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator_random.cc.o
+[ 79%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_generator.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pattern_information.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/pdb_heuristic.cc.o
+[ 80%] Building CXX object search/CMakeFiles/downward.dir/pdbs/random_pattern.cc.o
+[ 81%] Building CXX object search/CMakeFiles/downward.dir/pdbs/slim_match_tree.cc.o
+[ 81%] Building CXX object search/CMakeFiles/downward.dir/pdbs/subcategory.cc.o
+[ 81%] Building CXX object search/CMakeFiles/downward.dir/pdbs/utils.cc.o
+[ 81%] Building CXX object search/CMakeFiles/downward.dir/pdbs/validation.cc.o
+[ 82%] Building CXX object search/CMakeFiles/downward.dir/pdbs/zero_one_pdbs.cc.o
+[ 82%] Building CXX object search/CMakeFiles/downward.dir/pdbs/zero_one_pdbs_heuristic.cc.o
+[ 82%] Building CXX object search/CMakeFiles/downward.dir/algorithms/max_cliques.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/task_utils/sampling.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/task_utils/variable_order_finder.cc.o
+[ 83%] Building CXX object search/CMakeFiles/downward.dir/algorithms/partial_state_tree.cc.o
+[ 84%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/distances.cc.o
+[ 84%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/factored_transition_system.cc.o
+[ 84%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/fts_factory.cc.o
+[ 84%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/label_reduction.cc.o
+[ 85%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/labels.cc.o
+[ 85%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_and_shrink_algorithm.cc.o
+[ 85%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_and_shrink_heuristic.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_and_shrink_representation.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function.cc.o
+[ 86%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_dfp.cc.o
+[ 87%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_goal_relevance.cc.o
+[ 87%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_miasm.cc.o
+[ 87%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_miasm_utils.cc.o
+[ 87%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_single_random.cc.o
+[ 88%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_scoring_function_total_order.cc.o
+[ 88%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_selector.cc.o
+[ 88%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_selector_score_based_filtering.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory.cc.o
+[ 89%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory_precomputed.cc.o
+[ 90%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory_sccs.cc.o
+[ 90%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_factory_stateless.cc.o
+[ 90%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_precomputed.cc.o
+[ 90%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_sccs.cc.o
+[ 91%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_strategy_stateless.cc.o
+/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/a525580925207bd9d4e9abe98570cc6835b520ed_e5e41175/src/search/cost_saturation/structured_scp_order_generator.cc: In member function ‘cost_saturation::NodeId cost_saturation::StructuredSCPOrderGenerator::create_lookup_node(const Costs&, cost_saturation::CostKey, int)’:
+/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/a525580925207bd9d4e9abe98570cc6835b520ed_e5e41175/src/search/cost_saturation/structured_scp_order_generator.cc:324:39: warning: ‘restricted_it.gtl::priv::raw_hash_set<gtl::priv::FlatHashMapPolicy<std::vector<int>, int>, cost_saturation::VectorIntMurmurHash, gtl::EqualTo<std::vector<int> >, std::allocator<std::pair<const std::vector<int>, int> > >::iterator::<anonymous>.gtl::priv::raw_hash_set<gtl::priv::FlatHashMapPolicy<std::vector<int>, int>, cost_saturation::VectorIntMurmurHash, gtl::EqualTo<std::vector<int> >, std::allocator<std::pair<const std::vector<int>, int> > >::iterator::<unnamed union>::slot_’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+  324 |                 restricted_it->second = table_id;
+      |                 ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~
+[ 91%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_tree.cc.o
+[ 91%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_tree_factory.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/merge_tree_factory_linear.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_bisimulation.cc.o
+[ 92%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_bucket_based.cc.o
+[ 93%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_random.cc.o
+[ 93%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_fh.cc.o
+[ 93%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/shrink_strategy.cc.o
+[ 93%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/transition_system.cc.o
+[ 94%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/types.cc.o
+[ 94%] Building CXX object search/CMakeFiles/downward.dir/merge_and_shrink/utils.cc.o
+[ 94%] Building CXX object search/CMakeFiles/downward.dir/algorithms/equivalence_relation.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/constraint_generator.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/delete_relaxation_if_constraints.cc.o
+[ 95%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/delete_relaxation_rr_constraints.cc.o
+[ 96%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/lm_cut_constraints.cc.o
+[ 96%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/operator_counting_heuristic.cc.o
+[ 96%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/pho_abstraction_constraints.cc.o
+[ 96%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/pho_constraints.cc.o
+[ 97%] Building CXX object search/CMakeFiles/downward.dir/operator_counting/state_equation_constraints.cc.o
+[ 97%] Building CXX object search/CMakeFiles/downward.dir/potentials/diverse_potential_heuristics.cc.o
+[ 97%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_function.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_heuristic.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_max_heuristic.cc.o
+[ 98%] Building CXX object search/CMakeFiles/downward.dir/potentials/potential_optimizer.cc.o
+[ 99%] Building CXX object search/CMakeFiles/downward.dir/potentials/sample_based_potential_heuristics.cc.o
+[ 99%] Building CXX object search/CMakeFiles/downward.dir/potentials/single_potential_heuristics.cc.o
+[ 99%] Building CXX object search/CMakeFiles/downward.dir/potentials/subcategory.cc.o
+[ 99%] Building CXX object search/CMakeFiles/downward.dir/potentials/util.cc.o
+[100%] Linking CXX executable ../bin/downward
+[100%] Built target downward
+Building configuration release.
+Executing command "cmake -S /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/a525580925207bd9d4e9abe98570cc6835b520ed_e5e41175/./src -B /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/a525580925207bd9d4e9abe98570cc6835b520ed_e5e41175/./builds/release -G Unix Makefiles -DCMAKE_BUILD_TYPE=Release"
+Executing command "cmake --build /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/a525580925207bd9d4e9abe98570cc6835b520ed_e5e41175/./builds/release -j 32"
+Built configuration release successfully.
+usage: 2026-07-13-A-sscp-revisions.py [-h] [--all] [--tex] [--relative]
+                                      [step ...]
+
+positional arguments:
+  step        Name or number of a step below. If none is given, print help.
+              (default: [])
+
+options:
+  -h, --help  show this help message and exit
+  --all       Run all steps. (default: False)
+  --tex       produce LaTeX output (default: False)
+  --relative  make relative scatter plots (default: False)
+
+Available steps:
+================
+ 1 build                           build()
+ 2 start                           start_runs()
+ 3 parse                           parse()
+
+ 4 fetch                          
+fetcher('/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/2026-07-13-A-sscp-revisions', '/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/2026-07-13-A-sscp-revisions-eval', filter=None, merge=None)
+
+ 5 2026-07-13-A-sscp-revisions-abs
+absolutereport('/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/2026-07-13-A-sscp-revisions-eval', PosixPath('/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/2026-07-13-A-sscp-revisions-eval/2026-07-13-A-sscp-revisions-abs.html'))
+
+ 6 compress-exp-dir                compress_exp_dir()

@@ -1,0 +1,889 @@
+#include "structured_scp_order_generator.h"
+
+#include "abstraction.h"
+#include "abstraction_generator.h"
+#include "types.h"
+#include "utils.h"
+
+#include "../plugins/plugin.h"
+#include "../task_utils/task_properties.h"
+#include "../utils/collections.h"
+#include "../utils/logging.h"
+
+#include <algorithm>
+#include <bit>
+#include <cmath>
+#include <iostream>
+#include <memory>
+#include <numeric>
+#include <tuple>
+#include <vector>
+
+using namespace std;
+
+namespace cost_saturation {
+static const int BITS_PER_WORD = 64;
+
+static int get_num_mask_words(int num_bits) {
+    return (num_bits + BITS_PER_WORD - 1) / BITS_PER_WORD;
+}
+
+static void set_mask_bit(OpMask &mask, int i) {
+    mask[i / BITS_PER_WORD] |= uint64_t(1) << (i % BITS_PER_WORD);
+}
+
+static bool test_mask_bit(const OpMask &mask, int i) {
+    return (mask[i / BITS_PER_WORD] >> (i % BITS_PER_WORD)) & 1;
+}
+
+/* Total memory the restricted-cost table maps may occupy before they stop
+   growing (see RestrictedCostsTables). */
+static constexpr int64_t RESTRICTED_COSTS_TABLES_BUDGET_BYTES = 256 << 20;
+
+// Budget for the precomputed pairwise conflict masks.
+static constexpr int64_t CONFLICTING_OPS_BUDGET_BYTES = 512 << 20;
+// Budget for the static conflict matrix (one bit per abstraction pair).
+static constexpr int64_t CONFLICT_MATRIX_BUDGET_BYTES = 64 << 20;
+
+StructuredSCPOrderGenerator::StructuredSCPOrderGenerator(
+    const shared_ptr<AbstractTask> &transform, Abstractions abstractions,
+    const StructuredSCPOptions &options, utils::Verbosity verbosity)
+    : abstractions(move(abstractions)),
+      task_proxy(*transform),
+      options(options),
+      precomputed_conflicting_ops(false),
+      recomputed_lookup_tables(0),
+      lookup_cache_hits(0),
+      log(utils::get_log_for_verbosity(verbosity)) {
+    int num_abstractions = this->abstractions.size();
+    lookup_tables.resize(num_abstractions);
+    lookup_nodes.resize(num_abstractions);
+    scf_cache.resize(num_abstractions);
+    table_by_restricted_costs.resize(num_abstractions);
+    lookup_tables_cache.initialize(num_abstractions);
+    unsolvability_infos.reserve(num_abstractions);
+    for (int abstraction_id = 0; abstraction_id < num_abstractions;
+         ++abstraction_id) {
+        unsolvability_infos.emplace_back(
+            abstraction_id,
+            this->abstractions[abstraction_id]->get_num_states());
+    }
+    cout << "Number of abstractions: " << num_abstractions << endl;
+    if (options.max_lookup_table_cache_resizes != -1) {
+        // Historically, hash map resizes happened at 87.5% load.
+        max_lookup_table_entries = static_cast<CostKey>(
+            0.875 * pow(2, options.max_lookup_table_cache_resizes));
+    } else {
+        max_lookup_table_entries = numeric_limits<CostKey>::max();
+    }
+    cout << "Max lookup table entries: " << max_lookup_table_entries << endl;
+}
+
+void StructuredSCPOrderGenerator::precompute_operator_properties(
+    const vector<int> &relevant_abstraction_ids) {
+    vector<bool> abstraction_is_relevant(abstractions.size(), false);
+    for (int abstraction_id : relevant_abstraction_ids) {
+        abstraction_is_relevant[abstraction_id] = true;
+    }
+    if (options.use_affecting_labels || options.use_non_negative_labels) {
+        precompute_relevant_ops(abstraction_is_relevant);
+    }
+    precompute_ops_with_nonincreasing_remaining_cost(abstraction_is_relevant);
+    cout << "Relevant abstractions: " << relevant_abstraction_ids.size()
+         << endl;
+    /* The precomputed masks take num_abstractions^2 operator masks;
+       above a byte budget only the static conflict matrix (one bit per
+       pair) is kept and the masks are computed on the fly per pair
+       check. For extreme abstraction counts even the matrix is skipped. */
+    int num_words = get_num_mask_words(task_proxy.get_operators().size());
+    int64_t num_all = abstractions.size();
+    int64_t mask_bytes = num_all * num_all * num_words * sizeof(uint64_t);
+    int64_t matrix_bytes = num_all * num_all / 8;
+    conflicting_ops = {{OpMask(num_words, 0)}};
+    if (options.use_affecting_labels &&
+        matrix_bytes <= CONFLICT_MATRIX_BUDGET_BYTES) {
+        precompute_conflicting_ops(
+            abstraction_is_relevant,
+            mask_bytes <= CONFLICTING_OPS_BUDGET_BYTES);
+        log << "Precomputed conflicting ops"
+            << (precomputed_conflicting_ops ? " with masks" : "") << endl;
+    }
+}
+
+void StructuredSCPOrderGenerator::precompute_relevant_ops(
+    const vector<bool> &abstraction_is_relevant) {
+    int num_operators = task_proxy.get_operators().size();
+    int num_words = get_num_mask_words(num_operators);
+    relevant_ops_by_abstraction.reserve(abstractions.size());
+    inf_donating_ops_by_abstraction.reserve(abstractions.size());
+    int abstraction_id = 0;
+    for (const unique_ptr<Abstraction> &abstraction : abstractions) {
+        OpMask relevant_ops(num_words, 0);
+        OpMask inf_donating_ops(num_words, 0);
+        if (abstraction_is_relevant[abstraction_id]) {
+            for (int op_id = 0; op_id < num_operators; ++op_id) {
+                if (abstraction->operator_is_scp_active(op_id)) {
+                    assert(abstraction->operator_is_active(op_id));
+                    set_mask_bit(relevant_ops, op_id);
+                } else if (
+                    options.use_general_cp &&
+                    !abstraction->operator_is_active(op_id) &&
+                    !abstraction->operator_induces_self_loop(op_id)) {
+                    /* With general cost partitioning, an operator without
+                       any transition has saturated cost -infinity (an empty
+                       supremum), so saturating this abstraction leaves
+                       infinite remaining cost for the operator to all later
+                       abstractions. If the operator affects a later
+                       abstraction, its heuristic values can increase, so
+                       the order of the two abstractions matters even though
+                       their saturation-affecting labels are disjoint.
+                       Abstractions that prune transitions (e.g., Cartesian
+                       abstractions drop transitions of unsolvable states)
+                       can lack an operator that still affects other
+                       abstractions; for projections this never happens. */
+                    set_mask_bit(inf_donating_ops, op_id);
+                }
+            }
+        }
+        relevant_ops_by_abstraction.push_back(move(relevant_ops));
+        inf_donating_ops_by_abstraction.push_back(move(inf_donating_ops));
+        ++abstraction_id;
+    }
+
+    relevant_op_ids_by_abstraction.resize(abstractions.size());
+    for (size_t id = 0; id < abstractions.size(); ++id) {
+        for (int op_id = 0; op_id < num_operators; ++op_id) {
+            if (test_mask_bit(relevant_ops_by_abstraction[id], op_id)) {
+                relevant_op_ids_by_abstraction[id].push_back(op_id);
+            }
+        }
+    }
+
+    /* Split the memory budget for the restricted-cost table caches evenly
+       among the abstractions. */
+    int64_t budget_per_abstraction = RESTRICTED_COSTS_TABLES_BUDGET_BYTES /
+                                     static_cast<int64_t>(abstractions.size());
+    for (RestrictedCostsTables &tables : table_by_restricted_costs) {
+        tables.max_bytes = budget_per_abstraction;
+    }
+}
+
+/* The order of two abstractions can only influence their heuristic values
+   if some operator affects both of them (like for additive pattern
+   databases), or if one abstraction donates infinite remaining cost for an
+   operator that affects the other. */
+void StructuredSCPOrderGenerator::compute_conflicting_ops(
+    int id1, int id2, OpMask &conflict) const {
+    const OpMask &relevant1 = relevant_ops_by_abstraction[id1];
+    const OpMask &relevant2 = relevant_ops_by_abstraction[id2];
+    const OpMask &donating1 = inf_donating_ops_by_abstraction[id1];
+    const OpMask &donating2 = inf_donating_ops_by_abstraction[id2];
+    for (size_t w = 0; w < conflict.size(); ++w) {
+        conflict[w] = (relevant1[w] & relevant2[w]) |
+                      (donating1[w] & relevant2[w]) |
+                      (donating2[w] & relevant1[w]);
+    }
+}
+
+void StructuredSCPOrderGenerator::
+    precompute_ops_with_nonincreasing_remaining_cost(
+        const vector<bool> &abstraction_is_relevant) {
+    int num_operators = task_proxy.get_operators().size();
+    int num_words = get_num_mask_words(num_operators);
+    // By default, all operators are considered nonincreasing.
+    op_has_nonincreasing_remaining_costs =
+        vector<OpMask>(abstractions.size(), OpMask(num_words, ~uint64_t(0)));
+
+    // With non-negative cost partitioning, all operators are nonincreasing.
+    if (options.use_general_cp && options.use_non_negative_labels) {
+        for (size_t abstraction_id = 0; abstraction_id < abstractions.size();
+             ++abstraction_id) {
+            if (abstraction_is_relevant[abstraction_id]) {
+                vector<bool> non_increasing_ops =
+                    abstractions[abstraction_id]
+                        ->get_operators_with_non_increasing_remaining_cost();
+                OpMask &mask =
+                    op_has_nonincreasing_remaining_costs[abstraction_id];
+                const OpMask &relevant_ops =
+                    relevant_ops_by_abstraction[abstraction_id];
+                for (int op_id = 0; op_id < num_operators; ++op_id) {
+                    if (test_mask_bit(relevant_ops, op_id) &&
+                        !non_increasing_ops[op_id]) {
+                        mask[op_id / BITS_PER_WORD] &=
+                            ~(uint64_t(1) << (op_id % BITS_PER_WORD));
+                    }
+                }
+            }
+        }
+    }
+}
+
+void StructuredSCPOrderGenerator::precompute_conflicting_ops(
+    const vector<bool> &abstraction_is_relevant, bool store_masks) {
+    precomputed_conflicting_ops = store_masks;
+    have_static_conflict_matrix = true;
+    int num_words = get_num_mask_words(task_proxy.get_operators().size());
+    if (store_masks) {
+        conflicting_ops = vector<vector<OpMask>>(
+            abstractions.size(),
+            vector<OpMask>(abstractions.size(), OpMask(num_words, 0)));
+    }
+    OpMask scratch_conflict(num_words, 0);
+    statically_conflicting_pairs = vector<OpMask>(
+        abstractions.size(),
+        OpMask(get_num_mask_words(abstractions.size()), 0));
+    for (size_t id1 = 0; id1 < abstractions.size(); ++id1) {
+        if (abstraction_is_relevant[id1]) {
+            for (size_t id2 = id1 + 1; id2 < abstractions.size(); ++id2) {
+                if (abstraction_is_relevant[id2]) {
+                    OpMask &conflict = store_masks ? conflicting_ops[id1][id2]
+                                                   : scratch_conflict;
+                    compute_conflicting_ops(id1, id2, conflict);
+                    if (any_of(
+                            conflict.begin(), conflict.end(),
+                            [](uint64_t word) { return word != 0; })) {
+                        set_mask_bit(statically_conflicting_pairs[id1], id2);
+                        set_mask_bit(statically_conflicting_pairs[id2], id1);
+                    }
+                }
+            }
+        }
+    }
+    if (store_masks) {
+        /* With the masks precomputed, the relevant ops are not needed
+           anymore; without them they feed the on-the-fly computation. */
+        utils::release_vector_memory(relevant_ops_by_abstraction);
+        utils::release_vector_memory(inf_donating_ops_by_abstraction);
+    }
+}
+
+bool StructuredSCPOrderGenerator::is_non_trivial_sum_node(NodeId node) const {
+    return nodes[node].type == NodeType::SUM &&
+           any_of(
+               nodes.children_begin(node), nodes.children_end(node),
+               [&](NodeId child) {
+                   return nodes[child].type != NodeType::LOOKUP;
+               });
+}
+
+StructuredSCPOrder StructuredSCPOrderGenerator::generate() {
+    utils::Timer timer;
+    NodeId root_node = create_sscp_order_dag();
+    assert(abstractions.size() == unsolvability_infos.size());
+    assert(lookup_tables.size() == abstractions.size());
+    assert(lookup_nodes.size() == abstractions.size());
+    cout << "Recomputed lookup tables: " << recomputed_lookup_tables << endl;
+    cout << "Lookup table cache hits: " << lookup_cache_hits << endl;
+    cout << "Lookup table cache size: " << lookup_tables_cache.size() << endl;
+    cout << "Stored cost functions: " << cost_functions.size() << endl;
+    int num_lookup_nodes = 0;
+    int num_sum_nodes = 0;
+    int num_nontrivial_sum_nodes = 0;
+    int num_max_nodes = 0;
+    for (NodeId node = 0; node < static_cast<int>(nodes.size()); ++node) {
+        switch (nodes[node].type) {
+        case NodeType::LOOKUP:
+            ++num_lookup_nodes;
+            break;
+        case NodeType::MAX:
+            ++num_max_nodes;
+            break;
+        case NodeType::SUM:
+            ++num_sum_nodes;
+            if (is_non_trivial_sum_node(node)) {
+                ++num_nontrivial_sum_nodes;
+            }
+            break;
+        }
+    }
+    log << "Time to generate DAG: " << timer() << endl;
+    log << "Generated nodes: " << nodes.size() << endl;
+    log << "Generated sum nodes: " << num_sum_nodes << endl;
+    log << "Generated nontrivial sum nodes: " << num_nontrivial_sum_nodes
+        << endl;
+    log << "Generated max nodes: " << num_max_nodes << endl;
+    log << "Generated lookup table entries: " << num_lookup_nodes << endl;
+    return create_structured_scp_order(root_node);
+}
+
+NodeId StructuredSCPOrderGenerator::create_lookup_node(
+    const Costs &costs, CostKey cost_key, int abstraction_id) {
+    bool cache_this_lookup =
+        options.cache_lookup_tables && cost_key < max_lookup_table_entries;
+    if (cache_this_lookup) {
+        int cached_table_id = lookup_tables_cache.get(cost_key, abstraction_id);
+        if (cached_table_id != UNKNOWN_LOOKUP) {
+            ++lookup_cache_hits;
+            if (cached_table_id == PRUNED_LOOKUP) {
+                return NO_NODE;
+            }
+            assert(utils::in_bounds(
+                cached_table_id, lookup_nodes[abstraction_id]));
+            return lookup_nodes[abstraction_id][cached_table_id];
+        }
+    }
+    auto cache_table_for_costs = [&](int table_id) {
+        if (cache_this_lookup) {
+            lookup_tables_cache.set(cost_key, abstraction_id, table_id);
+        }
+    };
+
+    /* The goal distances only depend on the costs of the abstraction's
+       relevant operators, so cost functions that agree on them share the
+       lookup table and we can skip the goal distance computation. */
+    RestrictedCostsTables &restricted_tables =
+        table_by_restricted_costs[abstraction_id];
+    bool restrict_costs =
+        !relevant_op_ids_by_abstraction.empty() && !restricted_tables.dropped;
+    CostKey restricted_key = CostFunctionRegistry::NO_KEY;
+    bool restricted_inserted = false;
+    if (restrict_costs) {
+        const vector<int> &relevant_op_ids =
+            relevant_op_ids_by_abstraction[abstraction_id];
+        restricted_costs_scratch.resize(relevant_op_ids.size());
+        for (size_t i = 0; i < relevant_op_ids.size(); ++i) {
+            restricted_costs_scratch[i] = costs[relevant_op_ids[i]];
+        }
+        vector<int> &table_id_by_key = restricted_tables.table_id_by_key;
+        if (!restricted_tables.frozen &&
+            static_cast<int64_t>(table_id_by_key.size()) >=
+                restricted_tables.next_check) {
+            /* Geometric checkpoints: drop the cache as soon as sharing is
+               evidently rare, so a useless cache never grows to its byte
+               budget. At the budget, keep serving the collected entries
+               (sharing was common) but stop growing. */
+            if (restricted_tables.hits * 4 <
+                static_cast<int64_t>(table_id_by_key.size())) {
+                restricted_tables.dropped = true;
+                restricted_tables.keys.release_memory();
+                utils::release_vector_memory(table_id_by_key);
+                restrict_costs = false;
+            } else if (
+                restricted_tables.keys.memory_in_bytes() >=
+                restricted_tables.max_bytes) {
+                restricted_tables.frozen = true;
+            } else {
+                restricted_tables.next_check *= 2;
+            }
+        }
+        if (restrict_costs) {
+            uint64_t restricted_hash = hash_bytes(
+                restricted_costs_scratch.data(),
+                restricted_costs_scratch.size() * sizeof(int),
+                restricted_costs_scratch.size());
+            CostKey key;
+            if (restricted_tables.frozen) {
+                key = restricted_tables.keys.lookup(
+                    restricted_costs_scratch, restricted_hash);
+            } else {
+                key = restricted_tables.keys.register_or_lookup(
+                    restricted_costs_scratch, restricted_hash);
+                if (key == table_id_by_key.size()) {
+                    table_id_by_key.push_back(UNKNOWN_LOOKUP);
+                    restricted_key = key;
+                    restricted_inserted = true;
+                }
+            }
+            if (!restricted_inserted && key != CostFunctionRegistry::NO_KEY) {
+                ++restricted_tables.hits;
+                int table_id = table_id_by_key[key];
+                cache_table_for_costs(table_id);
+                if (table_id == PRUNED_LOOKUP) {
+                    return NO_NODE;
+                }
+                return lookup_nodes[abstraction_id][table_id];
+            }
+        }
+    }
+    auto cache_table_for_restricted_costs = [&](int table_id) {
+        if (restricted_inserted) {
+            restricted_tables.table_id_by_key[restricted_key] = table_id;
+        }
+        cache_table_for_costs(table_id);
+    };
+
+    vector<int> goal_distances =
+        abstractions[abstraction_id]->compute_goal_distances(costs);
+    // Prune this abstraction if all goal distances are 0.
+    if (all_of(goal_distances.begin(), goal_distances.end(), [](int h) {
+            return h == 0;
+        })) {
+        cache_table_for_restricted_costs(PRUNED_LOOKUP);
+        return NO_NODE;
+    }
+
+    /* An abstraction with only 0 and INF values can be pruned from the DAG
+       under non-general costs since it only contributes unsolvability
+       information. */
+    bool dead_end_detection_only =
+        !options.use_general_cp &&
+        all_of(goal_distances.begin(), goal_distances.end(), [](int h) {
+            return h == 0 || h == INF;
+        });
+
+    int lookup_table_id = 0;
+    for (; lookup_table_id <
+           static_cast<int>(lookup_tables[abstraction_id].size());
+         ++lookup_table_id) {
+        const vector<int> &lookup_table =
+            lookup_tables[abstraction_id][lookup_table_id];
+        if (goal_distances == lookup_table) {
+            ++recomputed_lookup_tables;
+            if (dead_end_detection_only) {
+                cache_table_for_restricted_costs(PRUNED_LOOKUP);
+                return NO_NODE;
+            }
+            cache_table_for_restricted_costs(lookup_table_id);
+            return lookup_nodes[abstraction_id][lookup_table_id];
+        }
+    }
+    lookup_tables[abstraction_id].push_back(move(goal_distances));
+    NodeId node = nodes.add_lookup_node(abstraction_id, lookup_table_id);
+
+    lookup_nodes[abstraction_id].push_back(node);
+    if (options.cache_scf_functions) {
+        scf_cache[abstraction_id].emplace_back(compute_scf(
+            *abstractions[abstraction_id], get_lookup_table(node),
+            options.use_general_cp));
+        assert(
+            scf_cache[abstraction_id].size() ==
+            lookup_tables[abstraction_id].size());
+    }
+    if (dead_end_detection_only) {
+        cache_table_for_restricted_costs(PRUNED_LOOKUP);
+        return NO_NODE;
+    }
+    cache_table_for_restricted_costs(lookup_table_id);
+    return node;
+}
+
+CostContext StructuredSCPOrderGenerator::make_cost_context(Costs &&costs) {
+    CostContext context{move(costs), 0, 0, {}, {}};
+    context.cost_hash = CostFunctionRegistry::compute_hash(context.costs);
+    context.key =
+        cost_functions.register_or_lookup(context.costs, context.cost_hash);
+    if (options.use_affecting_labels) {
+        int num_operators = context.costs.size();
+        context.live_ops.assign(get_num_mask_words(num_operators), 0);
+        context.cond_ops.assign(get_num_mask_words(num_operators), 0);
+        vector<int> all_ops(num_operators);
+        iota(all_ops.begin(), all_ops.end(), 0);
+        update_cost_context(context, all_ops);
+    }
+    return context;
+}
+
+void StructuredSCPOrderGenerator::update_cost_context(
+    CostContext &context, const vector<int> &changed_ops) const {
+    if (!options.use_affecting_labels) {
+        return;
+    }
+    for (int op_id : changed_ops) {
+        uint64_t bit = uint64_t(1) << (op_id % BITS_PER_WORD);
+        uint64_t &live_word = context.live_ops[op_id / BITS_PER_WORD];
+        uint64_t &cond_word = context.cond_ops[op_id / BITS_PER_WORD];
+        live_word &= ~bit;
+        cond_word &= ~bit;
+        if (options.use_infinite_labels && context.costs[op_id] == INF) {
+            continue;
+        }
+        if (options.use_non_negative_labels && context.costs[op_id] == 0) {
+            cond_word |= bit;
+        } else {
+            live_word |= bit;
+        }
+    }
+}
+
+void StructuredSCPOrderGenerator::reduce_cost_context(
+    CostContext &context, const SaturatedCostFunction &scf) {
+    for (size_t i = 0; i < scf.nonzero_ops.size(); ++i) {
+        int op_id = scf.nonzero_ops[i];
+        int remaining = context.costs[op_id];
+        int saturated = scf.nonzero_costs[i];
+        assert(remaining >= 0);
+        assert(saturated <= remaining);
+        assert(remaining == INF || saturated != INF);
+        // Left addition: x - y = x for all values y if x is infinite.
+        if (remaining != INF) {
+            int reduced = (saturated == -INF) ? INF : remaining - saturated;
+            assert(reduced >= 0);
+            context.costs[op_id] = reduced;
+            context.cost_hash +=
+                CostFunctionRegistry::mix_op_cost(op_id, reduced) -
+                CostFunctionRegistry::mix_op_cost(op_id, remaining);
+        }
+    }
+    update_cost_context(context, scf.nonzero_ops);
+    context.key =
+        cost_functions.register_or_lookup(context.costs, context.cost_hash);
+}
+
+AbstractionGroups StructuredSCPOrderGenerator::compute_independent_abstractions(
+    const vector<int> &pending_abstraction_ids, const CostContext &context) {
+    /* Grow one component at a time with a frontier search over the
+       implicit dependency graph: each frontier abstraction absorbs the
+       unassigned abstractions it depends on. The common fully-dependent
+       case finishes after the dependencies that witness connectivity,
+       without building an explicit graph or union-find structure. */
+    cc_unassigned.assign(
+        pending_abstraction_ids.begin(), pending_abstraction_ids.end());
+    vector<vector<int>> independent_abstractions;
+    while (!cc_unassigned.empty()) {
+        vector<int> component;
+        component.reserve(cc_unassigned.size());
+        component.push_back(cc_unassigned.back());
+        cc_unassigned.pop_back();
+        // The unprocessed tail of the component is the frontier.
+        for (size_t f = 0; f < component.size() && !cc_unassigned.empty();
+             ++f) {
+            size_t keep = 0;
+            for (size_t k = 0; k < cc_unassigned.size(); ++k) {
+                if (abstractions_depend(
+                        component[f], cc_unassigned[k], context)) {
+                    component.push_back(cc_unassigned[k]);
+                } else {
+                    cc_unassigned[keep++] = cc_unassigned[k];
+                }
+            }
+            cc_unassigned.resize(keep);
+        }
+        sort(component.begin(), component.end());
+        independent_abstractions.push_back(move(component));
+    }
+    sort(independent_abstractions.begin(), independent_abstractions.end());
+    return independent_abstractions;
+}
+
+bool StructuredSCPOrderGenerator::abstractions_depend(
+    int id1, int id2, const CostContext &context) {
+    if (id1 > id2) {
+        swap(id1, id2);
+    }
+    if (have_static_conflict_matrix &&
+        !test_mask_bit(statically_conflicting_pairs[id1], id2)) {
+        return false;
+    }
+
+    if (options.use_affecting_labels) {
+        const OpMask *conflict_ptr;
+        if (precomputed_conflicting_ops) {
+            conflict_ptr = &conflicting_ops[id1][id2];
+        } else {
+            OpMask &scratch = conflicting_ops[0][0];
+            compute_conflicting_ops(id1, id2, scratch);
+            conflict_ptr = &scratch;
+        }
+        const OpMask &conflict = *conflict_ptr;
+        const OpMask &nonincreasing1 =
+            op_has_nonincreasing_remaining_costs[id1];
+        const OpMask &nonincreasing2 =
+            op_has_nonincreasing_remaining_costs[id2];
+        for (size_t w = 0; w < conflict.size(); ++w) {
+            /* An operator affecting both abstractions creates a dependency
+               if it is live, or if it has remaining cost 0 and the
+               abstractions do not both guarantee nonincreasing remaining
+               costs. */
+            uint64_t dependency_ops =
+                conflict[w] & (context.live_ops[w] |
+                               (context.cond_ops[w] &
+                                ~(nonincreasing1[w] & nonincreasing2[w])));
+            if (dependency_ops) {
+                return true;
+            }
+        }
+        return false;
+    } else {
+        int num_operators = task_proxy.get_operators().size();
+        for (int op_id = 0; op_id < num_operators; ++op_id) {
+            if (options.use_infinite_labels && context.costs[op_id] == INF) {
+                continue;
+            }
+            if (options.use_non_negative_labels && context.costs[op_id] == 0 &&
+                test_mask_bit(
+                    op_has_nonincreasing_remaining_costs[id1], op_id) &&
+                test_mask_bit(
+                    op_has_nonincreasing_remaining_costs[id2], op_id)) {
+                continue;
+            }
+            return true;
+        }
+        return false;
+    }
+}
+
+namespace {
+void collect_compositional_nodes(
+    const NodeArena &nodes, NodeId node, vector<bool> &marked,
+    vector<NodeId> &reachable) {
+    if (nodes[node].type != NodeType::LOOKUP && !marked[node]) {
+        marked[node] = true;
+        reachable.push_back(node);
+        for (const NodeId *child = nodes.children_begin(node);
+             child != nodes.children_end(node); ++child) {
+            collect_compositional_nodes(nodes, *child, marked, reachable);
+        }
+    }
+}
+}
+
+StructuredSCPOrder StructuredSCPOrderGenerator::create_structured_scp_order(
+    NodeId root_node) {
+    // Free the construction-time caches before materializing instructions.
+    cost_functions.release_memory();
+    lookup_tables_cache.release_memory();
+    utils::release_vector_memory(table_by_restricted_costs);
+    utils::release_vector_memory(relevant_op_ids_by_abstraction);
+    utils::release_vector_memory(scf_cache);
+    utils::release_vector_memory(conflicting_ops);
+    utils::release_vector_memory(op_has_nonincreasing_remaining_costs);
+
+    // Determine reachable compositional nodes and order them by level.
+    vector<NodeId> reachable_compositional_nodes;
+    vector<bool> marked(nodes.size(), false);
+    if (root_node != NO_NODE) {
+        collect_compositional_nodes(
+            nodes, root_node, marked, reachable_compositional_nodes);
+        /* Children are always created before their parents, so sorting by
+           node id yields a topological order. */
+        sort(
+            reachable_compositional_nodes.begin(),
+            reachable_compositional_nodes.end());
+    }
+    utils::release_vector_memory(marked);
+
+    // Create compact lookup tables and extract unsolvability information.
+    create_compact_lookup_tables();
+    int useful_unsolvability_infos = 0;
+    int num_unsolvable_states = 0;
+    for (const UnsolvabilityInfo &info : unsolvability_infos) {
+        if (info.useful) {
+            ++useful_unsolvability_infos;
+            num_unsolvable_states += count(
+                info.unsolvable_states.begin(), info.unsolvable_states.end(),
+                true);
+        }
+    }
+    cout << "Useful unsolvability infos: " << useful_unsolvability_infos
+         << endl;
+    cout << "Unsolvable abstract states: " << num_unsolvable_states << endl;
+    assert(abstractions.size() == unsolvability_infos.size());
+
+    /* Assign each node its value id in the heuristic evaluation: lookup
+       nodes get the positions of their table entries, compositional nodes
+       follow in level order. */
+    vector<int> value_ids(nodes.size(), -1);
+    int value_id = 0;
+    int num_lookup_nodes = 0;
+    for (const vector<NodeId> &lookup_nodes_by_abstraction : lookup_nodes) {
+        for (NodeId node : lookup_nodes_by_abstraction) {
+            value_ids[node] = value_id;
+            ++value_id;
+            ++num_lookup_nodes;
+        }
+    }
+
+    // Create the instructions for the compositional nodes.
+    int64_t total_ids = 0;
+    for (NodeId node : reachable_compositional_nodes) {
+        total_ids += nodes[node].num_children;
+    }
+    Instructions instructions;
+    instructions.reserve(reachable_compositional_nodes.size(), total_ids);
+    int num_reachable_nodes =
+        static_cast<int>(reachable_compositional_nodes.size()) +
+        num_lookup_nodes;
+    int num_reachable_sum_nodes = 0;
+    int num_reachable_non_trivial_sum_nodes = 0;
+    int num_reachable_max_nodes = 0;
+    for (NodeId node : reachable_compositional_nodes) {
+        assert(nodes[node].num_children > 0);
+        value_ids[node] = value_id;
+        ++value_id;
+
+        if (nodes[node].type == NodeType::MAX) {
+            instructions.types.push_back(InstructionType::MAX);
+            ++num_reachable_max_nodes;
+        } else {
+            assert(nodes[node].type == NodeType::SUM);
+            instructions.types.push_back(InstructionType::SUM);
+            ++num_reachable_sum_nodes;
+            if (is_non_trivial_sum_node(node)) {
+                ++num_reachable_non_trivial_sum_nodes;
+            }
+        }
+        for (const NodeId *child = nodes.children_begin(node);
+             child != nodes.children_end(node); ++child) {
+            assert(value_ids[*child] != -1);
+            assert(value_ids[*child] < value_ids[node]);
+            instructions.ids.push_back(value_ids[*child]);
+        }
+        instructions.id_offsets.push_back(instructions.ids.size());
+    }
+    AbstractionFunctions abs_functions;
+    abs_functions.reserve(abstractions.size());
+    for (const unique_ptr<Abstraction> &abstraction : abstractions) {
+        abs_functions.push_back(abstraction->extract_abstraction_function());
+    }
+    cout << "Reachable nodes: " << num_reachable_nodes << endl;
+    cout << "Reachable sum nodes: " << num_reachable_sum_nodes << endl;
+    cout << "Reachable nontrivial sum nodes: "
+         << num_reachable_non_trivial_sum_nodes << endl;
+    cout << "Reachable max nodes: " << num_reachable_max_nodes << endl;
+    cout << "Used abstractions: " << abstractions.size() << endl;
+    assert(abstractions.size() == unsolvability_infos.size());
+    return StructuredSCPOrder{
+        move(abs_functions), move(unsolvability_infos), move(instructions),
+        move(lookup_tables)};
+}
+
+void StructuredSCPOrderGenerator::create_compact_lookup_tables() {
+    vector<vector<vector<int>>> compact_lookup_tables;
+    compact_lookup_tables.reserve(abstractions.size());
+    assert(lookup_tables.size() == abstractions.size());
+    int removed_abstractions = 0;
+    for (size_t abstr_id = 0; abstr_id < abstractions.size(); ++abstr_id) {
+        vector<vector<int>> &lookup_table_by_abstraction =
+            lookup_tables[abstr_id];
+        if (options.use_unsolvability_infos) {
+            for (const vector<int> &lookup : lookup_table_by_abstraction) {
+                for (size_t state_id = 0; state_id < lookup.size();
+                     ++state_id) {
+                    if (lookup[state_id] == INF) {
+                        unsolvability_infos[abstr_id]
+                            .unsolvable_states[state_id] = true;
+                        unsolvability_infos[abstr_id].useful = true;
+                    }
+                }
+            }
+        }
+        if (lookup_table_by_abstraction.empty() &&
+            !unsolvability_infos[abstr_id].useful) {
+            // Remove abstraction without lookup table.
+            abstractions.erase(abstractions.begin() + abstr_id);
+            lookup_tables.erase(lookup_tables.begin() + abstr_id);
+            lookup_nodes.erase(lookup_nodes.begin() + abstr_id);
+            unsolvability_infos.erase(unsolvability_infos.begin() + abstr_id);
+            ++removed_abstractions;
+            --abstr_id;
+            continue;
+        }
+        /* Transpose the lookup tables of this abstraction so that all values
+           for one abstract state are stored contiguously. */
+        vector<vector<int>> compact_lookup_table_by_abstraction;
+        if (!lookup_table_by_abstraction.empty()) {
+            compact_lookup_table_by_abstraction.resize(
+                lookup_table_by_abstraction[0].size());
+            for (const vector<int> &lookup_table :
+                 lookup_table_by_abstraction) {
+                for (size_t i = 0; i < lookup_table.size(); ++i) {
+                    compact_lookup_table_by_abstraction[i].push_back(
+                        lookup_table[i]);
+                }
+            }
+        }
+        compact_lookup_tables.push_back(
+            move(compact_lookup_table_by_abstraction));
+    }
+    cout << "Removed " << removed_abstractions << " abstractions." << endl;
+    lookup_tables = move(compact_lookup_tables);
+}
+
+const SaturatedCostFunction &StructuredSCPOrderGenerator::get_saturated_costs(
+    NodeId node) const {
+    assert(nodes[node].type == NodeType::LOOKUP);
+    if (options.cache_scf_functions) {
+        return scf_cache[nodes[node].abstraction_id]
+                        [nodes[node].lookup_table_id];
+    } else {
+        scf_scratch = make_unique<SaturatedCostFunction>(compute_scf(
+            *abstractions[nodes[node].abstraction_id], get_lookup_table(node),
+            options.use_general_cp));
+        return *scf_scratch;
+    }
+}
+
+void add_structured_order_generator_options_to_parser(
+    plugins::Feature &feature) {
+    feature.add_option<shared_ptr<AbstractTask>>(
+        "transform",
+        "Optional task transformation for the heuristic."
+        " Currently, adapt_costs() and no_transform() are available.",
+        "no_transform()");
+    feature.add_list_option<shared_ptr<AbstractionGenerator>>(
+        "abstraction_generators",
+        "available generators are cartesian() and projections()",
+        "[projections(hillclimbing(max_time=60, random_seed=0)),"
+        " projections(systematic(2)), cartesian()]");
+    feature.add_option<bool>(
+        "use_unsolvability_infos",
+        "extract unsolvability information to one table per abstraction",
+        "true");
+    feature.add_option<bool>(
+        "use_general_cp", "use general cost partitioning", "true");
+    feature.add_option<bool>(
+        "use_affecting_labels",
+        "disregard disjunct affecting labels for order dependence", "true");
+    feature.add_option<bool>(
+        "use_non_negative_labels",
+        "disregard zero cost labels if they are not negative", "true");
+    feature.add_option<bool>(
+        "use_infinite_labels", "disregard infinite cost labels", "true");
+    feature.add_option<bool>(
+        "use_cost_partitioning_check", "post check for cost partitioning",
+        "true");
+    feature.add_option<bool>(
+        "cache_scf_functions", "cache saturated cost functions", "true");
+    feature.add_option<int>(
+        "max_lookup_table_cache_resizes",
+        "maximum number of lookup table cache resizes", "-1");
+    feature.add_option<bool>(
+        "cache_lookup_tables",
+        "cache lookup table ids by cost function to avoid recomputing "
+        "goal distances",
+        "true");
+    utils::add_log_options_to_feature(feature);
+}
+
+tuple<
+    shared_ptr<AbstractTask>, Abstractions, StructuredSCPOptions,
+    utils::Verbosity>
+get_structured_scp_order_generator_arguments_from_options(
+    const plugins::Options &opts) {
+    StructuredSCPOptions options{
+        opts.get<bool>("use_unsolvability_infos"),
+        opts.get<bool>("use_general_cp"),
+        opts.get<bool>("cache_lookup_tables"),
+        opts.get<bool>("use_affecting_labels"),
+        opts.get<bool>("use_non_negative_labels"),
+        opts.get<bool>("use_infinite_labels"),
+        opts.get<bool>("use_cost_partitioning_check"),
+        opts.get<bool>("cache_scf_functions"),
+        opts.get<int>("max_lookup_table_cache_resizes"),
+    };
+    if (options.use_cost_partitioning_check && !options.use_infinite_labels) {
+        ABORT("use_cost_partitioning_check=true requires "
+              "use_infinite_labels=true");
+    }
+    cout << "Generating abstractions..." << endl;
+    Abstractions abstractions = generate_abstractions(
+        opts.get<shared_ptr<AbstractTask>>("transform"),
+        opts.get<vector<shared_ptr<AbstractionGenerator>>>(
+            "abstraction_generators"));
+    cout << "Generated " << abstractions.size() << " abstractions" << endl;
+    return tuple_cat(
+        forward_as_tuple(
+            opts.get<shared_ptr<AbstractTask>>("transform"), move(abstractions),
+            move(options)),
+        utils::get_log_arguments_from_options(opts));
+}
+
+static class StructuredSCPOrderGeneratorCategoryPlugin
+    : public plugins::TypedCategoryPlugin<StructuredSCPOrderGenerator> {
+public:
+    StructuredSCPOrderGeneratorCategoryPlugin()
+        : TypedCategoryPlugin("StructuredSCPOrderGenerator") {
+        document_synopsis("Generate structured SCP orders.");
+    }
+} _category_plugin;
+}

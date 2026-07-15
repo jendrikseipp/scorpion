@@ -134,20 +134,34 @@ void reduce_costs(
     vector<int> &remaining_costs, const vector<int> &saturated_costs) {
     assert(remaining_costs.size() == saturated_costs.size());
     for (size_t i = 0; i < remaining_costs.size(); ++i) {
-        int &remaining = remaining_costs[i];
+        int remaining = remaining_costs[i];
         int saturated = saturated_costs[i];
         assert(remaining >= 0);
         assert(saturated <= remaining);
-        if (remaining == INF) {
-            // Left addition: x - y = x for all values y if x is infinite.
-        } else if (saturated == -INF) {
-            remaining = INF;
-        } else {
-            assert(saturated != INF);
-            remaining -= saturated;
-        }
-        assert(remaining >= 0);
+        assert(remaining == INF || saturated != INF);
+        /* Left addition: x - y = x for all values y if x is infinite.
+           Branchless so that the compiler can vectorize the loop; unsigned
+           subtraction avoids signed overflow for saturated == -INF. */
+        int difference = static_cast<int>(
+            static_cast<unsigned int>(remaining) -
+            static_cast<unsigned int>(saturated));
+        remaining_costs[i] =
+            (remaining == INF || saturated == -INF) ? INF : difference;
+        assert(remaining_costs[i] >= 0);
     }
+}
+
+vector<int> compute_scf(
+    const Abstraction &abstraction, const vector<int> &goal_distances,
+    bool use_general_costs) {
+    vector<int> saturated_costs =
+        abstraction.compute_saturated_costs(goal_distances);
+    if (!use_general_costs) {
+        for (int &cost : saturated_costs) {
+            cost = max(cost, 0);
+        }
+    }
+    return saturated_costs;
 }
 
 bool use_explicit_transitions(

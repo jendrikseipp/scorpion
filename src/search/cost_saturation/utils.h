@@ -4,8 +4,12 @@
 #include "abstraction.h"
 #include "types.h"
 
+#include "../ext/murmurhash3/murmurhash3.h"
+
+#include <cstdint>
 #include <execution>
 #include <iostream>
+#include <utility>
 #include <vector>
 
 class AbstractTask;
@@ -67,6 +71,26 @@ std::vector<int> get_abstract_state_ids(
 
 extern void reduce_costs(
     std::vector<int> &remaining_costs, const std::vector<int> &saturated_costs);
+
+// Compute the saturated cost function for the given goal distances.
+extern std::vector<int> compute_scf(
+    const Abstraction &abstraction, const std::vector<int> &goal_distances,
+    bool use_general_costs);
+
+/* Hash functors based on MurmurHash3, which hashes whole memory ranges and
+   is therefore much faster for long vectors than element-wise hashing. */
+inline size_t hash_bytes(const void *data, int num_bytes, uint32_t seed) {
+    // MurmurHash3_x86_128 outputs 128 bits; return the first 64 bits.
+    uint64_t hash_output[2];
+    MurmurHash3_x86_128(data, num_bytes, seed, hash_output);
+    return static_cast<size_t>(hash_output[0]);
+}
+
+struct VectorIntMurmurHash {
+    size_t operator()(const std::vector<int> &v) const {
+        return hash_bytes(v.data(), v.size() * sizeof(int), v.size());
+    }
+};
 
 // Determine whether to use explicit transitions based on the transition type
 // and task properties. AUTO mode uses explicit transitions if the task has

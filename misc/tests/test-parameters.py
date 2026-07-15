@@ -69,6 +69,8 @@ PERMANENT_EXCEPTIONS = [
     "projections",
     "scp",
     "scp_online",
+    "sscp",
+    "structured_order_generator_full",
     "sys_scp",
     "ucp",
 ]

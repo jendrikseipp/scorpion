@@ -63,6 +63,23 @@ public:
     // Return true iff operator induces a state-changing transition.
     virtual bool operator_is_active(int op_id) const = 0;
 
+    /* Return true iff operator potentially has non-zero saturated costs,
+       i.e., it induces a state-changing transition that does not connect two
+       goal states. The default implementation conservatively answers true
+       for all active operators. */
+    virtual bool operator_is_scp_active(int op_id) const {
+        return operator_is_active(op_id);
+    }
+
+    /* Return for each operator whether its saturated cost is guaranteed to
+       be non-negative for all cost functions, so subtracting the saturated
+       costs never increases the remaining costs. The default implementation
+       conservatively makes no such guarantee. */
+    virtual std::vector<bool>
+    get_operators_with_non_increasing_remaining_cost() const {
+        return std::vector<bool>(get_num_operators(), false);
+    }
+
     // Return true iff operator induces a self-loop. Note that an operator may
     // induce both state-changing transitions and self-loops.
     virtual bool operator_induces_self_loop(int op_id) const = 0;

@@ -10,7 +10,7 @@
 #include "algorithms/subscriber.h"
 #include "utils/hash.h"
 
-#include <parallel_hashmap/phmap.h>
+#include <gtl/phmap.hpp>
 #include <set>
 
 /*
@@ -161,7 +161,7 @@ class StateRegistry : public subscriber::SubscriberService<StateRegistry> {
       i.e. the actual state data is compared, not the memory location.
     */
     using StateIDSet =
-        phmap::flat_hash_set<int, StateIDSemanticHash, StateIDSemanticEqual>;
+        gtl::flat_hash_set<int, StateIDSemanticHash, StateIDSemanticEqual>;
 
     TaskProxy task_proxy;
     const int_packer::IntPacker &state_packer;

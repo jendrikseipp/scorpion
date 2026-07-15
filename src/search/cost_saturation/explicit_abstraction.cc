@@ -5,6 +5,9 @@
 #include "../utils/collections.h"
 #include "../utils/strings.h"
 
+#include <deque>
+#include <map>
+
 using namespace std;
 
 namespace cost_saturation {
@@ -139,6 +142,101 @@ int ExplicitAbstraction::get_num_states() const {
 
 bool ExplicitAbstraction::operator_is_active(int op_id) const {
     return active_operators[op_id];
+}
+
+bool ExplicitAbstraction::operator_is_scp_active(int op_id) const {
+    if (scp_active_operators.empty()) {
+        vector<bool> is_goal_state(get_num_states(), false);
+        for (int goal_state : goal_states) {
+            is_goal_state[goal_state] = true;
+        }
+        scp_active_operators.resize(get_num_operators(), false);
+        int num_states = get_num_states();
+        for (int target = 0; target < num_states; ++target) {
+            for (const Successor &transition : backward_graph[target]) {
+                if (!is_goal_state[target] ||
+                    !is_goal_state[transition.state]) {
+                    scp_active_operators[transition.op] = true;
+                }
+            }
+        }
+    }
+    return scp_active_operators[op_id];
+}
+
+/* Compute the operators whose saturated cost is guaranteed to be
+   non-negative, so subtracting the saturated costs never increases the
+   remaining costs. Currently, there are three reasons why an operator o is
+   non-increasing:
+   1. o induces a self loop
+        (then sat(o) = max{..., h(s)-h(s), ...} = max{..., 0, ...} >= 0)
+   2. o leads to a goal state at least once
+        (then sat(o) = max{..., h(s)-0, ...} = max{..., h(s), ...} >= 0)
+   3. o is guaranteed to be on a shortest path to the goal
+        (then sat(o) = max{..., (h(s')+cost(o)) - h(s'), ...} >= cost(o) >= 0)
+*/
+vector<bool>
+ExplicitAbstraction::get_operators_with_non_increasing_remaining_cost() const {
+    vector<bool> result(looping_operators.size(), false);
+
+    // "1. o induces a self loop"
+    for (size_t op_id = 0; op_id < looping_operators.size(); ++op_id) {
+        if (looping_operators[op_id]) {
+            result[op_id] = true;
+        }
+    }
+
+    // "2. o leads to a goal state at least once"
+    for (int goal : goal_states) {
+        for (const Successor &transition : backward_graph[goal]) {
+            result[transition.op] = true;
+        }
+    }
+
+    // "3. o is guaranteed to be on a shortest path to the goal"
+    int num_states = get_num_states();
+    vector<bool> expanded(num_states, false);
+    vector<bool> unique(num_states, true);
+    vector<vector<int>> op_ids_by_state(num_states);
+
+    deque<pair<int, vector<int>>> open;
+    for (int goal : goal_states) {
+        open.emplace_back(goal, vector<int>());
+        unique[goal] = false;
+    }
+
+    while (!open.empty()) {
+        auto [state_index, ops] = move(open.front());
+        open.pop_front();
+
+        if (expanded[state_index]) {
+            unique[state_index] = false;
+            continue;
+        }
+        assert(op_ids_by_state[state_index].empty());
+        op_ids_by_state[state_index] = move(ops);
+
+        // Regress abstract state.
+        map<int, vector<int>> predecessor_ids;
+        for (const Successor &transition : backward_graph[state_index]) {
+            predecessor_ids[transition.state].push_back(transition.op);
+        }
+        for (pair<int, vector<int>> pred : predecessor_ids) {
+            if (unique[pred.first]) {
+                open.push_back(move(pred));
+            }
+        }
+        expanded[state_index] = true;
+    }
+
+    for (int state_id = 0; state_id < num_states; ++state_id) {
+        if (unique[state_id]) {
+            for (int op_id : op_ids_by_state[state_id]) {
+                result[op_id] = true;
+            }
+        }
+    }
+    return result;
 }
 
 bool ExplicitAbstraction::operator_induces_self_loop(int op_id) const {
