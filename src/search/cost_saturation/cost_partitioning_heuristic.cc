@@ -5,6 +5,7 @@
 #include "../utils/collections.h"
 
 #include <cassert>
+#include <numeric>
 
 using namespace std;
 
@@ -58,7 +59,7 @@ void CostPartitioningHeuristic::add(CostPartitioningHeuristic &&other) {
 int CostPartitioningHeuristic::compute_heuristic(
     const vector<int> &abstract_state_ids) const {
     return transform_reduce(
-        execution::unseq, lookup_tables.cbegin(), lookup_tables.cend(), 0,
+        lookup_tables.cbegin(), lookup_tables.cend(), 0,
         [](int h1, int h2) { return (h1 == INF || h2 == INF) ? INF : h1 + h2; },
         [&abstract_state_ids](const LookupTable &lookup_table) {
             assert(utils::in_bounds(

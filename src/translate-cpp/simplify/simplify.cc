@@ -308,8 +308,7 @@ bool translate_operator(const Renaming &r, SASOperator &op) {
         }
         if (incompat)
             continue;
-        new_pre_post.emplace_back(
-            new_var_no, new_pre, new_post, move(new_cond));
+        new_pre_post.push_back({new_var_no, new_pre, new_post, move(new_cond)});
         pp_vars.push_back(new_var_no);
     }
     if (new_pre_post.empty() && !get_options().keep_no_ops)

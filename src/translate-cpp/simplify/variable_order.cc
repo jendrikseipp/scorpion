@@ -94,9 +94,12 @@ public:
                 // this effect's own condition variables. Iterate both in place
                 // rather than copy source_vars and append per effect (the
                 // condition is empty on STRIPS, so the copy bought nothing).
+                // Copy the structured binding: Clang < 16 cannot capture
+                // structured bindings in lambdas.
+                int target = tgt;
                 auto add_edge = [&](int src) {
-                    if (src != tgt)
-                        raw_targets[src].push_back(tgt);
+                    if (src != target)
+                        raw_targets[src].push_back(target);
                 };
                 for (int src : source_vars)
                     add_edge(src);
@@ -351,8 +354,7 @@ public:
                     if (cit != new_var.end())
                         new_cond.emplace_back(cit->second, cval);
                 }
-                new_pre_post.emplace_back(
-                    it->second, pre, post, move(new_cond));
+                new_pre_post.push_back({it->second, pre, post, move(new_cond)});
             }
             if (new_pre_post.empty() && !get_options().keep_no_ops)
                 continue;

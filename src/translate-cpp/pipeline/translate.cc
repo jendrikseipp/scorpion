@@ -515,7 +515,7 @@ optional<SASOperator> build_sas_operator(
                 if (contradict)
                     continue;
                 ranges::sort(filtered);
-                pre_post.emplace_back(var, pre, post, move(filtered));
+                pre_post.push_back({var, pre, post, move(filtered)});
                 added = true;
             }
         }

@@ -53,3 +53,12 @@ set(using_clang_like "$<OR:${using_clang},${using_apple_clang}>")
 set(should_ignore_std_warning "$<AND:${using_clang_like},${v15_or_later}>")
 target_compile_options(common_cxx_warnings INTERFACE
     "$<${should_ignore_std_warning}:-Wno-unqualified-std-cast-call>")
+
+# Clang before version 17 and Apple Clang produce a false-positive
+# -Wzero-as-null-pointer-constant warning for defaulted three-way comparison
+# operators (https://github.com/llvm/llvm-project/issues/43670).
+set(before_v17 "$<VERSION_LESS:$<CXX_COMPILER_VERSION>,17>")
+set(clang_with_spaceship_bug
+    "$<OR:${using_apple_clang},$<AND:${using_clang},${before_v17}>>")
+target_compile_options(common_cxx_warnings INTERFACE
+    "$<${clang_with_spaceship_bug}:-Wno-zero-as-null-pointer-constant>")

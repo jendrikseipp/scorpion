@@ -4,7 +4,7 @@
 #include "abstraction.h"
 #include "types.h"
 
-#include <execution>
+#include <algorithm>
 #include <iostream>
 #include <vector>
 
@@ -60,8 +60,8 @@ std::vector<int> get_abstract_state_ids(
             return abstraction ? abstraction->get_abstract_state_id(state) : -1;
         };
     std::transform(
-        std::execution::unseq, abstractions.cbegin(), abstractions.cend(),
-        abstract_state_ids.begin(), get_abs_state_id);
+        abstractions.cbegin(), abstractions.cend(), abstract_state_ids.begin(),
+        get_abs_state_id);
     return abstract_state_ids;
 }
 
