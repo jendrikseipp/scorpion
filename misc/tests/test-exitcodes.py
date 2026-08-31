@@ -26,6 +26,9 @@ TRANSLATE_TASKS = {
 # codes, which the Python translator triggers reliably on this task.
 TRANSLATE_TESTS = [
     ("small", [], [], defaultdict(lambda: returncodes.SUCCESS)),
+    # Gripper has negated effects, which exercise Scorpion issue #35 on macOS/libc++.
+    ("small", ["--translator", "cpp"], [],
+     defaultdict(lambda: returncodes.SUCCESS)),
     # We cannot set time limits on Windows and thus expect DRIVER_UNSUPPORTED
     # as exit code in this case.
     ("large", ["--translator", "py", "--translate-time-limit", "1s"], [],

@@ -481,7 +481,7 @@ ConditionPtr parse_literal(
                 "block.",
                 &current[1], SYNTAX_LITERAL);
         }
-        current = current[1].list();
+        current = alist[1].list();
         negated = !negated;
     }
     if (!current[0].is_atom())
