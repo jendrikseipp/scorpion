@@ -75,8 +75,7 @@ void add_saturator_option(plugins::Feature &feature) {
         "saturator", "function that computes saturated cost functions", "all");
 }
 
-CPFunction get_cp_function_from_options(const plugins::Options &options) {
-    Saturator saturator_type = options.get<Saturator>("saturator");
+CPFunction get_cp_function(Saturator saturator_type) {
     CPFunction cp_function = nullptr;
     if (saturator_type == Saturator::ALL) {
         cp_function = compute_saturated_cost_partitioning;
@@ -90,8 +89,33 @@ CPFunction get_cp_function_from_options(const plugins::Options &options) {
     return cp_function;
 }
 
+CPFunction get_cp_function_from_options(const plugins::Options &options) {
+    return get_cp_function(options.get<Saturator>("saturator"));
+}
+
+SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(
+    const shared_ptr<AbstractTask> &task,
+    const vector<shared_ptr<AbstractionGenerator>> &abstraction_generators,
+    Saturator saturator, const shared_ptr<OrderGenerator> &order_generator,
+    int max_orders, int max_size_kb, double max_time, bool diversify,
+    int num_samples, double max_optimization_time, int random_seed,
+    bool cache_estimates, const string &description, utils::Verbosity verbosity)
+    : MaxCostPartitioningHeuristic(
+          task, cache_estimates, description, verbosity) {
+    vector<int> costs = task_properties::get_operator_costs(task_proxy);
+    unique_ptr<DeadEnds> dead_ends = make_unique<DeadEnds>();
+    Abstractions abstractions =
+        generate_abstractions(task, abstraction_generators, dead_ends.get());
+    CPHeuristics cp_heuristics = compute_cp_heuristics(
+        task_proxy, abstractions, costs, get_cp_function(saturator),
+        order_generator, max_orders, max_size_kb, max_time, diversify,
+        num_samples, max_optimization_time, random_seed);
+    set_cost_partitionings(
+        move(abstractions), move(cp_heuristics), move(dead_ends));
+}
+
 class SaturatedCostPartitioningHeuristicFeature
-    : public plugins::TypedFeature<Evaluator, MaxCostPartitioningHeuristic> {
+    : public plugins::TypedFeature<TaskIndependentEvaluator> {
 public:
     SaturatedCostPartitioningHeuristicFeature() : TypedFeature("scp") {
         document_subcategory("heuristics_cost_partitioning");
@@ -120,25 +144,13 @@ public:
         add_order_options(*this);
     }
 
-    virtual shared_ptr<MaxCostPartitioningHeuristic> create_component(
+    virtual shared_ptr<TaskIndependentEvaluator> create_component(
         const plugins::Options &options) const override {
-        shared_ptr<AbstractTask> task =
-            options.get<shared_ptr<AbstractTask>>("transform");
-        TaskProxy task_proxy(*task);
-        vector<int> costs = task_properties::get_operator_costs(task_proxy);
-        unique_ptr<DeadEnds> dead_ends = make_unique<DeadEnds>();
-        Abstractions abstractions = generate_abstractions(
-            task,
-            options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),
-            dead_ends.get());
-        CPFunction cp_function = get_cp_function_from_options(options);
-        vector<CostPartitioningHeuristic> cp_heuristics =
-            get_cp_heuristic_collection_generator_from_options(options)
-                ->generate_cost_partitionings(
-                    task_proxy, abstractions, costs, cp_function);
-        return plugins::make_shared_from_arg_tuples<
-            MaxCostPartitioningHeuristic>(
-            move(abstractions), move(cp_heuristics), move(dead_ends),
+        return components::make_auto_task_independent_component<
+            SaturatedCostPartitioningHeuristic, Evaluator>(
+            get_abstraction_generator_list_from_options(options),
+            options.get<Saturator>("saturator"),
+            get_order_arguments_from_options(options),
             get_heuristic_arguments_from_options(options));
     }
 };

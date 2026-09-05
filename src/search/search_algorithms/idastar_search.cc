@@ -60,10 +60,11 @@ void FifoCache::clear() {
 }
 
 IDAstarSearch::IDAstarSearch(
+    const shared_ptr<AbstractTask> &task,
     const shared_ptr<Evaluator> &h_evaluator, int initial_f_limit,
     int cache_size, bool single_plan, OperatorCost cost_type, int bound,
     double max_time, const string &description, utils::Verbosity verbosity)
-    : SearchAlgorithm(cost_type, bound, max_time, description, verbosity),
+    : SearchAlgorithm(task, cost_type, bound, max_time, description, verbosity),
       h_evaluator(h_evaluator),
       single_plan(single_plan),
       iteration(0),
@@ -166,10 +167,7 @@ SearchStatus IDAstarSearch::step() {
     if (utils::extra_memory_padding_is_reserved()) {
         utils::release_extra_memory_padding();
     }
-    if (found_solution()) {
-        return SOLVED;
-    }
-    return FAILED;
+    return get_finished_search_status();
 }
 
 void IDAstarSearch::save_plan_if_necessary() {
@@ -177,14 +175,18 @@ void IDAstarSearch::save_plan_if_necessary() {
     // them.
 }
 
+bool IDAstarSearch::is_complete_within_bound() const {
+    /* IDA* only prunes states the evaluator considers unreachable. */
+    return h_evaluator->is_safe();
+}
+
 class IDAstarSearchFeature
-    : public plugins::TypedFeature<
-          SearchAlgorithm, idastar_search::IDAstarSearch> {
+    : public plugins::TypedFeature<TaskIndependentSearchAlgorithm> {
 public:
     IDAstarSearchFeature() : TypedFeature("idastar") {
         document_title("IDA* search");
         document_synopsis("IDA* search with an optional g-value cache.");
-        add_option<shared_ptr<Evaluator>>(
+        add_option<shared_ptr<TaskIndependentEvaluator>>(
             "eval",
             "evaluator for h-value. Make sure to use cache_estimates=false.");
         add_option<int>(
@@ -201,10 +203,11 @@ public:
         add_search_algorithm_options_to_feature(*this, "idastar");
     }
 
-    virtual shared_ptr<IDAstarSearch> create_component(
+    virtual shared_ptr<TaskIndependentSearchAlgorithm> create_component(
         const plugins::Options &options) const override {
-        return plugins::make_shared_from_arg_tuples<IDAstarSearch>(
-            options.get<shared_ptr<Evaluator>>("eval"),
+        return components::make_auto_task_independent_component<
+            IDAstarSearch, SearchAlgorithm>(
+            options.get<shared_ptr<TaskIndependentEvaluator>>("eval"),
             options.get<int>("initial_f_limit"), options.get<int>("cache_size"),
             options.get<bool>("single_plan"),
             get_search_algorithm_arguments_from_options(options));

@@ -21,10 +21,13 @@ protected:
 
 public:
     IterativeDeepeningSearch(
-        bool single_plan, OperatorCost cost_type, int bound, double max_time,
+        const std::shared_ptr<AbstractTask> &task, bool single_plan,
+        OperatorCost cost_type, int bound, double max_time,
         const std::string &description, utils::Verbosity verbosity);
 
     void save_plan_if_necessary() override;
+
+    virtual bool is_complete_within_bound() const override;
 
     virtual void print_statistics() const override;
 };

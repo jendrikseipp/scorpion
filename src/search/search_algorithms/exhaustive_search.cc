@@ -40,10 +40,16 @@ static vector<vector<int>> construct_and_dump_fact_mapping(
     return mapping;
 }
 
-ExhaustiveSearch::ExhaustiveSearch()
+ExhaustiveSearch::ExhaustiveSearch(const shared_ptr<AbstractTask> &task)
     : SearchAlgorithm(
-          ONE, numeric_limits<int>::max(), numeric_limits<double>::infinity(),
-          "dump_reachable_search_space", utils::Verbosity::NORMAL) {
+          task, ONE, numeric_limits<int>::max(),
+          numeric_limits<double>::infinity(), "dump_reachable_search_space",
+          utils::Verbosity::NORMAL) {
+}
+
+bool ExhaustiveSearch::is_complete_within_bound() const {
+    /* The search only dumps the state space and never reports a plan. */
+    return false;
 }
 
 void ExhaustiveSearch::initialize() {
@@ -113,16 +119,17 @@ SearchStatus ExhaustiveSearch::step() {
 }
 
 class ExhaustiveSearchFeature
-    : public plugins::TypedFeature<SearchAlgorithm, ExhaustiveSearch> {
+    : public plugins::TypedFeature<TaskIndependentSearchAlgorithm> {
 public:
     ExhaustiveSearchFeature() : TypedFeature("dump_reachable_search_space") {
         document_title("Exhaustive search");
         document_synopsis("Dump the reachable state space.");
     }
 
-    virtual shared_ptr<ExhaustiveSearch> create_component(
+    virtual shared_ptr<TaskIndependentSearchAlgorithm> create_component(
         const plugins::Options &) const override {
-        return plugins::make_shared_from_arg_tuples<ExhaustiveSearch>();
+        return components::make_auto_task_independent_component<
+            ExhaustiveSearch, SearchAlgorithm>();
     }
 };
 

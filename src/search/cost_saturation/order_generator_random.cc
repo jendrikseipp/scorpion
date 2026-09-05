@@ -9,8 +9,9 @@
 using namespace std;
 
 namespace cost_saturation {
-OrderGeneratorRandom::OrderGeneratorRandom(int random_seed)
-    : OrderGenerator(random_seed) {
+OrderGeneratorRandom::OrderGeneratorRandom(
+    const shared_ptr<AbstractTask> &task, int random_seed)
+    : OrderGenerator(task, random_seed) {
 }
 
 void OrderGeneratorRandom::initialize(
@@ -25,7 +26,7 @@ Order OrderGeneratorRandom::compute_order_for_state(const vector<int> &, bool) {
 }
 
 class OrderGeneratorRandomFeature
-    : public plugins::TypedFeature<OrderGenerator, OrderGeneratorRandom> {
+    : public plugins::TypedFeature<TaskIndependentOrderGenerator> {
 public:
     OrderGeneratorRandomFeature() : TypedFeature("random_orders") {
         document_subcategory("heuristics_cost_partitioning");
@@ -34,9 +35,10 @@ public:
         add_order_generator_arguments_to_feature(*this);
     }
 
-    virtual shared_ptr<OrderGeneratorRandom> create_component(
+    virtual shared_ptr<TaskIndependentOrderGenerator> create_component(
         const plugins::Options &options) const override {
-        return plugins::make_shared_from_arg_tuples<OrderGeneratorRandom>(
+        return components::make_auto_task_independent_component<
+            OrderGeneratorRandom, OrderGenerator>(
             get_order_generator_arguments_from_options(options));
     }
 };

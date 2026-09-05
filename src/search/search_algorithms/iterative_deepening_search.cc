@@ -12,9 +12,10 @@ using namespace std;
 
 namespace iterative_deepening_search {
 IterativeDeepeningSearch::IterativeDeepeningSearch(
-    bool single_plan, OperatorCost cost_type, int bound, double max_time,
+    const shared_ptr<AbstractTask> &task, bool single_plan,
+    OperatorCost cost_type, int bound, double max_time,
     const string &description, utils::Verbosity verbosity)
-    : SearchAlgorithm(cost_type, bound, max_time, description, verbosity),
+    : SearchAlgorithm(task, cost_type, bound, max_time, description, verbosity),
       single_plan(single_plan),
       sg(task_proxy),
       last_plan_cost(-1) {
@@ -87,10 +88,7 @@ SearchStatus IterativeDeepeningSearch::step() {
         utils::g_log << "depth limit: " << depth_limit << endl;
         recursive_search(initial_state, depth_limit);
     }
-    if (found_solution()) {
-        return SOLVED;
-    }
-    return FAILED;
+    return get_finished_search_status();
 }
 
 void IterativeDeepeningSearch::save_plan_if_necessary() {
@@ -98,10 +96,16 @@ void IterativeDeepeningSearch::save_plan_if_necessary() {
     // them.
 }
 
+bool IterativeDeepeningSearch::is_complete_within_bound() const {
+    /*
+      The search iterates over all depth limits below the bound and enumerates
+      all paths for each of them, so it finds a cheapest plan if one exists.
+    */
+    return true;
+}
+
 class IterativeDeepeningSearchFeature
-    : public plugins::TypedFeature<
-          SearchAlgorithm,
-          iterative_deepening_search::IterativeDeepeningSearch> {
+    : public plugins::TypedFeature<TaskIndependentSearchAlgorithm> {
 public:
     IterativeDeepeningSearchFeature() : TypedFeature("ids") {
         document_title("Iterative deepening search");
@@ -111,9 +115,10 @@ public:
         add_search_algorithm_options_to_feature(*this, "ids");
     }
 
-    virtual shared_ptr<IterativeDeepeningSearch> create_component(
+    virtual shared_ptr<TaskIndependentSearchAlgorithm> create_component(
         const plugins::Options &options) const override {
-        return plugins::make_shared_from_arg_tuples<IterativeDeepeningSearch>(
+        return components::make_auto_task_independent_component<
+            IterativeDeepeningSearch, SearchAlgorithm>(
             options.get<bool>("single_plan"),
             get_search_algorithm_arguments_from_options(options));
     }

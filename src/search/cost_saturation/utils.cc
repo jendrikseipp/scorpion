@@ -173,7 +173,7 @@ void add_transition_type_option(plugins::Feature &feature) {
 }
 
 void add_order_options(plugins::Feature &feature) {
-    feature.add_option<shared_ptr<OrderGenerator>>(
+    feature.add_option<shared_ptr<TaskIndependentOrderGenerator>>(
         "orders", "order generator", "greedy_orders()");
     feature.add_option<int>(
         "max_orders", "maximum number of orders", "infinity",
@@ -199,16 +199,34 @@ void add_order_options(plugins::Feature &feature) {
     utils::add_rng_options_to_feature(feature);
 }
 
-shared_ptr<CostPartitioningHeuristicCollectionGenerator>
-get_cp_heuristic_collection_generator_from_options(
-    const plugins::Options &opts) {
-    return plugins::make_shared_from_arg_tuples<
-        CostPartitioningHeuristicCollectionGenerator>(
-        opts.get<shared_ptr<OrderGenerator>>("orders"),
-        opts.get<int>("max_orders"), opts.get<int>("max_size"),
-        opts.get<double>("max_time"), opts.get<bool>("diversify"),
-        opts.get<int>("samples"), opts.get<double>("max_optimization_time"),
+OrderArguments get_order_arguments_from_options(const plugins::Options &opts) {
+    return tuple_cat(
+        make_tuple(
+            opts.get<shared_ptr<TaskIndependentOrderGenerator>>("orders"),
+            opts.get<int>("max_orders"), opts.get<int>("max_size"),
+            opts.get<double>("max_time"), opts.get<bool>("diversify"),
+            opts.get<int>("samples"),
+            opts.get<double>("max_optimization_time")),
         utils::get_rng_arguments_from_options(opts));
+}
+
+vector<shared_ptr<TaskIndependentAbstractionGenerator>>
+get_abstraction_generator_list_from_options(const plugins::Options &opts) {
+    return opts.get_list<shared_ptr<TaskIndependentAbstractionGenerator>>(
+        "abstractions");
+}
+
+CPHeuristics compute_cp_heuristics(
+    const TaskProxy &task_proxy, const Abstractions &abstractions,
+    const vector<int> &costs, const CPFunction &cp_function,
+    const shared_ptr<OrderGenerator> &order_generator, int max_orders,
+    int max_size_kb, double max_time, bool diversify, int num_samples,
+    double max_optimization_time, int random_seed) {
+    return CostPartitioningHeuristicCollectionGenerator(
+               order_generator, max_orders, max_size_kb, max_time, diversify,
+               num_samples, max_optimization_time, random_seed)
+        .generate_cost_partitionings(
+            task_proxy, abstractions, costs, cp_function);
 }
 
 void add_options_for_cost_partitioning_heuristic(
@@ -227,7 +245,7 @@ void add_options_for_cost_partitioning_heuristic(
     feature.document_property("safe", "yes");
     feature.document_property("preferred operators", "no");
 
-    feature.add_list_option<shared_ptr<AbstractionGenerator>>(
+    feature.add_list_option<shared_ptr<TaskIndependentAbstractionGenerator>>(
         "abstractions", "abstraction generators",
         "[projections(hillclimbing(max_time=60)), "
         "projections(systematic(2)), "
@@ -235,22 +253,4 @@ void add_options_for_cost_partitioning_heuristic(
     add_heuristic_options_to_feature(feature, description);
 }
 
-shared_ptr<MaxCostPartitioningHeuristic> get_max_cp_heuristic(
-    const plugins::Options &opts, const CPFunction &cp_function) {
-    shared_ptr<AbstractTask> task =
-        opts.get<shared_ptr<AbstractTask>>("transform");
-    TaskProxy task_proxy(*task);
-    vector<int> costs = task_properties::get_operator_costs(task_proxy);
-    unique_ptr<DeadEnds> dead_ends = make_unique<DeadEnds>();
-    Abstractions abstractions = generate_abstractions(
-        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),
-        dead_ends.get());
-    vector<CostPartitioningHeuristic> cp_heuristics =
-        get_cp_heuristic_collection_generator_from_options(opts)
-            ->generate_cost_partitionings(
-                task_proxy, abstractions, costs, cp_function);
-    return plugins::make_shared_from_arg_tuples<MaxCostPartitioningHeuristic>(
-        move(abstractions), move(cp_heuristics), move(dead_ends),
-        get_heuristic_arguments_from_options(opts));
-}
 }

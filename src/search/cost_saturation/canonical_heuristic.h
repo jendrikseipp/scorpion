@@ -23,10 +23,11 @@ protected:
 
 public:
     CanonicalHeuristic(
+        const std::shared_ptr<AbstractTask> &task,
         const std::vector<std::shared_ptr<AbstractionGenerator>>
             &abstraction_generators,
-        const std::shared_ptr<AbstractTask> &transform, bool cache_estimates,
-        const std::string &description, utils::Verbosity verbosity);
+        bool cache_estimates, const std::string &description,
+        utils::Verbosity verbosity);
 };
 }
 

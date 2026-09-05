@@ -50,8 +50,9 @@ static void compute_union_pattern(
 }
 
 PatternCollectionGeneratorSystematic::PatternCollectionGeneratorSystematic(
-    int pattern_max_size, PatternType pattern_type, utils::Verbosity verbosity)
-    : PatternCollectionGenerator(verbosity),
+    const shared_ptr<AbstractTask> &task, int pattern_max_size,
+    PatternType pattern_type, utils::Verbosity verbosity)
+    : PatternCollectionGenerator(task, verbosity),
       max_pattern_size(pattern_max_size),
       pattern_type(pattern_type) {
 }
@@ -381,8 +382,7 @@ void add_pattern_type_option(plugins::Feature &feature) {
 }
 
 class PatternCollectionGeneratorSystematicFeature
-    : public plugins::TypedFeature<
-          PatternCollectionGenerator, PatternCollectionGeneratorSystematic> {
+    : public plugins::TypedFeature<TaskIndependentPatternCollectionGenerator> {
 public:
     PatternCollectionGeneratorSystematicFeature() : TypedFeature("systematic") {
         document_title("Systematically generated patterns");
@@ -414,10 +414,10 @@ public:
         add_generator_options_to_feature(*this);
     }
 
-    virtual shared_ptr<PatternCollectionGeneratorSystematic> create_component(
-        const plugins::Options &opts) const override {
-        return plugins::make_shared_from_arg_tuples<
-            PatternCollectionGeneratorSystematic>(
+    virtual shared_ptr<TaskIndependentPatternCollectionGenerator>
+    create_component(const plugins::Options &opts) const override {
+        return components::make_auto_task_independent_component<
+            PatternCollectionGeneratorSystematic, PatternCollectionGenerator>(
             opts.get<int>("pattern_max_size"),
             opts.get<PatternType>("pattern_type"),
             get_generator_arguments_from_options(opts));

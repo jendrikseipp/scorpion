@@ -53,10 +53,10 @@ static MaxAdditiveSubsets compute_max_additive_subsets(
 }
 
 CanonicalHeuristic::CanonicalHeuristic(
+    const shared_ptr<AbstractTask> &task,
     const vector<shared_ptr<AbstractionGenerator>> &abstraction_generators,
-    const shared_ptr<AbstractTask> &transform, bool cache_estimates,
-    const string &description, utils::Verbosity verbosity)
-    : Heuristic(transform, cache_estimates, description, verbosity) {
+    bool cache_estimates, const string &description, utils::Verbosity verbosity)
+    : Heuristic(task, cache_estimates, description, verbosity) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
 
     Abstractions abstractions =
@@ -109,7 +109,7 @@ int CanonicalHeuristic::compute_max_over_sums(
 }
 
 class CanonicalHeuristicFeature
-    : public plugins::TypedFeature<Evaluator, CanonicalHeuristic> {
+    : public plugins::TypedFeature<TaskIndependentEvaluator> {
 public:
     CanonicalHeuristicFeature() : TypedFeature("canonical_heuristic") {
         document_subcategory("heuristics_cost_partitioning");
@@ -119,10 +119,11 @@ public:
             *this, "canonical_heuristic");
     }
 
-    virtual shared_ptr<CanonicalHeuristic> create_component(
+    virtual shared_ptr<TaskIndependentEvaluator> create_component(
         const plugins::Options &options) const override {
-        return plugins::make_shared_from_arg_tuples<CanonicalHeuristic>(
-            options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),
+        return components::make_auto_task_independent_component<
+            CanonicalHeuristic, Evaluator>(
+            get_abstraction_generator_list_from_options(options),
             get_heuristic_arguments_from_options(options));
     }
 };

@@ -67,8 +67,8 @@ we recommend using [NOLAN](https://mrlab.ai/papers/correa-seipp-icaps2025.pdf):
 which is equivalent to
 
     ./fast-downward.py --preprocess [DOMAIN_FILE] PROBLEM_FILE \
-      --evaluator "hlm=landmark_sum(lm_factory=lm_reasonable_orders_hps(lm_rhw()), transform=adapt_costs(one), pref=false)" \
-      --evaluator "hff=ff(transform=adapt_costs(one))" \
+      --evaluator "hlm=eval_modify_costs(landmark_sum(lm_factory=lm_reasonable_orders_hps(lm_rhw()), pref=false), cost_type=one)" \
+      --evaluator "hff=eval_modify_costs(ff(), cost_type=one)" \
       --search "lazy(alt([single(hff), single(hff, pref_only=true), single(hlm, pref_only=true),
         tiebreaking([novelty(width=2, evals=[hlm]), hlm, g()])], boost=1000),
         preferred=[hff, hlm], cost_type=one, reopen_closed=false)"
@@ -267,13 +267,14 @@ Different cost partitioning algorithms for landmark heuristics:
 
 Fast Downward is a domain-independent classical planning system.
 
-Copyright 2003-2025 Fast Downward contributors (see below).
+Copyright 2003-2026 Fast Downward contributors (see below).
 
 For further information:
 - Fast Downward website: <https://www.fast-downward.org>
 - Report a bug or file an issue: <https://issues.fast-downward.org>
 - Fast Downward mailing list: <https://groups.google.com/forum/#!forum/fast-downward>
 - Fast Downward main repository: <https://github.com/aibasel/downward>
+
 
 ## Scientific experiments
 
@@ -284,6 +285,7 @@ Lab](https://lab.readthedocs.io/en/stable/) Python package helps
 running Fast Downward experiments. Our separate [benchmark
 repository](https://github.com/aibasel/downward-benchmarks) contains a
 collection of planning tasks.
+
 
 ## Supported software versions
 
@@ -310,6 +312,7 @@ We test LP support with CPLEX 22.1.1 and SoPlex 7.1.1. On Ubuntu we
 test both CPLEX and SoPlex. On Windows we currently only test CPLEX,
 and on macOS we do not test LP solvers (yet).
 
+
 ## Build instructions
 
 See [BUILD.md](BUILD.md).
@@ -325,21 +328,23 @@ Currently, this list is sorted by the last year the person has been
 active, and in case of ties, by the earliest year the person started
 contributing, and finally by last name.
 
+- 2003-2026 Malte Helmert
+- 2008-2016, 2018-2026 Gabriele Röger
+- 2012-2026 Florian Pommerening
+- 2021-2026 Clemens Büchner
 - 2022-2026 Remo Christen
 - 2022-2026 Simon Dold
+- 2023-2026 Claudia S. Grundke
+- 2024-2026 Tanja Schindler
+- 2024-2026 David Speck
 - 2025-2026 Esther Mugdan
-- 2003-2025 Malte Helmert
-- 2008-2016, 2018-2025 Gabriele Roeger
+- 2025-2026 Travis Rivera Petit
+- 2026 Gustavo Delazeri
+- 2026 Pascal Lauer
 - 2009, 2025 Christian Muise
 - 2010-2025 Jendrik Seipp
 - 2010-2011, 2013-2025 Silvan Sievers
-- 2012-2025 Florian Pommerening
 - 2013, 2015-2025 Salomé Eriksson
-- 2021-2025 Clemens Büchner
-- 2023-2025 Claudia S. Grundke
-- 2024–2025 Tanja Schindler
-- 2024-2025 David Speck
-- 2025 Travis Rivera Petit
 - 2018-2024 Patrick Ferber
 - 2024 Martín Pozo
 - 2015, 2021-2023 Thomas Keller

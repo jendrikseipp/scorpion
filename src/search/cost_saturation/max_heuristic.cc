@@ -11,9 +11,12 @@ using namespace std;
 
 namespace cost_saturation {
 MaxHeuristic::MaxHeuristic(
-    Abstractions &&abstractions, const shared_ptr<AbstractTask> &transform,
+    const shared_ptr<AbstractTask> &task,
+    const vector<shared_ptr<AbstractionGenerator>> &abstraction_generators,
     bool cache_estimates, const string &description, utils::Verbosity verbosity)
-    : Heuristic(transform, cache_estimates, description, verbosity) {
+    : Heuristic(task, cache_estimates, description, verbosity) {
+    Abstractions abstractions =
+        generate_abstractions(task, abstraction_generators);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     for (auto &abstraction : abstractions) {
         h_values_by_abstraction.push_back(
@@ -43,7 +46,7 @@ int MaxHeuristic::compute_heuristic(const State &ancestor_state) {
 }
 
 class MaxHeuristicFeature
-    : public plugins::TypedFeature<Evaluator, MaxHeuristic> {
+    : public plugins::TypedFeature<TaskIndependentEvaluator> {
 public:
     MaxHeuristicFeature() : TypedFeature("maximize") {
         document_subcategory("heuristics_cost_partitioning");
@@ -52,14 +55,12 @@ public:
         add_options_for_cost_partitioning_heuristic(*this, "maximize");
     }
 
-    virtual shared_ptr<MaxHeuristic> create_component(
+    virtual shared_ptr<TaskIndependentEvaluator> create_component(
         const plugins::Options &options) const override {
-        Abstractions abstractions = generate_abstractions(
-            options.get<shared_ptr<AbstractTask>>("transform"),
-            options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
-
-        return plugins::make_shared_from_arg_tuples<MaxHeuristic>(
-            move(abstractions), get_heuristic_arguments_from_options(options));
+        return components::make_auto_task_independent_component<
+            MaxHeuristic, Evaluator>(
+            get_abstraction_generator_list_from_options(options),
+            get_heuristic_arguments_from_options(options));
     }
 };
 

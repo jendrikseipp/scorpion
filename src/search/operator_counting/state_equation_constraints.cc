@@ -11,8 +11,9 @@
 using namespace std;
 
 namespace operator_counting {
-StateEquationConstraints::StateEquationConstraints(utils::Verbosity verbosity)
-    : log(utils::get_log_for_verbosity(verbosity)) {
+StateEquationConstraints::StateEquationConstraints(
+    const shared_ptr<AbstractTask> &task, utils::Verbosity verbosity)
+    : ConstraintGenerator(task), log(utils::get_log_for_verbosity(verbosity)) {
 }
 
 static void add_indices_to_constraint(
@@ -58,7 +59,8 @@ void StateEquationConstraints::add_constraints(
     named_vector::NamedVector<lp::LPConstraint> &constraints, double infinity) {
     for (vector<Proposition> &var_propositions : propositions) {
         for (Proposition &prop : var_propositions) {
-            lp::LPConstraint constraint(-infinity, infinity);
+            lp::LPConstraint constraint(
+                lp::LPConstraintSense::GREATER_EQUAL, -infinity);
             add_indices_to_constraint(constraint, prop.always_produced_by, 1.0);
             add_indices_to_constraint(
                 constraint, prop.sometimes_produced_by, 1.0);
@@ -111,7 +113,7 @@ bool StateEquationConstraints::update_constraints(
                 if (goal_state[var] == value) {
                     ++lower_bound;
                 }
-                lp_solver.set_constraint_lower_bound(
+                lp_solver.set_constraint_rhs(
                     prop.constraint_index, lower_bound);
             }
         }
@@ -120,8 +122,7 @@ bool StateEquationConstraints::update_constraints(
 }
 
 class StateEquationConstraintsFeature
-    : public plugins::TypedFeature<
-          ConstraintGenerator, StateEquationConstraints> {
+    : public plugins::TypedFeature<TaskIndependentConstraintGenerator> {
 public:
     StateEquationConstraintsFeature()
         : TypedFeature("state_equation_constraints") {
@@ -160,9 +161,10 @@ public:
         utils::add_log_options_to_feature(*this);
     }
 
-    virtual shared_ptr<StateEquationConstraints> create_component(
+    virtual shared_ptr<TaskIndependentConstraintGenerator> create_component(
         const plugins::Options &opts) const override {
-        return plugins::make_shared_from_arg_tuples<StateEquationConstraints>(
+        return components::make_auto_task_independent_component<
+            StateEquationConstraints, ConstraintGenerator>(
             utils::get_log_arguments_from_options(opts));
     }
 };

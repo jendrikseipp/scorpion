@@ -80,8 +80,8 @@ class PatternCollectionGeneratorSystematic : public PatternCollectionGenerator {
         const std::shared_ptr<AbstractTask> &task) override;
 public:
     PatternCollectionGeneratorSystematic(
-        int pattern_max_size, PatternType pattern_type,
-        utils::Verbosity verbosity);
+        const std::shared_ptr<AbstractTask> &task, int pattern_max_size,
+        PatternType pattern_type, utils::Verbosity verbosity);
 
     void generate(
         const std::shared_ptr<AbstractTask> &task,

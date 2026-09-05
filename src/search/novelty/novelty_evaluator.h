@@ -26,9 +26,10 @@ protected:
 
 public:
     NoveltyEvaluator(
-        int width, const std::vector<std::shared_ptr<Evaluator>> &evals,
-        bool consider_only_novel_states,
-        const std::shared_ptr<AbstractTask> &transform, bool cache_estimates,
+        const std::shared_ptr<AbstractTask> &task, int width,
+        int max_variables_for_width2,
+        const std::vector<std::shared_ptr<Evaluator>> &evals,
+        bool consider_only_novel_states, bool cache_estimates,
         const std::string &description, utils::Verbosity verbosity);
     virtual ~NoveltyEvaluator() override;
 
@@ -37,7 +38,7 @@ public:
     virtual void notify_initial_state(const State &initial_state) override;
     virtual void notify_state_transition(
         const State &parent, OperatorID op_id, const State &state) override;
-    virtual bool dead_ends_are_reliable() const override;
+    virtual bool is_safe() const override;
 };
 
 // HACK: we need to notify landmark heuristics before evaluating the novelty

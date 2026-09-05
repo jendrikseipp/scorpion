@@ -42,11 +42,13 @@ protected:
 
 public:
     BreadthFirstSearch(
-        bool single_plan, bool write_plan,
-        const std::shared_ptr<PruningMethod> &pruning,
+        const std::shared_ptr<AbstractTask> &task, bool single_plan,
+        bool write_plan, const std::shared_ptr<PruningMethod> &pruning,
         const std::string &description, utils::Verbosity verbosity);
 
     virtual void save_plan_if_necessary() override;
+
+    virtual bool is_complete_within_bound() const override;
 
     virtual void print_statistics() const override;
 };

@@ -1,6 +1,7 @@
 #ifndef COST_SATURATION_SATURATED_COST_PARTITIONING_ONLINE_HEURISTIC_H
 #define COST_SATURATION_SATURATED_COST_PARTITIONING_ONLINE_HEURISTIC_H
 
+#include "abstraction_generator.h"
 #include "saturated_cost_partitioning_heuristic.h"
 #include "types.h"
 
@@ -45,12 +46,13 @@ protected:
 
 public:
     SaturatedCostPartitioningOnlineHeuristic(
+        const std::shared_ptr<AbstractTask> &task,
+        const std::vector<std::shared_ptr<AbstractionGenerator>>
+            &abstraction_generators,
         const std::shared_ptr<OrderGenerator> &order_generator,
-        Saturator saturator, const CPFunction &cp_function,
-        Abstractions &&abstractions_, std::unique_ptr<DeadEnds> &&dead_ends_,
-        int interval, double max_time, int max_size_kb, bool debug,
-        const std::shared_ptr<AbstractTask> &transform, bool cache_estimates,
-        const std::string &description, utils::Verbosity verbosity);
+        Saturator saturator, int interval, double max_time, int max_size_kb,
+        bool debug, bool cache_estimates, const std::string &description,
+        utils::Verbosity verbosity);
     virtual ~SaturatedCostPartitioningOnlineHeuristic() override;
 };
 }

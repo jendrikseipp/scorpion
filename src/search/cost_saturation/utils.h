@@ -2,6 +2,8 @@
 #define COST_SATURATION_UTILS_H
 
 #include "abstraction.h"
+#include "abstraction_generator.h"
+#include "order_generator.h"
 #include "types.h"
 
 #include <algorithm>
@@ -79,11 +81,36 @@ extern void add_order_options(plugins::Feature &feature);
 extern void add_options_for_cost_partitioning_heuristic(
     plugins::Feature &feature, const std::string &description,
     bool consistent = true);
-extern std::shared_ptr<MaxCostPartitioningHeuristic> get_max_cp_heuristic(
-    const plugins::Options &opts, const CPFunction &cp_function);
-extern std::shared_ptr<CostPartitioningHeuristicCollectionGenerator>
-get_cp_heuristic_collection_generator_from_options(
+
+/*
+  Arguments added by add_order_options(), in the order in which the
+  corresponding constructor parameters have to be declared:
+  order generator, max_orders, max_size, max_time, diversify, samples,
+  max_optimization_time and the random seed.
+*/
+using OrderArguments = std::tuple<
+    std::shared_ptr<TaskIndependentOrderGenerator>, int, int, double, bool, int,
+    double, int>;
+extern OrderArguments get_order_arguments_from_options(
     const plugins::Options &opts);
+
+/*
+  Abstraction generators and heuristic options are only added once, so we
+  bundle the arguments added by add_options_for_cost_partitioning_heuristic().
+*/
+extern std::vector<std::shared_ptr<TaskIndependentAbstractionGenerator>>
+get_abstraction_generator_list_from_options(const plugins::Options &opts);
+
+/*
+  Compute cost partitioning heuristics for the given abstractions using the
+  options added by add_order_options().
+*/
+extern CPHeuristics compute_cp_heuristics(
+    const TaskProxy &task_proxy, const Abstractions &abstractions,
+    const std::vector<int> &costs, const CPFunction &cp_function,
+    const std::shared_ptr<OrderGenerator> &order_generator, int max_orders,
+    int max_size_kb, double max_time, bool diversify, int num_samples,
+    double max_optimization_time, int random_seed);
 
 template<typename T>
 void print_indexed_vector(const std::vector<T> &vec) {

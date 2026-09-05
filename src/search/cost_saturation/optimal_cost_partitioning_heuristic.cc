@@ -17,11 +17,11 @@ using namespace std;
 
 namespace cost_saturation {
 OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
+    const shared_ptr<AbstractTask> &task,
     const vector<shared_ptr<AbstractionGenerator>> &abstraction_generators,
-    bool allow_negative_costs, lp::LPSolverType lpsolver,
-    const shared_ptr<AbstractTask> &transform, bool cache_estimates,
+    bool allow_negative_costs, lp::LPSolverType lpsolver, bool cache_estimates,
     const string &description, utils::Verbosity verbosity)
-    : Heuristic(transform, cache_estimates, description, verbosity),
+    : Heuristic(task, cache_estimates, description, verbosity),
       lp_solver(lpsolver),
       allow_negative_costs(allow_negative_costs) {
     utils::Timer timer;
@@ -190,17 +190,17 @@ void OptimalCostPartitioningHeuristic::add_abstraction_constraints(
       distance[A][s''] <= distance[A][s'] + operator_cost[A][o] which equals
       0 <= distance[A][s'] + operator_cost[A][o] - distance[A][s''] <= \infty
     */
-    abstraction.for_each_transition(
-        [this, id, &lp_constraints](const Transition &transition) {
-            int from_col = distance_variables[id][transition.src];
-            int op_col = operator_cost_variables[id][transition.op];
-            int to_col = distance_variables[id][transition.target];
-            lp::LPConstraint constraint(0., lp_solver.get_infinity());
-            constraint.insert(from_col, 1);
-            constraint.insert(op_col, 1);
-            constraint.insert(to_col, -1);
-            lp_constraints.push_back(move(constraint));
-        });
+    abstraction.for_each_transition([this, id, &lp_constraints](
+                                        const Transition &transition) {
+        int from_col = distance_variables[id][transition.src];
+        int op_col = operator_cost_variables[id][transition.op];
+        int to_col = distance_variables[id][transition.target];
+        lp::LPConstraint constraint(lp::LPConstraintSense::GREATER_EQUAL, 0.);
+        constraint.insert(from_col, 1);
+        constraint.insert(op_col, 1);
+        constraint.insert(to_col, -1);
+        lp_constraints.push_back(move(constraint));
+    });
 
     /*
       For each abstract goal state s' in abstraction A add constraint
@@ -210,7 +210,7 @@ void OptimalCostPartitioningHeuristic::add_abstraction_constraints(
     int abstraction_col = abstraction_variables[id];
     for (int goal_id : abstraction.get_goal_states()) {
         int goal_col = distance_variables[id][goal_id];
-        lp::LPConstraint constraint(0., lp_solver.get_infinity());
+        lp::LPConstraint constraint(lp::LPConstraintSense::GREATER_EQUAL, 0.);
         constraint.insert(goal_col, 1);
         constraint.insert(abstraction_col, -1);
         lp_constraints.push_back(move(constraint));
@@ -224,7 +224,8 @@ void OptimalCostPartitioningHeuristic::add_operator_cost_constraints(
       sum_{A in abstractions} operator_cost[A][o] <= cost(o)
     */
     for (OperatorProxy op : task_proxy.get_operators()) {
-        lp_constraints.emplace_back(-lp_solver.get_infinity(), op.get_cost());
+        lp_constraints.emplace_back(
+            lp::LPConstraintSense::LESS_EQUAL, op.get_cost());
         lp::LPConstraint &constraint = lp_constraints.back();
         for (size_t id = 0; id < operator_cost_variables.size(); ++id) {
             int abstraction_col = operator_cost_variables[id][op.get_id()];
@@ -234,8 +235,7 @@ void OptimalCostPartitioningHeuristic::add_operator_cost_constraints(
 }
 
 class OptimalCostPartitioningHeuristicFeature
-    : public plugins::TypedFeature<
-          Evaluator, OptimalCostPartitioningHeuristic> {
+    : public plugins::TypedFeature<TaskIndependentEvaluator> {
 public:
     OptimalCostPartitioningHeuristicFeature() : TypedFeature("ocp") {
         document_subcategory("heuristics_cost_partitioning");
@@ -249,11 +249,11 @@ public:
             "use general instead of non-negative cost partitioning", "true");
     }
 
-    virtual shared_ptr<OptimalCostPartitioningHeuristic> create_component(
+    virtual shared_ptr<TaskIndependentEvaluator> create_component(
         const plugins::Options &options) const override {
-        return plugins::make_shared_from_arg_tuples<
-            OptimalCostPartitioningHeuristic>(
-            options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),
+        return components::make_auto_task_independent_component<
+            OptimalCostPartitioningHeuristic, Evaluator>(
+            get_abstraction_generator_list_from_options(options),
             options.get<bool>("allow_negative_costs"),
             lp::get_lp_solver_arguments_from_options(options),
             get_heuristic_arguments_from_options(options));

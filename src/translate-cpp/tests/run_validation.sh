@@ -36,8 +36,8 @@ for domain in "${bench_root}"/*; do
         # Python translator
         (cd "${tmp_py}" && \
          ulimit -v $((2 * 1024 * 1024)) && \
-         PYTHONPATH="${repo_root}/src" \
-         timeout 120 python3 -m translate \
+         PYTHONPATH="${repo_root}/src/translate" \
+         timeout 120 python3 -m fast_downward.translate \
              "${repo_root}/${domain_pddl}" "${repo_root}/${problem}" \
              >/dev/null 2>&1)
         py_rc=$?

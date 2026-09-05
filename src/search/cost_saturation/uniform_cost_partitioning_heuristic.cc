@@ -115,13 +115,11 @@ compute_opportunistic_uniform_cost_partitioning(
 }
 
 ScaledCostPartitioningHeuristic::ScaledCostPartitioningHeuristic(
-    Abstractions &&abstractions,
-    vector<CostPartitioningHeuristic> &&cp_heuristics,
-    unique_ptr<DeadEnds> &&dead_ends, const shared_ptr<AbstractTask> &transform,
-    bool cache_estimates, const string &description, utils::Verbosity verbosity)
+    const shared_ptr<AbstractTask> &task, bool cache_estimates,
+    const string &description, utils::Verbosity verbosity)
     : MaxCostPartitioningHeuristic(
-          move(abstractions), move(cp_heuristics), move(dead_ends), transform,
-          cache_estimates, description, verbosity) {
+          get_scaled_costs_task(task), cache_estimates, description,
+          verbosity) {
 }
 
 int ScaledCostPartitioningHeuristic::compute_heuristic(
@@ -150,29 +148,45 @@ shared_ptr<AbstractTask> get_scaled_costs_task(
         task, move(costs));
 }
 
-static CostPartitioningHeuristic get_ucp_heuristic(
-    const TaskProxy &task_proxy, const Abstractions &abstractions, bool debug) {
+UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(
+    const shared_ptr<AbstractTask> &task,
+    const vector<shared_ptr<AbstractionGenerator>> &abstraction_generators,
+    bool opportunistic, bool debug,
+    const shared_ptr<OrderGenerator> &order_generator, int max_orders,
+    int max_size_kb, double max_time, bool diversify, int num_samples,
+    double max_optimization_time, int random_seed, bool cache_estimates,
+    const string &description, utils::Verbosity verbosity)
+    : ScaledCostPartitioningHeuristic(
+          task, cache_estimates, description, verbosity) {
+    /* Our base class replaced the task by a copy with scaled costs, so we use
+       the scaled task (this->task) for all computations below. */
+    unique_ptr<DeadEnds> dead_ends = make_unique<DeadEnds>();
+    Abstractions abstractions = generate_abstractions(
+        this->task, abstraction_generators, dead_ends.get());
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
-    return compute_uniform_cost_partitioning(abstractions, costs, debug);
-}
 
-static CPHeuristics get_oucp_heuristics(
-    const TaskProxy &task_proxy, const Abstractions &abstractions,
-    const CostPartitioningHeuristicCollectionGenerator &cps_generator,
-    bool debug) {
-    vector<int> costs = task_properties::get_operator_costs(task_proxy);
-    return cps_generator.generate_cost_partitionings(
-        task_proxy, abstractions, costs,
-        [debug](
-            const Abstractions &abstractions_, const vector<int> &order,
-            vector<int> &remaining_costs, const vector<int> &) {
-            return compute_opportunistic_uniform_cost_partitioning(
-                abstractions_, order, remaining_costs, debug);
-        });
+    CPHeuristics cp_heuristics;
+    if (opportunistic) {
+        cp_heuristics = compute_cp_heuristics(
+            task_proxy, abstractions, costs,
+            [debug](
+                const Abstractions &abstractions_, const vector<int> &order,
+                vector<int> &remaining_costs, const vector<int> &) {
+                return compute_opportunistic_uniform_cost_partitioning(
+                    abstractions_, order, remaining_costs, debug);
+            },
+            order_generator, max_orders, max_size_kb, max_time, diversify,
+            num_samples, max_optimization_time, random_seed);
+    } else {
+        cp_heuristics.push_back(
+            compute_uniform_cost_partitioning(abstractions, costs, debug));
+    }
+    set_cost_partitionings(
+        move(abstractions), move(cp_heuristics), move(dead_ends));
 }
 
 class UniformCostPartitioningHeuristicFeature
-    : public plugins::TypedFeature<Evaluator, MaxCostPartitioningHeuristic> {
+    : public plugins::TypedFeature<TaskIndependentEvaluator> {
 public:
     UniformCostPartitioningHeuristicFeature() : TypedFeature("ucp") {
         document_subcategory("heuristics_cost_partitioning");
@@ -194,37 +208,14 @@ public:
         add_option<bool>("debug", "print debugging messages", "false");
     }
 
-    virtual shared_ptr<MaxCostPartitioningHeuristic> create_component(
+    virtual shared_ptr<TaskIndependentEvaluator> create_component(
         const plugins::Options &options) const override {
-        shared_ptr<AbstractTask> scaled_costs_task = get_scaled_costs_task(
-            options.get<shared_ptr<AbstractTask>>("transform"));
-
-        unique_ptr<DeadEnds> dead_ends = make_unique<DeadEnds>();
-        Abstractions abstractions = generate_abstractions(
-            scaled_costs_task,
-            options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),
-            dead_ends.get());
-
-        TaskProxy scaled_costs_task_proxy(*scaled_costs_task);
-        bool debug = options.get<bool>("debug");
-
-        CPHeuristics cp_heuristics;
-        if (options.get<bool>("opportunistic")) {
-            cp_heuristics = get_oucp_heuristics(
-                scaled_costs_task_proxy, abstractions,
-                *get_cp_heuristic_collection_generator_from_options(options),
-                debug);
-        } else {
-            cp_heuristics.push_back(get_ucp_heuristic(
-                scaled_costs_task_proxy, abstractions, debug));
-        }
-
-        return plugins::make_shared_from_arg_tuples<
-            ScaledCostPartitioningHeuristic>(
-            move(abstractions), move(cp_heuristics), move(dead_ends),
-            scaled_costs_task, options.get<bool>("cache_estimates"),
-            options.get<string>("description"),
-            options.get<utils::Verbosity>("verbosity"));
+        return components::make_auto_task_independent_component<
+            UniformCostPartitioningHeuristic, Evaluator>(
+            get_abstraction_generator_list_from_options(options),
+            options.get<bool>("opportunistic"), options.get<bool>("debug"),
+            get_order_arguments_from_options(options),
+            get_heuristic_arguments_from_options(options));
     }
 };
 

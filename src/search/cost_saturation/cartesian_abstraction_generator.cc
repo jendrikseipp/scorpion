@@ -47,6 +47,7 @@ static vector<vector<Successor>> get_backward_graph(
 }
 
 CartesianAbstractionGenerator::CartesianAbstractionGenerator(
+    const shared_ptr<AbstractTask> &task,
     const vector<shared_ptr<cartesian_abstractions::SubtaskGenerator>>
         &subtasks,
     int max_states, int max_transitions, double max_time,
@@ -58,7 +59,7 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
     int memory_padding, int random_seed,
     cartesian_abstractions::DotGraphVerbosity dot_graph_verbosity,
     utils::Verbosity verbosity)
-    : AbstractionGenerator(verbosity),
+    : AbstractionGenerator(task, verbosity),
       subtask_generators(subtasks),
       max_states(max_states),
       max_transitions(max_transitions),
@@ -180,8 +181,7 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
 }
 
 class CartesianAbstractionGeneratorFeature
-    : public plugins::TypedFeature<
-          AbstractionGenerator, CartesianAbstractionGenerator> {
+    : public plugins::TypedFeature<TaskIndependentAbstractionGenerator> {
 public:
     CartesianAbstractionGeneratorFeature() : TypedFeature("cartesian") {
         document_title("Cartesian abstraction generator");
@@ -189,14 +189,15 @@ public:
         utils::add_log_options_to_feature(*this);
     }
 
-    virtual shared_ptr<CartesianAbstractionGenerator> create_component(
+    virtual shared_ptr<TaskIndependentAbstractionGenerator> create_component(
         const plugins::Options &opts) const override {
         cartesian_abstractions::g_hacked_sort_transitions =
             opts.get<bool>("sort_transitions");
 
-        return plugins::make_shared_from_arg_tuples<
-            CartesianAbstractionGenerator>(
-            opts.get_list<shared_ptr<cartesian_abstractions::SubtaskGenerator>>(
+        return components::make_auto_task_independent_component<
+            CartesianAbstractionGenerator, AbstractionGenerator>(
+            opts.get_list<shared_ptr<
+                cartesian_abstractions::TaskIndependentSubtaskGenerator>>(
                 "subtasks"),
             opts.get<int>("max_states"), opts.get<int>("max_transitions"),
             opts.get<double>("max_time"),

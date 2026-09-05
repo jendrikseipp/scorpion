@@ -17,6 +17,7 @@ class OrderGeneratorDynamicGreedy : public OrderGenerator {
 
 public:
     OrderGeneratorDynamicGreedy(
+        const std::shared_ptr<AbstractTask> &task,
         ScoringFunction scoring_function, int random_seed);
 
     virtual void initialize(

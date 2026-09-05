@@ -2,6 +2,7 @@
 
 #include "cartesian_heuristic_function.h"
 #include "cost_saturation.h"
+#include "subtask_generators.h"
 #include "types.h"
 #include "utils.h"
 
@@ -16,6 +17,7 @@ using namespace std;
 
 namespace cartesian_abstractions {
 AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
+    const shared_ptr<AbstractTask> &task,
     const vector<shared_ptr<SubtaskGenerator>> &subtasks, int max_states,
     int max_transitions, double max_time,
     PickFlawedAbstractState pick_flawed_abstract_state, PickSplit pick_split,
@@ -23,17 +25,16 @@ AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
     int max_state_expansions,
     TransitionRepresentation transition_representation, int memory_padding,
     int random_seed, DotGraphVerbosity dot_graph_verbosity,
-    bool use_general_costs, const shared_ptr<AbstractTask> &transform,
-    bool cache_estimates, const string &description, utils::Verbosity verbosity)
-    : Heuristic(transform, cache_estimates, description, verbosity) {
+    bool use_general_costs, bool cache_estimates, const string &description,
+    utils::Verbosity verbosity)
+    : Heuristic(task, cache_estimates, description, verbosity) {
     CostSaturation cost_saturation(
         subtasks, max_states, max_transitions, max_time, use_general_costs,
         pick_flawed_abstract_state, pick_split, tiebreak_split,
         max_concrete_states_per_abstract_state, max_state_expansions,
         transition_representation, memory_padding, *utils::get_rng(random_seed),
         log, dot_graph_verbosity);
-    heuristic_functions =
-        cost_saturation.generate_heuristic_functions(transform);
+    heuristic_functions = cost_saturation.generate_heuristic_functions(task);
 }
 
 int AdditiveCartesianHeuristic::compute_heuristic(const State &ancestor_state) {
@@ -51,7 +52,7 @@ int AdditiveCartesianHeuristic::compute_heuristic(const State &ancestor_state) {
 }
 
 class AdditiveCartesianHeuristicFeature
-    : public plugins::TypedFeature<Evaluator, AdditiveCartesianHeuristic> {
+    : public plugins::TypedFeature<TaskIndependentEvaluator> {
 public:
     AdditiveCartesianHeuristicFeature() : TypedFeature("cegar") {
         document_title("Additive Cartesian CEGAR heuristic");
@@ -115,11 +116,13 @@ public:
         document_property("preferred operators", "no");
     }
 
-    virtual shared_ptr<AdditiveCartesianHeuristic> create_component(
+    virtual shared_ptr<TaskIndependentEvaluator> create_component(
         const plugins::Options &opts) const override {
         g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
-        return plugins::make_shared_from_arg_tuples<AdditiveCartesianHeuristic>(
-            opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks"),
+        return components::make_auto_task_independent_component<
+            AdditiveCartesianHeuristic, Evaluator>(
+            opts.get_list<shared_ptr<TaskIndependentSubtaskGenerator>>(
+                "subtasks"),
             opts.get<int>("max_states"), opts.get<int>("max_transitions"),
             opts.get<double>("max_time"),
             opts.get<PickFlawedAbstractState>("pick_flawed_abstract_state"),

@@ -14,10 +14,13 @@ using namespace std;
 
 namespace operator_counting {
 PhOAbstractionConstraints::PhOAbstractionConstraints(
+    const shared_ptr<AbstractTask> &task,
     const vector<shared_ptr<cost_saturation::AbstractionGenerator>>
         &abstraction_generators,
     bool saturated)
-    : abstraction_generators(abstraction_generators), saturated(saturated) {
+    : ConstraintGenerator(task),
+      abstraction_generators(abstraction_generators),
+      saturated(saturated) {
 }
 
 void PhOAbstractionConstraints::initialize_constraints(
@@ -39,7 +42,8 @@ void PhOAbstractionConstraints::initialize_constraints(
         useless_operators.resize(num_ops, false);
         for (auto &abstraction : abstractions) {
             // Add constraint \sum_{o} Y_o * scf_h(o) >= 0.
-            lp::LPConstraint constraint(0, lp.get_infinity());
+            lp::LPConstraint constraint(
+                lp::LPConstraintSense::GREATER_EQUAL, 0);
             vector<int> h_values =
                 abstraction->compute_goal_distances(operator_costs);
             vector<int> saturated_costs =
@@ -64,7 +68,8 @@ void PhOAbstractionConstraints::initialize_constraints(
         }
     } else {
         for (auto &abstraction : abstractions) {
-            lp::LPConstraint constraint(0, lp.get_infinity());
+            lp::LPConstraint constraint(
+                lp::LPConstraintSense::GREATER_EQUAL, 0);
             for (int op_id = 0; op_id < num_ops; ++op_id) {
                 if (abstraction->operator_is_active(op_id)) {
                     constraint.insert(op_id, operator_costs[op_id]);
@@ -115,23 +120,22 @@ bool PhOAbstractionConstraints::update_constraints(
             return true;
         }
         if (constraint_ids_by_abstraction[i] != -1) {
-            lp_solver.set_constraint_lower_bound(
-                constraint_ids_by_abstraction[i], h);
+            lp_solver.set_constraint_rhs(constraint_ids_by_abstraction[i], h);
         }
     }
     return false;
 }
 
 class PhOAbstractionConstraintsFeature
-    : public plugins::TypedFeature<
-          ConstraintGenerator, PhOAbstractionConstraints> {
+    : public plugins::TypedFeature<TaskIndependentConstraintGenerator> {
 public:
     PhOAbstractionConstraintsFeature()
         : TypedFeature("pho_abstraction_constraints") {
         document_title(
             "(Saturated) posthoc optimization constraints for abstractions");
 
-        add_list_option<shared_ptr<cost_saturation::AbstractionGenerator>>(
+        add_list_option<
+            shared_ptr<cost_saturation::TaskIndependentAbstractionGenerator>>(
             "abstractions", "abstraction generation methods",
             plugins::ArgumentInfo::NO_DEFAULT);
         add_option<bool>(
@@ -140,10 +144,12 @@ public:
             "true");
     }
 
-    virtual shared_ptr<PhOAbstractionConstraints> create_component(
+    virtual shared_ptr<TaskIndependentConstraintGenerator> create_component(
         const plugins::Options &options) const override {
-        return plugins::make_shared_from_arg_tuples<PhOAbstractionConstraints>(
-            options.get_list<shared_ptr<cost_saturation::AbstractionGenerator>>(
+        return components::make_auto_task_independent_component<
+            PhOAbstractionConstraints, ConstraintGenerator>(
+            options.get_list<shared_ptr<
+                cost_saturation::TaskIndependentAbstractionGenerator>>(
                 "abstractions"),
             options.get<bool>("saturated"));
     }

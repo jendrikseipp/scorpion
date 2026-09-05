@@ -22,6 +22,7 @@ class PhOAbstractionConstraints : public ConstraintGenerator {
     std::vector<bool> useless_operators;
 public:
     PhOAbstractionConstraints(
+        const std::shared_ptr<AbstractTask> &task,
         const std::vector<
             std::shared_ptr<cost_saturation::AbstractionGenerator>>
             &abstraction_generators,

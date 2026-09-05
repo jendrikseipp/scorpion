@@ -17,6 +17,7 @@ class ProjectionGenerator : public AbstractionGenerator {
 
 public:
     ProjectionGenerator(
+        const std::shared_ptr<AbstractTask> &task,
         const std::shared_ptr<pdbs::PatternCollectionGenerator> &patterns,
         bool dominance_pruning, bool combine_labels,
         TransitionSystemType transition_type, utils::Verbosity verbosity);

@@ -16,7 +16,9 @@ class OrderGeneratorGreedy : public OrderGenerator {
         const std::vector<int> &abstract_state_ids, int abs_id) const;
 
 public:
-    OrderGeneratorGreedy(ScoringFunction scoring_function, int random_seed);
+    OrderGeneratorGreedy(
+        const std::shared_ptr<AbstractTask> &task,
+        ScoringFunction scoring_function, int random_seed);
 
     virtual void initialize(
         const Abstractions &abstractions,

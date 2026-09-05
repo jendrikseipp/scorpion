@@ -25,8 +25,11 @@ protected:
 
 public:
     IterativeWidthSearch(
-        int width, OperatorCost cost_type, int bound, double max_time,
+        const std::shared_ptr<AbstractTask> &task, int width,
+        OperatorCost cost_type, int bound, double max_time,
         const std::string &description, utils::Verbosity verbosity);
+
+    virtual bool is_complete_within_bound() const override;
 
     virtual void print_statistics() const override;
 

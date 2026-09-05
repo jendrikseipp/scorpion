@@ -106,7 +106,7 @@ static unique_ptr<PatternCollection> get_patterns(
     PatternType pattern_type, const utils::CountdownTimer &timer) {
     utils::g_log << "Generate patterns for size " << pattern_size << endl;
     PatternCollectionGeneratorSystematic generator(
-        pattern_size, pattern_type, utils::Verbosity::NORMAL);
+        task, pattern_size, pattern_type, utils::Verbosity::NORMAL);
     unique_ptr<PatternCollection> patterns_ptr =
         make_unique<PatternCollection>();
     PatternCollection &patterns = *patterns_ptr;
@@ -262,14 +262,15 @@ public:
 
 PatternCollectionGeneratorSystematicSCP::
     PatternCollectionGeneratorSystematicSCP(
-        int max_pattern_size, int max_pdb_size, int max_collection_size,
-        int max_patterns, double max_time, double max_time_per_restart,
+        const shared_ptr<AbstractTask> &task, int max_pattern_size,
+        int max_pdb_size, int max_collection_size, int max_patterns,
+        double max_time, double max_time_per_restart,
         int max_evaluations_per_restart, int max_total_evaluations,
         bool saturate, cost_saturation::TransitionSystemType transition_type,
         PatternType pattern_type, bool ignore_useless_patterns,
         bool store_dead_ends, PatternOrder order, int random_seed,
         utils::Verbosity verbosity)
-    : PatternCollectionGenerator(verbosity),
+    : PatternCollectionGenerator(task, verbosity),
       max_pattern_size(max_pattern_size),
       max_pdb_size(max_pdb_size),
       max_collection_size(max_collection_size),
@@ -549,8 +550,7 @@ PatternCollectionGeneratorSystematicSCP::compute_patterns(
 }
 
 class PatternCollectionGeneratorSystematicSCPFeature
-    : public plugins::TypedFeature<
-          PatternCollectionGenerator, PatternCollectionGeneratorSystematicSCP> {
+    : public plugins::TypedFeature<TaskIndependentPatternCollectionGenerator> {
 public:
     PatternCollectionGeneratorSystematicSCPFeature() : TypedFeature("sys_scp") {
         document_title("Sys-SCP patterns");
@@ -615,10 +615,11 @@ public:
         add_generator_options_to_feature(*this);
     }
 
-    virtual shared_ptr<PatternCollectionGeneratorSystematicSCP>
+    virtual shared_ptr<TaskIndependentPatternCollectionGenerator>
     create_component(const plugins::Options &opts) const override {
-        return plugins::make_shared_from_arg_tuples<
-            PatternCollectionGeneratorSystematicSCP>(
+        return components::make_auto_task_independent_component<
+            PatternCollectionGeneratorSystematicSCP,
+            PatternCollectionGenerator>(
             opts.get<int>("max_pattern_size"), opts.get<int>("max_pdb_size"),
             opts.get<int>("max_collection_size"), opts.get<int>("max_patterns"),
             opts.get<double>("max_time"),

@@ -82,8 +82,9 @@ class PatternCollectionGeneratorSystematicSCP
         const std::shared_ptr<AbstractTask> &task) override;
 public:
     PatternCollectionGeneratorSystematicSCP(
-        int max_pattern_size, int max_pdb_size, int max_collection_size,
-        int max_patterns, double max_time, double max_time_per_restart,
+        const std::shared_ptr<AbstractTask> &task, int max_pattern_size,
+        int max_pdb_size, int max_collection_size, int max_patterns,
+        double max_time, double max_time_per_restart,
         int max_evaluations_per_restart, int max_total_evaluations,
         bool saturate, cost_saturation::TransitionSystemType transition_type,
         PatternType pattern_type, bool ignore_useless_patterns,

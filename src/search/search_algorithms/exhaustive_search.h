@@ -15,7 +15,9 @@ protected:
     virtual SearchStatus step() override;
 
 public:
-    ExhaustiveSearch();
+    explicit ExhaustiveSearch(const std::shared_ptr<AbstractTask> &task);
+
+    virtual bool is_complete_within_bound() const override;
 
     virtual void print_statistics() const override;
 };

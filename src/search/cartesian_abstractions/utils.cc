@@ -4,6 +4,7 @@
 #include "abstraction.h"
 #include "flaw_search.h"
 #include "split_selector.h"
+#include "subtask_generators.h"
 #include "transition.h"
 #include "transition_system.h"
 
@@ -183,7 +184,7 @@ void write_to_file(const string &file_name, const string &content) {
 }
 
 void add_common_cegar_options(plugins::Feature &feature) {
-    feature.add_list_option<shared_ptr<SubtaskGenerator>>(
+    feature.add_list_option<shared_ptr<TaskIndependentSubtaskGenerator>>(
         "subtasks", "subtask generators",
         "[landmarks(order=random), goals(order=random)]");
     feature.add_option<int>(

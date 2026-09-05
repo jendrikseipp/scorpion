@@ -31,6 +31,7 @@ class UnsolvabilityHeuristic {
     std::vector<UnsolvabilityInfo> unsolvability_infos;
 
 public:
+    UnsolvabilityHeuristic() = default;
     UnsolvabilityHeuristic(
         const Abstractions &abstractions, CPHeuristics &cp_heuristics);
 

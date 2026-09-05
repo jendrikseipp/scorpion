@@ -6,8 +6,10 @@
 using namespace std;
 
 namespace cost_saturation {
-OrderGenerator::OrderGenerator(int random_seed)
-    : rng(utils::get_rng(random_seed)) {
+OrderGenerator::OrderGenerator(
+    const shared_ptr<AbstractTask> &task, int random_seed)
+    : components::TaskSpecificComponent(task),
+      rng(utils::get_rng(random_seed)) {
 }
 
 void add_order_generator_arguments_to_feature(plugins::Feature &feature) {
@@ -20,7 +22,7 @@ tuple<int> get_order_generator_arguments_from_options(
 }
 
 static class OrderGeneratorCategoryPlugin
-    : public plugins::TypedCategoryPlugin<OrderGenerator> {
+    : public plugins::TypedCategoryPlugin<TaskIndependentOrderGenerator> {
 public:
     OrderGeneratorCategoryPlugin() : TypedCategoryPlugin("OrderGenerator") {
         document_synopsis(

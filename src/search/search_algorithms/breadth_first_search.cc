@@ -16,11 +16,12 @@ using namespace std;
 
 namespace breadth_first_search {
 BreadthFirstSearch::BreadthFirstSearch(
-    bool single_plan, bool write_plan, const shared_ptr<PruningMethod> &pruning,
-    const string &description, utils::Verbosity verbosity)
+    const shared_ptr<AbstractTask> &task, bool single_plan, bool write_plan,
+    const shared_ptr<PruningMethod> &pruning, const string &description,
+    utils::Verbosity verbosity)
     : SearchAlgorithm(
-          ONE, numeric_limits<int>::max(), numeric_limits<double>::infinity(),
-          description, verbosity),
+          task, ONE, numeric_limits<int>::max(),
+          numeric_limits<double>::infinity(), description, verbosity),
       single_plan(single_plan),
       write_plan(write_plan),
       last_plan_cost(-1),
@@ -72,12 +73,11 @@ SearchStatus BreadthFirstSearch::step() {
         if (found_solution()) {
             utils::g_log << "Completely explored state space -- found solution."
                          << endl;
-            return SOLVED;
         } else {
             utils::g_log << "Completely explored state space -- no solution!"
                          << endl;
-            return UNSOLVABLE;
         }
+        return get_finished_search_status();
     }
 
     State s = state_registry.lookup_state(StateID(current_state_id));
@@ -124,8 +124,16 @@ void BreadthFirstSearch::save_plan_if_necessary() {
     // them.
 }
 
+bool BreadthFirstSearch::is_complete_within_bound() const {
+    /*
+      The search exhausts the reachable state space (it ignores the bound), so
+      it only misses plans if the pruning method prunes unsafely.
+    */
+    return pruning_method->is_safe();
+}
+
 class BreadthFirstSearchFeature
-    : public plugins::TypedFeature<SearchAlgorithm, BreadthFirstSearch> {
+    : public plugins::TypedFeature<TaskIndependentSearchAlgorithm> {
 public:
     BreadthFirstSearchFeature() : TypedFeature("brfs") {
         document_title("Breadth-first search");
@@ -138,12 +146,7 @@ public:
             "Store the necessary information during search for writing plans once "
             "they're found.",
             "true");
-        add_option<shared_ptr<PruningMethod>>(
-            "pruning",
-            "Pruning methods can prune or reorder the set of applicable operators in "
-            "each state and thereby influence the number and order of successor states "
-            "that are considered.",
-            "null()");
+        add_search_pruning_options_to_feature(*this);
         add_option<string>(
             "description",
             "description used to identify search algorithm in logs",
@@ -151,11 +154,12 @@ public:
         utils::add_log_options_to_feature(*this);
     }
 
-    virtual shared_ptr<BreadthFirstSearch> create_component(
+    virtual shared_ptr<TaskIndependentSearchAlgorithm> create_component(
         const plugins::Options &options) const override {
-        return plugins::make_shared_from_arg_tuples<BreadthFirstSearch>(
+        return components::make_auto_task_independent_component<
+            BreadthFirstSearch, SearchAlgorithm>(
             options.get<bool>("single_plan"), options.get<bool>("write_plan"),
-            options.get<shared_ptr<PruningMethod>>("pruning"),
+            get_search_pruning_arguments_from_options(options),
             options.get<string>("description"),
             utils::get_log_arguments_from_options(options));
     }

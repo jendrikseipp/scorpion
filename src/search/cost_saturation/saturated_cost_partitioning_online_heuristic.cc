@@ -19,18 +19,17 @@ using namespace std;
 namespace cost_saturation {
 SaturatedCostPartitioningOnlineHeuristic::
     SaturatedCostPartitioningOnlineHeuristic(
+        const shared_ptr<AbstractTask> &task,
+        const vector<shared_ptr<AbstractionGenerator>> &abstraction_generators,
         const shared_ptr<OrderGenerator> &order_generator, Saturator saturator,
-        const CPFunction &cp_function, Abstractions &&abstractions_,
-        unique_ptr<DeadEnds> &&dead_ends_, const int interval,
-        const double max_time, const int max_size_kb, const bool debug,
-        const shared_ptr<AbstractTask> &transform, bool cache_estimates,
-        const string &description, utils::Verbosity verbosity)
-    : Heuristic(transform, cache_estimates, description, verbosity),
+        const int interval, const double max_time, const int max_size_kb,
+        const bool debug, bool cache_estimates, const string &description,
+        utils::Verbosity verbosity)
+    : Heuristic(task, cache_estimates, description, verbosity),
       order_generator(order_generator),
       saturator(saturator),
-      cp_function(cp_function),
-      abstractions(move(abstractions_)),
-      dead_ends(move(dead_ends_)),
+      cp_function(get_cp_function(saturator)),
+      dead_ends(make_unique<DeadEnds>()),
       interval(interval),
       max_time(max_time),
       max_size_kb(max_size_kb),
@@ -40,6 +39,8 @@ SaturatedCostPartitioningOnlineHeuristic::
       size_kb(0),
       num_evaluated_states(0),
       num_scps_computed(0) {
+    abstractions =
+        generate_abstractions(task, abstraction_generators, dead_ends.get());
     order_generator->initialize(abstractions, costs);
     for (const auto &cp : cp_heuristics) {
         size_kb += cp.estimate_size_in_kb();
@@ -181,8 +182,7 @@ void SaturatedCostPartitioningOnlineHeuristic::print_final_statistics() const {
 }
 
 class SaturatedCostPartitioningOnlineHeuristicFeature
-    : public plugins::TypedFeature<
-          Evaluator, SaturatedCostPartitioningOnlineHeuristic> {
+    : public plugins::TypedFeature<TaskIndependentEvaluator> {
 public:
     SaturatedCostPartitioningOnlineHeuristicFeature()
         : TypedFeature("scp_online") {
@@ -204,7 +204,7 @@ public:
             *this, "scp_online", consistent);
         add_saturator_option(*this);
 
-        add_option<shared_ptr<OrderGenerator>>(
+        add_option<shared_ptr<TaskIndependentOrderGenerator>>(
             "orders", "order generator", "greedy_orders()");
         add_option<int>(
             "max_size", "maximum (estimated) heuristic size in KiB", "infinity",
@@ -220,22 +220,13 @@ public:
         utils::add_rng_options_to_feature(*this);
     }
 
-    virtual shared_ptr<SaturatedCostPartitioningOnlineHeuristic>
-    create_component(const plugins::Options &options) const override {
-        shared_ptr<AbstractTask> task =
-            options.get<shared_ptr<AbstractTask>>("transform");
-        unique_ptr<DeadEnds> dead_ends = make_unique<DeadEnds>();
-        Abstractions abstractions = generate_abstractions(
-            task,
-            options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),
-            dead_ends.get());
-
-        return plugins::make_shared_from_arg_tuples<
-            SaturatedCostPartitioningOnlineHeuristic>(
-            options.get<shared_ptr<OrderGenerator>>("orders"),
-            options.get<Saturator>("saturator"),
-            get_cp_function_from_options(options), move(abstractions),
-            move(dead_ends), options.get<int>("interval"),
+    virtual shared_ptr<TaskIndependentEvaluator> create_component(
+        const plugins::Options &options) const override {
+        return components::make_auto_task_independent_component<
+            SaturatedCostPartitioningOnlineHeuristic, Evaluator>(
+            get_abstraction_generator_list_from_options(options),
+            options.get<shared_ptr<TaskIndependentOrderGenerator>>("orders"),
+            options.get<Saturator>("saturator"), options.get<int>("interval"),
             options.get<double>("max_time"), options.get<int>("max_size"),
             options.get<bool>("debug"),
             get_heuristic_arguments_from_options(options));

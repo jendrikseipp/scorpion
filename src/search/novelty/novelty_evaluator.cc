@@ -11,12 +11,30 @@
 using namespace std;
 
 namespace novelty {
+/*
+  Computing the novelty of width-2 conjunctions is too expensive for tasks with
+  many variables, so we fall back to width 1 for them. We can only make this
+  decision once the task is known, i.e., not while parsing the options.
+*/
+static int get_effective_width(
+    const shared_ptr<AbstractTask> &task, int width,
+    int max_variables_for_width2) {
+    int num_vars = TaskProxy(*task).get_variables().size();
+    if (width > 1 && num_vars > max_variables_for_width2) {
+        utils::g_log << "Number of variables exceeds limit "
+                     << " --> use width=1" << endl;
+        return 1;
+    }
+    return width;
+}
+
 NoveltyEvaluator::NoveltyEvaluator(
-    int width, const vector<shared_ptr<Evaluator>> &evals,
-    bool consider_only_novel_states, const shared_ptr<AbstractTask> &transform,
-    bool cache_estimates, const string &description, utils::Verbosity verbosity)
-    : Heuristic(transform, cache_estimates, description, verbosity),
-      width(width),
+    const shared_ptr<AbstractTask> &task, int width,
+    int max_variables_for_width2, const vector<shared_ptr<Evaluator>> &evals,
+    bool consider_only_novel_states, bool cache_estimates,
+    const string &description, utils::Verbosity verbosity)
+    : Heuristic(task, cache_estimates, description, verbosity),
+      width(get_effective_width(task, width, max_variables_for_width2)),
       consider_only_novel_states(consider_only_novel_states),
       evals(evals),
       task_info(task_proxy),
@@ -99,7 +117,7 @@ void NoveltyEvaluator::notify_state_transition(
     }
 }
 
-bool NoveltyEvaluator::dead_ends_are_reliable() const {
+bool NoveltyEvaluator::is_safe() const {
     return false;
 }
 
@@ -108,7 +126,7 @@ int NoveltyEvaluator::compute_heuristic(const State &) {
 }
 
 class NoveltyEvaluatorFeature
-    : public plugins::TypedFeature<Evaluator, NoveltyEvaluator> {
+    : public plugins::TypedFeature<TaskIndependentEvaluator> {
 public:
     NoveltyEvaluatorFeature() : TypedFeature("novelty") {
         document_title("Novelty evaluator");
@@ -136,7 +154,7 @@ public:
         add_option<int>(
             "width", "maximum conjunction size", "2",
             plugins::Bounds("1", "2"));
-        add_list_option<shared_ptr<Evaluator>>(
+        add_list_option<shared_ptr<TaskIndependentEvaluator>>(
             "evals", "evaluators", "[const()]");
         add_option<bool>(
             "consider_only_novel_states", "assign infinity to non-novel states",
@@ -158,20 +176,12 @@ public:
         document_property("preferred operators", "no");
     }
 
-    virtual shared_ptr<NoveltyEvaluator> create_component(
+    virtual shared_ptr<TaskIndependentEvaluator> create_component(
         const plugins::Options &opts) const override {
-        int width = opts.get<int>("width");
-        int num_vars =
-            TaskProxy(*opts.get<shared_ptr<AbstractTask>>("transform"))
-                .get_variables()
-                .size();
-        if (num_vars > opts.get<int>("max_variables_for_width2")) {
-            utils::g_log << "Number of variables exceeds limit "
-                         << " --> use width=1" << endl;
-            width = 1;
-        }
-        return plugins::make_shared_from_arg_tuples<NoveltyEvaluator>(
-            width, opts.get_list<shared_ptr<Evaluator>>("evals"),
+        return components::make_auto_task_independent_component<
+            NoveltyEvaluator, Evaluator>(
+            opts.get<int>("width"), opts.get<int>("max_variables_for_width2"),
+            opts.get_list<shared_ptr<TaskIndependentEvaluator>>("evals"),
             opts.get<bool>("consider_only_novel_states"),
             get_heuristic_arguments_from_options(opts));
     }

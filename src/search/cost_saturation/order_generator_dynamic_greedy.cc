@@ -14,8 +14,9 @@ using namespace std;
 
 namespace cost_saturation {
 OrderGeneratorDynamicGreedy::OrderGeneratorDynamicGreedy(
-    ScoringFunction scoring_function, int random_seed)
-    : OrderGenerator(random_seed),
+    const shared_ptr<AbstractTask> &task, ScoringFunction scoring_function,
+    int random_seed)
+    : OrderGenerator(task, random_seed),
       scoring_function(scoring_function),
       abstractions(nullptr),
       costs(nullptr) {
@@ -99,8 +100,7 @@ Order OrderGeneratorDynamicGreedy::compute_order_for_state(
 }
 
 class OrderGeneratorDynamicGreedyFeature
-    : public plugins::TypedFeature<
-          OrderGenerator, OrderGeneratorDynamicGreedy> {
+    : public plugins::TypedFeature<TaskIndependentOrderGenerator> {
 public:
     OrderGeneratorDynamicGreedyFeature()
         : TypedFeature("dynamic_greedy_orders") {
@@ -112,10 +112,10 @@ public:
         add_order_generator_arguments_to_feature(*this);
     }
 
-    virtual shared_ptr<OrderGeneratorDynamicGreedy> create_component(
+    virtual shared_ptr<TaskIndependentOrderGenerator> create_component(
         const plugins::Options &options) const override {
-        return plugins::make_shared_from_arg_tuples<
-            OrderGeneratorDynamicGreedy>(
+        return components::make_auto_task_independent_component<
+            OrderGeneratorDynamicGreedy, OrderGenerator>(
             options.get<ScoringFunction>("scoring_function"),
             get_order_generator_arguments_from_options(options));
     }

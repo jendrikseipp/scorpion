@@ -25,6 +25,7 @@ protected:
 
 public:
     AdditiveCartesianHeuristic(
+        const std::shared_ptr<AbstractTask> &task,
         const std::vector<std::shared_ptr<SubtaskGenerator>> &subtasks,
         int max_states, int max_transitions, double max_time,
         PickFlawedAbstractState pick_flawed_abstract_state,
@@ -32,9 +33,8 @@ public:
         int max_concrete_states_per_abstract_state, int max_state_expansions,
         TransitionRepresentation transition_representation, int memory_padding,
         int random_seed, DotGraphVerbosity dot_graph_verbosity,
-        bool use_general_costs, const std::shared_ptr<AbstractTask> &transform,
-        bool cache_estimates, const std::string &description,
-        utils::Verbosity verbosity);
+        bool use_general_costs, bool cache_estimates,
+        const std::string &description, utils::Verbosity verbosity);
 };
 }
 

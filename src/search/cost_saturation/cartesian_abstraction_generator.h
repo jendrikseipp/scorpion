@@ -50,6 +50,7 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
 
 public:
     CartesianAbstractionGenerator(
+        const std::shared_ptr<AbstractTask> &task,
         const std::vector<
             std::shared_ptr<cartesian_abstractions::SubtaskGenerator>>
             &subtasks,

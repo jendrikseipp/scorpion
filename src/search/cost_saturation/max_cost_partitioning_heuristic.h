@@ -30,12 +30,21 @@ class MaxCostPartitioningHeuristic : public Heuristic {
 protected:
     virtual int compute_heuristic(const State &ancestor_state) override;
 
-public:
-    MaxCostPartitioningHeuristic(
+    /*
+      Store the given abstractions and cost partitioning heuristics.
+
+      Computing them requires the task, which is only available once the base
+      class has been constructed. Derived classes therefore call this from
+      their constructor body rather than passing the data to our constructor.
+    */
+    void set_cost_partitionings(
         Abstractions &&abstractions,
         std::vector<CostPartitioningHeuristic> &&cp_heuristics,
-        std::unique_ptr<DeadEnds> &&dead_ends,
-        const std::shared_ptr<AbstractTask> &transform, bool cache_estimates,
+        std::unique_ptr<DeadEnds> &&dead_ends);
+
+public:
+    MaxCostPartitioningHeuristic(
+        const std::shared_ptr<AbstractTask> &task, bool cache_estimates,
         const std::string &description, utils::Verbosity verbosity);
     virtual ~MaxCostPartitioningHeuristic() override;
 };

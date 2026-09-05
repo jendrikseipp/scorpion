@@ -14,9 +14,10 @@ namespace depth_first_search {
 static const int INF = numeric_limits<int>::max();
 
 DepthFirstSearch::DepthFirstSearch(
-    bool single_plan, OperatorCost cost_type, int bound, double max_time,
+    const shared_ptr<AbstractTask> &task, bool single_plan,
+    OperatorCost cost_type, int bound, double max_time,
     const string &description, utils::Verbosity verbosity)
-    : SearchAlgorithm(cost_type, bound, max_time, description, verbosity),
+    : SearchAlgorithm(task, cost_type, bound, max_time, description, verbosity),
       single_plan(single_plan),
       max_depth(0),
       cheapest_plan_cost(INF) {
@@ -98,10 +99,7 @@ SearchStatus DepthFirstSearch::step() {
     assert(check_invariants());
     recursive_search(node);
     assert(check_invariants());
-    if (found_solution()) {
-        return SOLVED;
-    }
-    return FAILED;
+    return get_finished_search_status();
 }
 
 void DepthFirstSearch::save_plan_if_necessary() {
@@ -109,9 +107,16 @@ void DepthFirstSearch::save_plan_if_necessary() {
     // them.
 }
 
+bool DepthFirstSearch::is_complete_within_bound() const {
+    /*
+      The search enumerates all simple paths within the bound, so it finds a
+      cheapest plan if one exists.
+    */
+    return true;
+}
+
 class DepthFirstSearchFeature
-    : public plugins::TypedFeature<
-          SearchAlgorithm, depth_first_search::DepthFirstSearch> {
+    : public plugins::TypedFeature<TaskIndependentSearchAlgorithm> {
 public:
     DepthFirstSearchFeature() : TypedFeature("dfs") {
         document_title("Depth-first search");
@@ -124,9 +129,10 @@ public:
         add_search_algorithm_options_to_feature(*this, "dfs");
     }
 
-    virtual shared_ptr<DepthFirstSearch> create_component(
+    virtual shared_ptr<TaskIndependentSearchAlgorithm> create_component(
         const plugins::Options &options) const override {
-        return plugins::make_shared_from_arg_tuples<DepthFirstSearch>(
+        return components::make_auto_task_independent_component<
+            DepthFirstSearch, SearchAlgorithm>(
             options.get<bool>("single_plan"),
             get_search_algorithm_arguments_from_options(options));
     }

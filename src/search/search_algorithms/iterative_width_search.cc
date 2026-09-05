@@ -10,9 +10,10 @@ using namespace std;
 
 namespace iterative_width_search {
 IterativeWidthSearch::IterativeWidthSearch(
-    int width, OperatorCost cost_type, int bound, double max_time,
-    const string &description, utils::Verbosity verbosity)
-    : SearchAlgorithm(cost_type, bound, max_time, description, verbosity),
+    const shared_ptr<AbstractTask> &task, int width, OperatorCost cost_type,
+    int bound, double max_time, const string &description,
+    utils::Verbosity verbosity)
+    : SearchAlgorithm(task, cost_type, bound, max_time, description, verbosity),
       task_info(task_proxy),
       novelty_table(width, task_info) {
     utils::g_log << "Setting up iterative width search." << endl;
@@ -43,6 +44,11 @@ bool IterativeWidthSearch::is_novel(
     succ_state.unpack();
     return novelty_table.compute_novelty_and_update_table(
                parent_state, op.get_id(), succ_state) < 3;
+}
+
+bool IterativeWidthSearch::is_complete_within_bound() const {
+    /* Novelty pruning is not safe: it may prune all plans. */
+    return false;
 }
 
 void IterativeWidthSearch::print_statistics() const {
@@ -100,8 +106,7 @@ void IterativeWidthSearch::dump_search_space() const {
 }
 
 class IterativeWidthSearchFeature
-    : public plugins::TypedFeature<
-          SearchAlgorithm, iterative_width_search::IterativeWidthSearch> {
+    : public plugins::TypedFeature<TaskIndependentSearchAlgorithm> {
 public:
     IterativeWidthSearchFeature() : TypedFeature("iw") {
         document_title("Iterated width search");
@@ -111,9 +116,10 @@ public:
         add_search_algorithm_options_to_feature(*this, "iw");
     }
 
-    virtual shared_ptr<IterativeWidthSearch> create_component(
+    virtual shared_ptr<TaskIndependentSearchAlgorithm> create_component(
         const plugins::Options &options) const override {
-        return plugins::make_shared_from_arg_tuples<IterativeWidthSearch>(
+        return components::make_auto_task_independent_component<
+            IterativeWidthSearch, SearchAlgorithm>(
             options.get<int>("width"),
             get_search_algorithm_arguments_from_options(options));
     }

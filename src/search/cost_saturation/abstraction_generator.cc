@@ -5,8 +5,10 @@
 using namespace std;
 
 namespace cost_saturation {
-AbstractionGenerator::AbstractionGenerator(utils::Verbosity verbosity)
-    : log(utils::get_log_for_verbosity(verbosity)) {
+AbstractionGenerator::AbstractionGenerator(
+    const shared_ptr<AbstractTask> &task, utils::Verbosity verbosity)
+    : components::TaskSpecificComponent(task),
+      log(utils::get_log_for_verbosity(verbosity)) {
 }
 
 void add_abstraction_generator_arguments_to_feature(plugins::Feature &feature) {
@@ -19,7 +21,7 @@ tuple<utils::Verbosity> get_abstraction_generator_arguments_from_options(
 }
 
 static class AbstractionGeneratorCategoryPlugin
-    : public plugins::TypedCategoryPlugin<AbstractionGenerator> {
+    : public plugins::TypedCategoryPlugin<TaskIndependentAbstractionGenerator> {
 public:
     AbstractionGeneratorCategoryPlugin()
         : TypedCategoryPlugin("AbstractionGenerator") {
