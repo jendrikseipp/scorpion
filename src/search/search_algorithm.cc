@@ -103,8 +103,12 @@ void SearchAlgorithm::search() {
     initialize();
     utils::CountdownTimer timer(max_time);
     if (bound == 0) {
+        /*
+          No plan can have a cost below the exclusive bound 0, so a complete
+          algorithm has proven that there is no plan within the bound.
+        */
         log << "Initial state is pruned because the g-bound is 0." << endl;
-        status = FAILED;
+        status = get_finished_search_status();
     } else {
         while (status == IN_PROGRESS) {
             status = step();

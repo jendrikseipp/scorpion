@@ -148,6 +148,12 @@ SEARCH_TESTS = [
         defaultdict(lambda: returncodes.SEARCH_UNSOLVABLE)),
     ("unsolvable", [], "astar(blind(),bound=2)",
         defaultdict(lambda: returncodes.SEARCH_UNSOLVABLE_WITHIN_BOUND)),
+    # With bound 0, no plan can be within the bound, so a complete algorithm
+    # reports this even for a solvable task, while incomplete ones just fail.
+    ("strips", [], "astar(blind(),bound=0)",
+        defaultdict(lambda: returncodes.SEARCH_UNSOLVABLE_WITHIN_BOUND)),
+    ("strips", [], "iw(bound=0)",
+        defaultdict(lambda: returncodes.SEARCH_UNSOLVED_INCOMPLETE)),
     ("unsolvable", [], "ehc(blind())",
         defaultdict(lambda: returncodes.SEARCH_UNSOLVED_INCOMPLETE)),
     ("unsolvable", [], "eager(single(blind(),pref_only=true))",
