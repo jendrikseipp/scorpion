@@ -14,10 +14,12 @@ Every task is checked under each translator option configuration that changes
 output.sas (--relaxed, --full-encoding, --add-implied-preconditions,
 --keep-unreachable-facts, --skip-variable-reordering,
 --keep-unimportant-variables, --keep-no-ops, --keep-duplicate-operators,
---layer-strategy max, and disabled invariants), so the two variants must agree
-on every option path, not just the defaults. Options that do not affect
-output.sas and the wall-clock-dependent --invariant-generation-max-time are
-excluded (see CONFIGS).
+--layer-strategy max, --condition-normalization-strategy, and disabled
+invariants), so the two variants must agree on every option path, not just the
+defaults. Options that do not affect output.sas and the wall-clock-dependent
+--invariant-generation-max-time are excluded (see CONFIGS); the options that
+only write extra files (--dump-predicates, --dump-static-atoms) are compared by
+test-translator-options.py instead.
 
 This checks only py-vs-cpp equivalence. Determinism of each translator is
 checked separately by test-translator.py (pass --translator cpp for the C++
@@ -103,7 +105,8 @@ OPTION_TASKS = [
 # config with both variants and the outputs compared. Options that do not
 # affect output.sas (--sas-file, --dump-*, --stop-after-parsing-pddl) and the
 # non-deterministic --invariant-generation-max-time (its effect depends on wall
-# clock, which differs between the variants) are intentionally excluded.
+# clock, which differs between the variants) are intentionally excluded;
+# test-translator-options.py checks the --dump-* files separately.
 #
 # (label, [translator options]).
 CONFIGS = [
@@ -117,6 +120,12 @@ CONFIGS = [
     ("keep-no-ops", ["--keep-no-ops"]),
     ("keep-duplicate-operators", ["--keep-duplicate-operators"]),
     ("layer-strategy=max", ["--layer-strategy", "max"]),
+    # "dnf" is the default and thus already covered by the "default" config.
+    ("axiomatize-disjunctions",
+     ["--condition-normalization-strategy", "axiomatize_disjunctions"]),
+    ("axiomatize-disjunctions-existentials",
+     ["--condition-normalization-strategy",
+      "axiomatize_disjunctions_existentials"]),
     ("no-invariants", ["--invariant-generation-max-candidates", "0"]),
 ]
 

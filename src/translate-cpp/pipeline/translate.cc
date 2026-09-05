@@ -13,9 +13,11 @@
 #include "../sas/sas_task.h"
 #include "../simplify/simplify.h"
 #include "../simplify/variable_order.h"
+#include "../utils/system.h"
 #include "../utils/timer.h"
 
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -810,6 +812,51 @@ void sort_operators_canonically(vector<SASOperator> &operators) {
 }
 }
 
+/*
+  Dump static atoms belonging to non-static predicates (--dump-static-atoms).
+
+  A predicate is static if all its groundings are static. Static atoms of
+  static predicates are dumped by instantiate::dump_static_atoms(). There are
+  also predicates where only a subset of their groundings are static and we
+  dump those static atoms here. Examples for such static atoms:
+    Blocksworld: on(b1,b1), on(b2,b2), etc.
+    Sokoban: clear(x) for cells x that are outside the wall
+    Spanner: at(nut1, gate), etc.
+    Visitall: visited(x) for start location x
+
+  We do not dump static atoms that are always false, such as the Blocksworld
+  atoms above. Mirrors main.append_static_atoms in the Python translator.
+*/
+static void append_static_atoms(
+    const Task &task, const SASTask &sas_task,
+    const vector<shared_ptr<const Atom>> &fluent_facts) {
+    set<string> sas_atoms;
+    for (const auto &values : sas_task.variables.value_names)
+        for (const auto &value : values)
+            sas_atoms.insert(value);
+    set<string> init_atoms;
+    for (const auto &element : task.init)
+        if (holds_alternative<shared_ptr<const Atom>>(element))
+            init_atoms.insert(get<shared_ptr<const Atom>>(element)->str());
+
+    ofstream out(instantiate::STATIC_ATOMS_FILE, ios::app);
+    if (!out)
+        utils::exit_with(
+            utils::ExitCode::TRANSLATE_CRITICAL_ERROR,
+            "Could not open output file: " +
+                string(instantiate::STATIC_ATOMS_FILE));
+    /*
+      Iterating over fact_by_id (rather than the fluent-fact hash set) keeps
+      the output order deterministic; the Python translator iterates over a
+      set here, so its order is not reproducible in the first place.
+    */
+    for (const auto &atom : fluent_facts) {
+        string name = atom->str();
+        if (!sas_atoms.contains(name) && init_atoms.contains(name))
+            instantiate::print_atom(out, name);
+    }
+}
+
 SASTask pddl_to_sas(Task &task) {
     // Label each phase with the Python translator's wording and print
     // the "[%.3fs CPU, %.3fs wall-clock]" suffix so Lab's stock
@@ -830,6 +877,8 @@ SASTask pddl_to_sas(Task &task) {
     });
     auto model = phase(
         "Computing model", [&] { return grounding::compute_model(prog); });
+    if (get_options().dump_static_atoms)
+        instantiate::dump_static_atoms(task, model);
     auto inst = phase("Completing instantiation", [&] {
         return instantiate::instantiate(task, model, prog.predicate_roles);
     });
@@ -973,6 +1022,8 @@ SASTask pddl_to_sas(Task &task) {
     // Axioms are emitted in canonical (condition, effect) order by
     // SASTask::output (post-remap), matching the Python translator's final
     // axiom sort.
+    if (get_options().dump_static_atoms)
+        append_static_atoms(task, sas_task, inst.fact_by_id);
     return sas_task;
 }
 }

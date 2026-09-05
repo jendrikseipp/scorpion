@@ -24,6 +24,20 @@ def add_type_predicates(types):
             result.append("Atom %s(%s)" % (k, obj))
     return result
 
+def collect_predicates(condition, result):
+    """Add the predicates of all literals in condition to result.
+
+    Normalized preconditions are conjunctions of literals, single literals or
+    truth values, but a precondition can also be a negated literal (e.g. the
+    derived predicate that replaces a universal condition), so we recurse
+    instead of assuming a fixed shape.
+    """
+    if isinstance(condition, pddl.Literal):
+        result.add(condition.predicate)
+    else:
+        for part in condition.parts:
+            collect_predicates(part, result)
+
 def dump_static_atoms(task, model):
     """Dump all atoms belonging to static predicates.
 
@@ -37,12 +51,7 @@ def dump_static_atoms(task, model):
         for effect in action.effects:
             fluent_predicates.add(effect.literal.predicate)
             all_predicates.add(effect.literal.predicate)
-        if isinstance(action.precondition, pddl.Conjunction):
-            for precond in action.precondition.parts:
-                all_predicates.add(precond.predicate)
-        else:
-            assert isinstance(action.precondition, pddl.Atom)
-            all_predicates.add(action.precondition.predicate)
+        collect_predicates(action.precondition, all_predicates)
     for axiom in task.axioms:
         fluent_predicates.add(axiom.name)
     types = get_objects_by_type(task.objects, task.types)

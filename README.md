@@ -143,9 +143,12 @@ https://github.com/jendrikseipp/scorpion/compare/main...scorpion
 
 - Scorpion ships a C++ port of the translator that produces the same output as
   the Python translator but runs much faster. The Python translator is used by
-  default; pass `--translator cpp` to use the C++ port.
+  default; pass `--translator cpp` to use the C++ port. Both translators
+  support the same options.
 - Use `--dump-predicates` and `--dump-static-atoms` to write files with
   information that's useful for learning domain control knowledge.
+- Use `--stop-after-parsing-pddl` to only parse the PDDL files (PDDL linting
+  mode).
 
 
 ### New plugin options

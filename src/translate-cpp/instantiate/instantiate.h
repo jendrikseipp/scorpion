@@ -6,6 +6,8 @@
 
 #include <memory>
 #include <optional>
+#include <ostream>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -47,6 +49,27 @@ struct Result {
 Result instantiate(
     const pddl::Task &task, const std::vector<grounding::Atom> &model,
     const grounding::PredicateRoles &roles);
+
+// File written by --dump-static-atoms.
+inline constexpr const char *STATIC_ATOMS_FILE = "static-atoms.txt";
+
+/*
+  Write `atom` to `out` in the Python translator's format, i.e., without the
+  "Atom " prefix that Literal::str() adds.
+*/
+void print_atom(std::ostream &out, const std::string &atom_str);
+
+/*
+  Dump all atoms belonging to static predicates (--dump-static-atoms).
+
+  A predicate is static if all its groundings are static. There are predicates
+  where only a subset of their groundings are static. Static atoms belonging to
+  non-static predicates are dumped by append_static_atoms() in
+  pipeline/translate.cc. Mirrors instantiate.dump_static_atoms in the Python
+  translator.
+*/
+void dump_static_atoms(
+    const pddl::Task &task, const std::vector<grounding::Atom> &model);
 }
 
 #endif

@@ -17,9 +17,13 @@ void usage(ostream &os, const char *prog) {
        << "    [--add-implied-preconditions] [--keep-unreachable-facts]\n"
        << "    [--skip-variable-reordering] [--keep-unimportant-variables]\n"
        << "    [--keep-no-ops] [--keep-duplicate-operators]\n"
-       << "    [--no-cpython-rng] [--dump-task]\n"
+       << "    [--no-cpython-rng] [--dump-task] [--dump-predicates]\n"
+       << "    [--dump-static-atoms] [--stop-after-parsing-pddl]\n"
        << "    [--layer-strategy {min,max}]\n"
-       << "    DOMAIN_PDDL TASK_PDDL\n";
+       << "    [--condition-normalization-strategy\n"
+       << "     {dnf,axiomatize_disjunctions,"
+          "axiomatize_disjunctions_existentials}]\n"
+       << "    DOMAIN PROBLEM\n";
 }
 
 [[noreturn]] void die(const char *prog, const string &msg) {
@@ -81,6 +85,29 @@ void parse_options(int argc, const char *const *argv) {
             o.cpython_rng = false;
         } else if (a == "--dump-task") {
             o.dump_task = true;
+        } else if (a == "--dump-predicates") {
+            o.dump_predicates = true;
+        } else if (a == "--dump-static-atoms") {
+            o.dump_static_atoms = true;
+        } else if (a == "--stop-after-parsing-pddl") {
+            o.stop_after_parsing_pddl = true;
+        } else if (a == "--condition-normalization-strategy") {
+            string v = next();
+            if (v == "dnf") {
+                o.condition_normalization_strategy =
+                    ConditionNormalizationStrategy::DNF;
+            } else if (v == "axiomatize_disjunctions") {
+                o.condition_normalization_strategy =
+                    ConditionNormalizationStrategy::AXIOMATIZE_DISJUNCTIONS;
+            } else if (v == "axiomatize_disjunctions_existentials") {
+                o.condition_normalization_strategy =
+                    ConditionNormalizationStrategy::
+                        AXIOMATIZE_DISJUNCTIONS_EXISTENTIALS;
+            } else {
+                die(prog, "--condition-normalization-strategy must be 'dnf', "
+                          "'axiomatize_disjunctions' or "
+                          "'axiomatize_disjunctions_existentials'");
+            }
         } else if (a == "--layer-strategy") {
             string v = next();
             if (v != "min" && v != "max")
@@ -97,8 +124,8 @@ void parse_options(int argc, const char *const *argv) {
     }
     if (positionals.size() != 2)
         die(prog, "expected exactly two positional arguments "
-                  "(domain and task)");
+                  "(domain and problem)");
     o.domain = positionals[0];
-    o.task = positionals[1];
+    o.problem = positionals[1];
 }
 }

@@ -1,5 +1,7 @@
 #include "normalize.h"
 
+#include "../translate_options.h"
+
 #include "../pddl/action.h"
 #include "../pddl/axiom.h"
 #include "../pddl/condition.h"
@@ -23,18 +25,28 @@ using TypeMap = unordered_map<string, string>;
 
 namespace {
 /*
-  Visit every condition slot in the task: action preconditions, effect
-  conditions on each effect, axiom conditions, and the goal. For each
+  Which condition slots for_each_condition() visits. Mirrors the keyword
+  arguments of Python's all_conditions().
+*/
+struct ConditionSlots {
+    bool actions = true;
+    bool axioms = true;
+    bool goal = true;
+};
+
+/*
+  Visit every selected condition slot in the task: action preconditions,
+  effect conditions on each effect, axiom conditions, and the goal. For each
   visit, `fn(get_type_map, get_condition, set_condition)` is called.
 
   IMPORTANT: actions/axioms snapshot is taken at call time. New axioms
-  added during iteration (e.g. by remove_universal_quantifiers) are NOT
+  added during iteration (e.g. by eliminate_universal_quantifiers) are NOT
   visited.
 */
 template<class Fn>
-void for_each_condition(Task &task, Fn fn) {
-    size_t n_actions = task.actions.size();
-    size_t n_axioms = task.axioms.size();
+void for_each_condition(Task &task, Fn fn, ConditionSlots slots = {}) {
+    size_t n_actions = slots.actions ? task.actions.size() : 0;
+    size_t n_axioms = slots.axioms ? task.axioms.size() : 0;
     for (size_t i = 0; i < n_actions; ++i) {
         // Precondition.
         fn([&]() { return task.actions[i].type_map; },
@@ -56,6 +68,8 @@ void for_each_condition(Task &task, Fn fn) {
            [&](ConditionPtr c) { task.axioms[i].condition = move(c); });
     }
     // Goal.
+    if (!slots.goal)
+        return;
     fn(
         [&]() -> TypeMap {
             // The goal has no type_map field; populate one by walking it.
@@ -85,7 +99,7 @@ vector<string> sorted_free_variables(const Condition &c) {
     return sorted;
 }
 
-/* [1] remove_universal_quantifiers ------------------------------------ */
+/* [1] eliminate_universal_quantifiers -------------------------------- */
 
 // Key for memoizing newly created not-axioms. The (condition, params)
 // pair maps to an axiom; we re-use axioms when the same condition arises.
@@ -117,7 +131,7 @@ struct AxiomKeyEqual {
     }
 };
 
-ConditionPtr remove_universal_recurse(
+ConditionPtr eliminate_universal_recurse(
     Task &task, const TypeMap &type_map,
     unordered_map<AxiomKey, string, AxiomKeyHash, AxiomKeyEqual> &memo,
     const ConditionPtr &condition) {
@@ -139,8 +153,8 @@ ConditionPtr remove_universal_recurse(
         string axiom_name =
             (memo_it != memo.end()) ? memo_it->second : string();
         if (axiom_name.empty()) {
-            ConditionPtr inner_processed =
-                remove_universal_recurse(task, type_map, memo, axiom_condition);
+            ConditionPtr inner_processed = eliminate_universal_recurse(
+                task, type_map, memo, axiom_condition);
             vector<TypedObject> params_copy = typed_params;
             axiom_name =
                 task.add_axiom(move(params_copy), inner_processed)->name;
@@ -159,22 +173,23 @@ ConditionPtr remove_universal_recurse(
     const auto &kids = condition->parts();
     new_parts.reserve(kids.size());
     for (const auto &p : kids)
-        new_parts.push_back(remove_universal_recurse(task, type_map, memo, p));
+        new_parts.push_back(
+            eliminate_universal_recurse(task, type_map, memo, p));
     return condition->change_parts(move(new_parts));
 }
 
-void remove_universal_quantifiers(Task &task) {
+void eliminate_universal_quantifiers(Task &task) {
     unordered_map<AxiomKey, string, AxiomKeyHash, AxiomKeyEqual> memo;
     for_each_condition(task, [&](auto get_tm, auto get_c, auto set_c) {
         auto c = get_c();
         if (c && c->has_universal_part()) {
             auto tm = get_tm();
-            set_c(remove_universal_recurse(task, tm, memo, c));
+            set_c(eliminate_universal_recurse(task, tm, memo, c));
         }
     });
 }
 
-/* [2] substitute_complicated_goal ------------------------------------- */
+/* [2] simplify_conditions --------------------------------------------- */
 
 void substitute_complicated_goal(Task &task) {
     if (!task.goal)
@@ -196,7 +211,7 @@ void substitute_complicated_goal(Task &task) {
     task.goal = make_shared<Atom>(new_axiom->name, vector<string>{});
 }
 
-/* [3] build_DNF ------------------------------------------------------- */
+/* [2 Option 1] build_DNF ---------------------------------------------- */
 
 ConditionPtr build_dnf_recurse(const ConditionPtr &condition) {
     vector<ConditionPtr> disjunctive;
@@ -253,12 +268,109 @@ void build_DNF(Task &task) {
     });
 }
 
-/* [4] split_disjunctions --------------------------------------------- */
+/* [2 Option 2] substitute_complicated_conditions ----------------------- */
+
+/*
+  Which condition types are replaced by derived predicates. Disjunctions are
+  always replaced; existential conditions only for the
+  axiomatize_disjunctions_existentials strategy.
+*/
+struct ReplaceTypes {
+    bool disjunctions = true;
+    bool existentials = false;
+
+    bool matches(const Condition &c) const {
+        return (disjunctions && c.kind() == Condition::Kind::DISJUNCTION) ||
+               (existentials && c.kind() == Condition::Kind::EXISTENTIAL);
+    }
+};
+
+/*
+  Replace each matching (sub)formula by a derived predicate and add an axiom
+  defining it. The transformation proceeds bottom-up, so nested (sub)formulas
+  are eliminated first. Identical (condition, parameters) pairs share an axiom.
+*/
+ConditionPtr substitute_complicated_recurse(
+    Task &task, const TypeMap &type_map, ReplaceTypes replace,
+    unordered_map<AxiomKey, string, AxiomKeyHash, AxiomKeyEqual> &memo,
+    const ConditionPtr &condition) {
+    if (is_literal(*condition) || condition->kind() == Condition::Kind::TRUTH ||
+        condition->kind() == Condition::Kind::FALSITY)
+        return condition;
+    if (!replace.matches(*condition)) {
+        vector<ConditionPtr> new_parts;
+        const auto &kids = condition->parts();
+        new_parts.reserve(kids.size());
+        for (const auto &part : kids)
+            new_parts.push_back(substitute_complicated_recurse(
+                task, type_map, replace, memo, part));
+        return condition->change_parts(move(new_parts));
+    }
+
+    vector<string> param_names = sorted_free_variables(*condition);
+    vector<TypedObject> typed_params;
+    typed_params.reserve(param_names.size());
+    for (const auto &v : param_names) {
+        auto it = type_map.find(v);
+        string type_name = (it == type_map.end()) ? "object" : it->second;
+        typed_params.emplace_back(v, type_name);
+    }
+    AxiomKey key{condition, typed_params};
+    auto memo_it = memo.find(key);
+    // Cache the axiom *name*: task.add_axiom appends to a vector<Axiom> that
+    // may reallocate, which would dangle any cached Axiom*.
+    string axiom_name = (memo_it != memo.end()) ? memo_it->second : string();
+    if (axiom_name.empty()) {
+        vector<ConditionPtr> new_parts;
+        const auto &kids = condition->parts();
+        new_parts.reserve(kids.size());
+        for (const auto &part : kids)
+            new_parts.push_back(substitute_complicated_recurse(
+                task, type_map, replace, memo, part));
+        ConditionPtr body = condition->change_parts(move(new_parts));
+        vector<TypedObject> params_copy = typed_params;
+        axiom_name = task.add_axiom(move(params_copy), body)->name;
+        memo.emplace(move(key), axiom_name);
+    }
+    return make_shared<Atom>(move(axiom_name), move(param_names));
+}
+
+void substitute_complicated_conditions(Task &task, bool replace_existentials) {
+    unordered_map<AxiomKey, string, AxiomKeyHash, AxiomKeyEqual> memo;
+    auto substitute = [&](ReplaceTypes replace, ConditionSlots slots) {
+        for_each_condition(
+            task,
+            [&](auto get_tm, auto get_c, auto set_c) {
+                auto c = get_c();
+                if (!c)
+                    return;
+                auto tm = get_tm();
+                set_c(
+                    substitute_complicated_recurse(task, tm, replace, memo, c));
+            },
+            slots);
+    };
+    if (replace_existentials) {
+        /*
+          Existential quantifiers are only replaced in action conditions and
+          the goal: in axiom bodies they become axiom parameters anyway, so
+          replacing them there would only add axioms.
+        */
+        substitute({true, false}, {false, true, false});
+        substitute({true, true}, {true, false, true});
+    } else {
+        substitute({true, false}, {});
+    }
+}
+
+/* split_disjunctions ------------------------------------------------- */
 
 /*
   For each disjunction at the root of a precondition/effect-condition/
-  axiom-condition, duplicate the owner once per disjunct. The goal cannot
-  be a disjunction at this stage (substitute_complicated_goal precluded it).
+  axiom-condition, duplicate the owner once per disjunct. The goal cannot be a
+  disjunction at this stage: substitute_complicated_goal() replaced it by a
+  derived predicate, and so did substitute_complicated_conditions() for the
+  strategy that does not call substitute_complicated_goal().
 
   Implemented by rebuilding actions/axioms vectors.
 */
@@ -316,7 +428,29 @@ void split_disjunctions(Task &task) {
     task.axioms = move(new_axioms);
 }
 
-/* [5] move_existential_quantifiers ----------------------------------- */
+/*
+  Simplify conditions according to the selected strategy. Afterwards, only
+  conjunctions and existential conditions remain (plus truth values and
+  literals).
+*/
+void simplify_conditions(Task &task) {
+    switch (get_options().condition_normalization_strategy) {
+    case ConditionNormalizationStrategy::DNF:
+        substitute_complicated_goal(task);
+        build_DNF(task);
+        break;
+    case ConditionNormalizationStrategy::AXIOMATIZE_DISJUNCTIONS:
+        substitute_complicated_goal(task);
+        substitute_complicated_conditions(task, false);
+        break;
+    case ConditionNormalizationStrategy::AXIOMATIZE_DISJUNCTIONS_EXISTENTIALS:
+        substitute_complicated_conditions(task, true);
+        break;
+    }
+    split_disjunctions(task);
+}
+
+/* [3a] move_existential_quantifiers ---------------------------------- */
 
 ConditionPtr move_existential_recurse(const ConditionPtr &condition) {
     vector<ConditionPtr> existential_parts;
@@ -364,7 +498,7 @@ void move_existential_quantifiers(Task &task) {
     });
 }
 
-/* [5a-c] eliminate existential quantifiers --------------------------- */
+/* [3b-d] eliminate existential quantifiers --------------------------- */
 
 namespace {
 // If `condition` is an outermost existential, pull its bound variables up into
@@ -398,7 +532,16 @@ void eliminate_existential_quantifiers_from_conditional_effects(Task &task) {
             lift_existential(e.parameters, e.condition);
 }
 
-/* [7] verify_axiom_predicates ---------------------------------------- */
+/* [3] eliminate_existential_quantifiers ------------------------------- */
+
+void eliminate_existential_quantifiers(Task &task) {
+    move_existential_quantifiers(task);
+    eliminate_existential_quantifiers_from_axioms(task);
+    eliminate_existential_quantifiers_from_preconditions(task);
+    eliminate_existential_quantifiers_from_conditional_effects(task);
+}
+
+/* verify_axiom_predicates -------------------------------------------- */
 
 void verify_axiom_predicates(const Task &task) {
     set<string> axiom_names;
@@ -430,14 +573,9 @@ void verify_axiom_predicates(const Task &task) {
 }
 
 void normalize(Task &task) {
-    remove_universal_quantifiers(task);
-    substitute_complicated_goal(task);
-    build_DNF(task);
-    split_disjunctions(task);
-    move_existential_quantifiers(task);
-    eliminate_existential_quantifiers_from_axioms(task);
-    eliminate_existential_quantifiers_from_preconditions(task);
-    eliminate_existential_quantifiers_from_conditional_effects(task);
+    eliminate_universal_quantifiers(task);
+    simplify_conditions(task);
+    eliminate_existential_quantifiers(task);
     verify_axiom_predicates(task);
 }
 }

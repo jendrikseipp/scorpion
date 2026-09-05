@@ -15,7 +15,9 @@
 #include <fstream>
 #include <iostream>
 #include <new>
+#include <set>
 #include <string>
+#include <utility>
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -65,6 +67,32 @@ void install_signal_and_error_handlers() {
 }
 
 namespace {
+/*
+  Write predicate names and arities to `path`, one "name,arity" pair per line
+  (--dump-predicates). Mirrors main.dump_predicates in the Python translator.
+*/
+void dump_predicates(const pddl::Task &task, const string &path) {
+    set<pair<string, int>> predicates;
+    for (const auto &predicate : task.predicates)
+        if (!predicate.name.starts_with("="))
+            predicates.emplace(predicate.name, predicate.get_arity());
+    for (const auto &type : task.types)
+        predicates.emplace(type.name, 1);
+
+    ofstream out(path);
+    if (!out)
+        utils::exit_with(
+            utils::ExitCode::TRANSLATE_CRITICAL_ERROR,
+            "Could not open output file: " + path);
+    bool first = true;
+    for (const auto &[name, arity] : predicates) {
+        if (!first)
+            out << "\n";
+        first = false;
+        out << name << "," << arity;
+    }
+}
+
 void dump_statistics(const sas::SASTask &task) {
     int derived = 0;
     for (int l : task.variables.axiom_layers)
@@ -118,9 +146,20 @@ int main(int argc, const char **argv) {
         utils::log() << "Parsing..." << endl;
         utils::PhaseTimer parse_t;
         auto domain_sexpr = parser::parse_pddl_file("domain", opts.domain);
-        auto task_sexpr = parser::parse_pddl_file("task", opts.task);
-        auto task = parser::parse_task(domain_sexpr, task_sexpr);
+        auto problem_sexpr = parser::parse_pddl_file("problem", opts.problem);
+        auto task = parser::parse_task(domain_sexpr, problem_sexpr);
         utils::log() << "Parsing: " << parse_t.str() << endl;
+
+        if (opts.dump_predicates)
+            dump_predicates(task, "predicates.txt");
+
+        if (opts.stop_after_parsing_pddl) {
+            utils::log() << "Done! "
+                         << utils::format_timing(
+                                utils::cpu_seconds(), utils::elapsed_seconds())
+                         << endl;
+            return 0;
+        }
 
         utils::log() << "Normalizing task..." << endl;
         utils::PhaseTimer normalize_t;

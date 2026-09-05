@@ -164,7 +164,7 @@ jobs:
       - name: Run driver, translator and search tests
         run: |
           cd misc/
-          tox -e driver,translator,preprocessing,search,parameters,generate-docs
+          tox -e driver,translator,translator-tests,preprocessing,search,generate-docs
 
       - name: Run CPLEX tests
         if: ${{ env.CPLEX_URL != 0 }}

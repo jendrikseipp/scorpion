@@ -9,11 +9,14 @@
 #include "../pddl/f_expression.h"
 #include "../pddl/task.h"
 #include "../utils/hash.h"
+#include "../utils/system.h"
 
 #include <algorithm>
+#include <fstream>
 #include <functional>
 #include <memory>
 #include <optional>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -429,5 +432,95 @@ Result instantiate(
     out.instantiated_goal =
         instantiate_goal(task.goal, fluent_facts, fact_by_id);
     return out;
+}
+
+void print_atom(ostream &out, const string &atom_str) {
+    static const string prefix = "Atom ";
+    if (atom_str.rfind(prefix, 0) == 0)
+        out << atom_str.substr(prefix.size()) << "\n";
+    else
+        out << atom_str << "\n";
+}
+
+namespace {
+/*
+  Object names of each type, including the objects of all its subtypes. Types
+  and objects appear in the order in which they are first inserted, matching
+  the iteration order of Python's defaultdict in get_objects_by_type().
+*/
+vector<pair<string, vector<string>>> get_object_names_by_type(
+    const Task &task) {
+    unordered_map<string, vector<string>> supertypes;
+    for (const auto &type : task.types)
+        supertypes[type.name] = type.supertype_names;
+    vector<pair<string, vector<string>>> result;
+    unordered_map<string, size_t> position;
+    auto add = [&](const string &type_name, const string &object) {
+        auto [it, inserted] = position.emplace(type_name, result.size());
+        if (inserted)
+            result.emplace_back(type_name, vector<string>{});
+        result[it->second].second.push_back(object);
+    };
+    for (const auto &obj : task.objects) {
+        add(obj.type_name, obj.name);
+        auto it = supertypes.find(obj.type_name);
+        if (it != supertypes.end())
+            for (const auto &supertype : it->second)
+                add(supertype, obj.name);
+    }
+    return result;
+}
+
+void collect_predicate(const ConditionPtr &condition, set<string> &result) {
+    if (!condition)
+        return;
+    if (condition->kind() == Condition::Kind::ATOM ||
+        condition->kind() == Condition::Kind::NEGATED_ATOM) {
+        result.insert(static_cast<const Literal &>(*condition).predicate);
+    } else {
+        for (const auto &part : condition->parts())
+            collect_predicate(part, result);
+    }
+}
+}
+
+void dump_static_atoms(const Task &task, const vector<grounding::Atom> &model) {
+    set<string> all_predicates;
+    set<string> fluent_predicates;
+    for (const auto &action : task.actions) {
+        for (const auto &effect : action.effects) {
+            if (!effect.literal)
+                continue;
+            const auto &literal = static_cast<const Literal &>(*effect.literal);
+            fluent_predicates.insert(literal.predicate);
+            all_predicates.insert(literal.predicate);
+        }
+        collect_predicate(action.precondition, all_predicates);
+    }
+    for (const auto &axiom : task.axioms)
+        fluent_predicates.insert(axiom.name);
+
+    set<string> static_predicates;
+    ranges::set_difference(
+        all_predicates, fluent_predicates,
+        inserter(static_predicates, static_predicates.end()));
+
+    ofstream out(STATIC_ATOMS_FILE);
+    if (!out)
+        utils::exit_with(
+            utils::ExitCode::TRANSLATE_CRITICAL_ERROR,
+            "Could not open output file: " + string(STATIC_ATOMS_FILE));
+    for (const auto &atom : model) {
+        if (!static_predicates.contains(atom.predicate_name()))
+            continue;
+        vector<string> args;
+        args.reserve(atom.args.size());
+        for (const auto &arg : atom.args)
+            args.push_back(grounding::arg_to_string(arg));
+        print_atom(out, Atom(atom.predicate_name(), move(args)).str());
+    }
+    for (const auto &[type_name, objects] : get_object_names_by_type(task))
+        for (const auto &object : objects)
+            print_atom(out, "Atom " + type_name + "(" + object + ")");
 }
 }

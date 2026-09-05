@@ -6,12 +6,26 @@
 
 namespace translate {
 /*
+  How to normalize complex PDDL conditions. Mirrors the Python translator's
+  --condition-normalization-strategy (fast_downward/translate/normalize.py).
+*/
+enum class ConditionNormalizationStrategy {
+    // Convert conditions to disjunctive normal form.
+    DNF,
+    // Replace every disjunction by a derived predicate.
+    AXIOMATIZE_DISJUNCTIONS,
+    // Additionally replace existential quantifiers in action conditions and
+    // goals by derived predicates.
+    AXIOMATIZE_DISJUNCTIONS_EXISTENTIALS,
+};
+
+/*
   Translator CLI options. Defaults mirror the Python translator
-  (src/translate/options.py).
+  (src/translate/fast_downward/translate/options.py).
 */
 struct Options {
     std::string domain;
-    std::string task;
+    std::string problem;
 
     // Output.
     std::string sas_file = "output.sas";
@@ -50,15 +64,25 @@ struct Options {
 
     // Debug.
     bool dump_task = false;
+    // Write predicate names and arity to predicates.txt.
+    bool dump_predicates = false;
+    // Write static atoms to static-atoms.txt.
+    bool dump_static_atoms = false;
+    // Exit after parsing the PDDL files (PDDL linting mode).
+    bool stop_after_parsing_pddl = false;
 
     // "min" or "max"
     std::string layer_strategy = "min";
+
+    // Condition normalization.
+    ConditionNormalizationStrategy condition_normalization_strategy =
+        ConditionNormalizationStrategy::DNF;
 };
 
 /*
   Parse argv into the singleton Options. argv[0] is the program name;
-  argv[1] and argv[2] are domain and task. Throws ParseError-compatible
-  std::runtime_error on misuse.
+  argv[1] and argv[2] are the domain and problem file. Throws
+  ParseError-compatible std::runtime_error on misuse.
 */
 void parse_options(int argc, const char *const *argv);
 
