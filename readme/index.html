@@ -440,13 +440,30 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../translator-options.md" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Translator options
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
     
     
       
         
           
-        
-      
         
       
         
@@ -492,7 +509,7 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
           
@@ -508,39 +525,19 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             Search plugins
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../search/AbstractTask/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    AbstractTask
-  </span>
-  
-
-      </a>
-    </li>
-  
-
               
             
               
@@ -1213,8 +1210,8 @@ we recommend using <a href="https://mrlab.ai/papers/correa-seipp-icaps2025.pdf">
 </code></pre></div>
 <p>which is equivalent to</p>
 <div class="language-text highlight"><pre><span></span><code>./fast-downward.py --preprocess [DOMAIN_FILE] PROBLEM_FILE \
-  --evaluator &quot;hlm=landmark_sum(lm_factory=lm_reasonable_orders_hps(lm_rhw()), transform=adapt_costs(one), pref=false)&quot; \
-  --evaluator &quot;hff=ff(transform=adapt_costs(one))&quot; \
+  --evaluator &quot;hlm=eval_modify_costs(landmark_sum(lm_factory=lm_reasonable_orders_hps(lm_rhw()), pref=false), cost_type=one)&quot; \
+  --evaluator &quot;hff=eval_modify_costs(ff(), cost_type=one)&quot; \
   --search &quot;lazy(alt([single(hff), single(hff, pref_only=true), single(hlm, pref_only=true),
     tiebreaking([novelty(width=2, evals=[hlm]), hlm, g()])], boost=1000),
     preferred=[hff, hlm], cost_type=one, reopen_closed=false)&quot;
@@ -1280,9 +1277,12 @@ https://github.com/jendrikseipp/scorpion/compare/main...scorpion</p>
 <ul>
 <li>Scorpion ships a C++ port of the translator that produces the same output as
   the Python translator but runs much faster. The Python translator is used by
-  default; pass <code>--translator cpp</code> to use the C++ port.</li>
+  default; pass <code>--translator cpp</code> to use the C++ port. Both translators
+  support the same options.</li>
 <li>Use <code>--dump-predicates</code> and <code>--dump-static-atoms</code> to write files with
   information that's useful for learning domain control knowledge.</li>
+<li>Use <code>--stop-after-parsing-pddl</code> to only parse the PDDL files (PDDL linting
+  mode).</li>
 </ul>
 <h3 id="new_plugin_options">New plugin options<a class="headerlink" href="#new_plugin_options" title="Permanent link">#</a></h3>
 <ul>
@@ -1397,7 +1397,7 @@ landmarks:</p>
 <hr />
 <p><img src="misc/images/fast-downward.svg" width="800" alt="Fast Downward"></p>
 <p>Fast Downward is a domain-independent classical planning system.</p>
-<p>Copyright 2003-2025 Fast Downward contributors (see below).</p>
+<p>Copyright 2003-2026 Fast Downward contributors (see below).</p>
 <p>For further information:
 - Fast Downward website: <a href="https://www.fast-downward.org">https://www.fast-downward.org</a>
 - Report a bug or file an issue: <a href="https://issues.fast-downward.org">https://issues.fast-downward.org</a>
@@ -1477,21 +1477,23 @@ Currently, this list is sorted by the last year the person has been
 active, and in case of ties, by the earliest year the person started
 contributing, and finally by last name.</p>
 <ul>
+<li>2003-2026 Malte Helmert</li>
+<li>2008-2016, 2018-2026 Gabriele Röger</li>
+<li>2012-2026 Florian Pommerening</li>
+<li>2021-2026 Clemens Büchner</li>
 <li>2022-2026 Remo Christen</li>
 <li>2022-2026 Simon Dold</li>
+<li>2023-2026 Claudia S. Grundke</li>
+<li>2024-2026 Tanja Schindler</li>
+<li>2024-2026 David Speck</li>
 <li>2025-2026 Esther Mugdan</li>
-<li>2003-2025 Malte Helmert</li>
-<li>2008-2016, 2018-2025 Gabriele Roeger</li>
+<li>2025-2026 Travis Rivera Petit</li>
+<li>2026 Gustavo Delazeri</li>
+<li>2026 Pascal Lauer</li>
 <li>2009, 2025 Christian Muise</li>
 <li>2010-2025 Jendrik Seipp</li>
 <li>2010-2011, 2013-2025 Silvan Sievers</li>
-<li>2012-2025 Florian Pommerening</li>
 <li>2013, 2015-2025 Salomé Eriksson</li>
-<li>2021-2025 Clemens Büchner</li>
-<li>2023-2025 Claudia S. Grundke</li>
-<li>2024–2025 Tanja Schindler</li>
-<li>2024-2025 David Speck</li>
-<li>2025 Travis Rivera Petit</li>
 <li>2018-2024 Patrick Ferber</li>
 <li>2024 Martín Pozo</li>
 <li>2015, 2021-2023 Thomas Keller</li>

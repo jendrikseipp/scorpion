@@ -16,7 +16,7 @@
     
     
       
-        <title>Usage - Scorpion</title>
+        <title>Planner Usage - Scorpion</title>
       
     
     
@@ -61,7 +61,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#usage" class="md-skip">
+        <a href="#planner_usage" class="md-skip">
           Skip to content
         </a>
       
@@ -97,7 +97,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Usage
+              Planner Usage
             
           </span>
         </div>
@@ -247,13 +247,30 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../translator-options.md" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Translator options
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
     
     
       
         
           
-        
-      
         
       
         
@@ -299,7 +316,7 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
           
@@ -315,39 +332,19 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             Search plugins
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../search/AbstractTask/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    AbstractTask
-  </span>
-  
-
-      </a>
-    </li>
-  
-
               
             
               
@@ -886,7 +883,7 @@
   
 
 
-<h1 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">#</a></h1>
+<h1 id="planner_usage">Planner Usage<a class="headerlink" href="#planner_usage" title="Permanent link">#</a></h1>
 <p>Fast Downward is a domain-independent classical planning system that consists of two main components:</p>
 <ul>
 <li>a translation phase translates a PDDL input task into a SAS+ tasks. </li>
@@ -903,17 +900,17 @@ participated in IPC 2011, please also check the page on
 <a href="../ipc-planners/">IPC planners</a>.</p>
 <h2 id="translation_component">Translation component<a class="headerlink" href="#translation_component" title="Permanent link">#</a></h2>
 <p>To translate a PDDL input task into a SAS+ task without performing a search run the following:</p>
-<div class="language-text highlight"><pre><span></span><code>./fast-downward.py --translate [&lt;domain.pddl&gt;] &lt;task.pddl&gt;
+<div class="language-text highlight"><pre><span></span><code>./fast-downward.py --translate [&lt;domain.pddl&gt;] &lt;problem.pddl&gt;
 </code></pre></div>
 <p>Note:</p>
 <ul>
 <li>Giving the domain file as input is optional. 
-    In case no domain file is specified, the component will search for a file called <code>domain.pddl</code> located in the same directory as the task file. </li>
-<li>Translator component options can be specified after the input files following the <code>--translator-options</code> flag.</li>
+    In case no domain file is specified for the task, the component will search for a file called <code>domain.pddl</code> located in the same directory as the problem file.</li>
+<li>Translator component options can be specified after the input files following the <code>--translator-options</code> flag. See <a href="translator-options.md">translator options</a> for details.</li>
 </ul>
 <h2 id="search_component">Search component<a class="headerlink" href="#search_component" title="Permanent link">#</a></h2>
 <p>To run a search on a PDDL input task run the following:</p>
-<div class="language-text highlight"><pre><span></span><code>./fast-downward.py [&lt;domain.pddl&gt;] &lt;task.pddl&gt; \
+<div class="language-text highlight"><pre><span></span><code>./fast-downward.py [&lt;domain.pddl&gt;] &lt;problem.pddl&gt; \
 --search &quot;&lt;some-search-algorithm&gt;(&lt;algorithm-parameters&gt;)&quot;
 </code></pre></div>
 <p>Note:</p>
@@ -921,7 +918,7 @@ participated in IPC 2011, please also check the page on
 <li>The PDDL task is translated into a SAS+ task internally without the need to explicitly call the <code>translate</code> component.
     Instead of a PDDL task a SAS+ translator output file could be given as input. In this case the translation step is omitted.</li>
 <li>Giving the domain file as input is optional. 
-    In case no domain file is specified, the component will search for a file called <code>domain.pddl</code> located in the same directory as the task file. </li>
+    In case no domain file is specified for the task, the component will search for a file called <code>domain.pddl</code> located in the same directory as the problem file.</li>
 <li><code>&lt;some-search-algorithm&gt;</code> can be any of the <a href="../search/SearchAlgorithm/">search algorithms</a> with corresponding <code>&lt;algorithm-parameters&gt;</code> as input.</li>
 <li>Search component options can be specified anywhere after the input files. 
     Search component options following translator component options need to first be escaped with the <code>--search-options</code> flag.</li>
@@ -929,10 +926,10 @@ participated in IPC 2011, please also check the page on
 <h3 id="example">Example<a class="headerlink" href="#example" title="Permanent link">#</a></h3>
 <p>The following example is a recommended search algorithm configuration:
 <a href="search/SearchAlgorithm/#a_search_eager">A* algorithm</a> with the <a href="search/Evaluator/#landmark-cut_heuristic">LM-cut heuristic</a>, which can be run as follows:</p>
-<div class="language-text highlight"><pre><span></span><code>./fast-downward.py [&lt;domain.pddl&gt;] &lt;task.pddl&gt; --search &quot;astar(lmcut())&quot;
+<div class="language-text highlight"><pre><span></span><code>./fast-downward.py [&lt;domain.pddl&gt;] &lt;problem.pddl&gt; --search &quot;astar(lmcut())&quot;
 </code></pre></div>
 <p>As this is a common search configuration an alias (<code>seq-opt-lmcut</code>) exists that results in the same execution and can be used as follows:</p>
-<div class="language-text highlight"><pre><span></span><code>./fast-downward.py --alias seq-opt-lmcut [&lt;domain.pddl&gt;] &lt;task.pddl&gt;
+<div class="language-text highlight"><pre><span></span><code>./fast-downward.py --alias seq-opt-lmcut [&lt;domain.pddl&gt;] &lt;problem.pddl&gt;
 </code></pre></div>
 <h3 id="aliases">Aliases<a class="headerlink" href="#aliases" title="Permanent link">#</a></h3>
 <p>Many other common search configurations are also specified as aliases. To see the full list of aliases call:</p>
@@ -940,7 +937,7 @@ participated in IPC 2011, please also check the page on
 </code></pre></div>
 <p>To find out which actual search options the aliases corresponds to, check the source code of the <code>src/driver/aliases.py</code> module.</p>
 <p>For example to run the "LAMA 2011 configuration" of the planner, call:</p>
-<div class="language-text highlight"><pre><span></span><code>./fast-downward.py --alias seq-sat-lama-2011 [&lt;domain.pddl&gt;] &lt;task.pddl&gt;
+<div class="language-text highlight"><pre><span></span><code>./fast-downward.py --alias seq-sat-lama-2011 [&lt;domain.pddl&gt;] &lt;problem.pddl&gt;
 </code></pre></div>
 <p>Note:</p>
 <ul>
@@ -952,17 +949,17 @@ participated in IPC 2011, please also check the page on
 <p>The search options are built with flexibility in mind, not ease of
 use. It is very easy to use option settings that look plausible, yet
 introduce significant inefficiencies. For example, an invocation like</p>
-<div class="language-text highlight"><pre><span></span><code>./fast-downward.py [&lt;domain.pddl&gt;] &lt;task.pddl&gt; \
+<div class="language-text highlight"><pre><span></span><code>./fast-downward.py [&lt;domain.pddl&gt;] &lt;problem.pddl&gt; \
 --search &quot;lazy_greedy([ff()], preferred=[ff()])&quot;
 </code></pre></div>
 <p>looks plausible, yet is hugely inefficient since it will compute the FF
 heuristic twice per state. To circumvent this a <a href="../search-plugin-syntax/#variables_as_parameters"><code>let</code>-expression</a> could be used:</p>
-<div class="language-text highlight"><pre><span></span><code>./fast-downward.py [&lt;domain.pddl&gt;] &lt;task.pddl&gt; \
+<div class="language-text highlight"><pre><span></span><code>./fast-downward.py [&lt;domain.pddl&gt;] &lt;problem.pddl&gt; \
 --search &quot;let(hff, ff(), lazy_greedy([hff], preferred=[hff]))&quot;
 </code></pre></div>
 <h2 id="validating_plans">Validating plans<a class="headerlink" href="#validating_plans" title="Permanent link">#</a></h2>
 <p>To validate a plan found by some search algorithm using <a href="https://github.com/KCL-Planning/VAL">VAL</a> run the following:</p>
-<div class="language-text highlight"><pre><span></span><code>./fast-downward.py --validate [&lt;domain.pddl&gt;] &lt;task.pddl&gt; \
+<div class="language-text highlight"><pre><span></span><code>./fast-downward.py --validate [&lt;domain.pddl&gt;] &lt;problem.pddl&gt; \
 --search &quot;&lt;some-search-algorithm&gt;(&lt;algorithm-parameters&gt;)&quot;
 </code></pre></div>
 <p>Note:</p>
