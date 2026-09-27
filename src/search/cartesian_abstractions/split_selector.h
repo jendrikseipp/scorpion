@@ -64,11 +64,13 @@ struct Split {
         assert(var_id == other.var_id);
         if (value == other.value) {
             return values == other.values;
-        } else if (values.size() == 1 && other.values.size() == 1) {
-            // If we need to separate exactly two values, their order doesn't
-            // matter.
-            return value == other.values[0] && other.value == values[0];
         } else {
+            // Note that a size of 1 for `values` does not mean that the abstract
+            // state consists of 2 values in the abstract state, since the "c"
+            // subset of the state (the wanted values) may be even only one
+            // value (e.g., a precondition), so we cannot know if we are
+            // separating two values and so the order (`value` and `values`)
+            // matters.
             return false;
         }
     }
