@@ -802,43 +802,10 @@ bool effect_in_result(const Effect &target, const vector<Effect> &result) {
     return false;
 }
 
-void add_effect(const pddl::AnyEffectPtr &tmp_effect, vector<Effect> &result) {
-    if (!tmp_effect)
-        return;
-    if (tmp_effect->kind() == pddl::AnyEffect::Kind::CONJUNCTIVE) {
-        const auto &c = static_cast<pddl::ConjunctiveEffect &>(*tmp_effect);
-        for (const auto &e : c.effects)
-            add_effect(e, result);
-        return;
-    }
-    vector<TypedObject> parameters;
-    ConditionPtr condition = make_shared<pddl::Truth>();
-    ConditionPtr literal;
-    if (tmp_effect->kind() == pddl::AnyEffect::Kind::UNIVERSAL) {
-        const auto &u = static_cast<pddl::UniversalEffect &>(*tmp_effect);
-        parameters = u.parameters;
-        if (u.effect &&
-            u.effect->kind() == pddl::AnyEffect::Kind::CONDITIONAL) {
-            const auto &ce = static_cast<pddl::ConditionalEffect &>(*u.effect);
-            condition = ce.condition;
-            const auto &se = static_cast<pddl::SimpleEffect &>(*ce.effect);
-            literal = se.literal;
-        } else {
-            const auto &se = static_cast<pddl::SimpleEffect &>(*u.effect);
-            literal = se.literal;
-        }
-    } else if (tmp_effect->kind() == pddl::AnyEffect::Kind::CONDITIONAL) {
-        const auto &ce = static_cast<pddl::ConditionalEffect &>(*tmp_effect);
-        condition = ce.condition;
-        const auto &se = static_cast<pddl::SimpleEffect &>(*ce.effect);
-        literal = se.literal;
-    } else {
-        const auto &se = static_cast<pddl::SimpleEffect &>(*tmp_effect);
-        literal = se.literal;
-    }
-    condition = condition->simplified();
-    Effect new_effect(parameters, condition, literal);
-    Effect contradiction(parameters, condition, literal->negate());
+void add_effect(Effect new_effect, vector<Effect> &result) {
+    const auto &literal = new_effect.literal;
+    Effect contradiction(
+        new_effect.parameters, new_effect.condition, literal->negate());
     if (!effect_in_result(contradiction, result)) {
         result.push_back(move(new_effect));
     } else {
@@ -857,6 +824,87 @@ void add_effect(const pddl::AnyEffectPtr &tmp_effect, vector<Effect> &result) {
     }
 }
 
+struct EffectScope {
+    ConditionPtr condition;
+    // Scalar universals can lift out of conditionals. The old normalizer did
+    // not lift universals when distributing a conditional over a conjunction.
+    // Track both descendants per path; empty conjunctions reach no leaf.
+    bool conditional_seen = false;
+    bool universal_seen = false;
+    bool universal_in_conditional = false;
+    bool conjunction_in_conditional = false;
+};
+
+// Flatten raw effects in source order, accumulating parameters and conditions.
+void collect_effects(
+    Context &ctx, const Sexpr &source, const pddl::AnyEffectPtr &effect,
+    vector<TypedObject> &parameters, const EffectScope &scope,
+    vector<Effect> &result, shared_ptr<Increase> &cost) {
+    using Kind = pddl::AnyEffect::Kind;
+    switch (effect->kind()) {
+    case Kind::CONJUNCTIVE: {
+        const auto &conjunction =
+            static_cast<const pddl::ConjunctiveEffect &>(*effect);
+        auto nested = scope;
+        nested.conjunction_in_conditional |= scope.conditional_seen;
+        for (const auto &child : conjunction.effects)
+            collect_effects(ctx, source, child, parameters, nested, result, cost);
+        return;
+    }
+    case Kind::UNIVERSAL: {
+        const auto &universal =
+            static_cast<const pddl::UniversalEffect &>(*effect);
+        auto nested = scope;
+        nested.universal_seen = true;
+        nested.universal_in_conditional |= scope.conditional_seen;
+        size_t outer_size = parameters.size();
+        parameters.insert(
+            parameters.end(), universal.parameters.begin(),
+            universal.parameters.end());
+        collect_effects(
+            ctx, source, universal.effect, parameters, nested, result, cost);
+        parameters.resize(outer_size);
+        return;
+    }
+    case Kind::CONDITIONAL: {
+        const auto &conditional =
+            static_cast<const pddl::ConditionalEffect &>(*effect);
+        auto nested = scope;
+        nested.conditional_seen = true;
+        if (scope.condition) {
+            nested.condition = make_shared<Conjunction>(
+                vector<ConditionPtr>{scope.condition, conditional.condition});
+        } else {
+            nested.condition = conditional.condition;
+        }
+        collect_effects(
+            ctx, source, conditional.effect, parameters, nested, result, cost);
+        return;
+    }
+    case Kind::COST:
+        if (scope.conditional_seen || scope.universal_seen)
+            ctx.error(
+                "Cost effects must be unconditional and unquantified.", &source);
+        // Match the existing last-cost-wins behavior for unconditional costs.
+        cost = static_cast<const pddl::CostEffect &>(*effect).effect;
+        return;
+    case Kind::SIMPLE: {
+        if (scope.universal_in_conditional &&
+            scope.conjunction_in_conditional)
+            ctx.error(
+                "Unsupported conjunction with a universal effect inside a "
+                "conditional effect.",
+                &source);
+        const auto &simple = static_cast<const pddl::SimpleEffect &>(*effect);
+        auto condition =
+            scope.condition ? scope.condition->simplified() : pddl::make_truth();
+        add_effect(
+            Effect(parameters, move(condition), simple.literal), result);
+        return;
+    }
+    }
+}
+
 shared_ptr<Increase> parse_effects(
     Context &ctx, const Sexpr &alist_sexpr, vector<Effect> &result,
     const TypeMap &type_dict, const PredicateMap &predicate_dict,
@@ -864,12 +912,13 @@ shared_ptr<Increase> parse_effects(
     auto l = ctx.layer("Parsing effect");
     auto tmp = parse_effect_tree(
         ctx, alist_sexpr, type_dict, predicate_dict, term_names);
-    auto normalized = tmp->normalize();
-    auto [cost_eff, rest_effect] = pddl::extract_cost(normalized);
-    add_effect(rest_effect, result);
-    if (cost_eff && cost_eff->effect)
-        return cost_eff->effect;
-    return nullptr;
+    shared_ptr<Increase> cost;
+    // This scratch belongs to one parse call. Exceptions discard it together
+    // with the incomplete action; each emitted Effect owns its parameter copy.
+    vector<TypedObject> parameters;
+    collect_effects(
+        ctx, alist_sexpr, tmp, parameters, EffectScope{}, result, cost);
+    return cost;
 }
 
 /* ------------------------------- actions ---------------------------- */

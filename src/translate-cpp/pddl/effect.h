@@ -10,10 +10,10 @@
 
 namespace translate::pddl {
 /*
-  Effects in the parsed PDDL. After normalization the unique form is
-  `Effect`: a forall-conditional over a single literal. The other classes
+  Effects in the parsed PDDL use `Effect`: a forall-conditional over a single
+  literal. The parser flattens the raw tree represented by the other classes
   (ConditionalEffect, ConjunctiveEffect, UniversalEffect, SimpleEffect,
-  CostEffect) represent the raw, un-normalized parse tree.
+  CostEffect) directly into these records.
 */
 
 class AnyEffect;
@@ -31,14 +31,7 @@ public:
     virtual ~AnyEffect() = default;
     virtual Kind kind() const = 0;
     virtual void dump(std::ostream &os, int indent = 0) const = 0;
-
-    // Convert the raw parse tree to the canonical "outer Conjunctive, then
-    // Universal, then Conditional, then Simple/Cost" form. Mirrors Python's
-    // AnyEffect.normalize().
-    virtual AnyEffectPtr normalize() const = 0;
 };
-
-class CostEffect;
 
 class SimpleEffect final : public AnyEffect {
 public:
@@ -50,7 +43,6 @@ public:
         return Kind::SIMPLE;
     }
     void dump(std::ostream &os, int indent) const override;
-    AnyEffectPtr normalize() const override;
 };
 
 class ConjunctiveEffect final : public AnyEffect {
@@ -62,7 +54,6 @@ public:
         return Kind::CONJUNCTIVE;
     }
     void dump(std::ostream &os, int indent) const override;
-    AnyEffectPtr normalize() const override;
 };
 
 class ConditionalEffect final : public AnyEffect {
@@ -75,7 +66,6 @@ public:
         return Kind::CONDITIONAL;
     }
     void dump(std::ostream &os, int indent) const override;
-    AnyEffectPtr normalize() const override;
 };
 
 class UniversalEffect final : public AnyEffect {
@@ -88,7 +78,6 @@ public:
         return Kind::UNIVERSAL;
     }
     void dump(std::ostream &os, int indent) const override;
-    AnyEffectPtr normalize() const override;
 };
 
 class CostEffect final : public AnyEffect {
@@ -102,15 +91,7 @@ public:
         return Kind::COST;
     }
     void dump(std::ostream &os, int indent) const override;
-    AnyEffectPtr normalize() const override;
 };
-
-/*
-  Separate out the CostEffect from a (post-normalize) effect tree.
-  Returns (cost_effect, rest_effect). Either may be null.
-*/
-std::pair<std::shared_ptr<CostEffect>, AnyEffectPtr> extract_cost(
-    const AnyEffectPtr &effect);
 
 /*
   Normalized effect: forall `parameters`, if `condition` holds, apply
