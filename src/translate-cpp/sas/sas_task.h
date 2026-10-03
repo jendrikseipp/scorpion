@@ -1,6 +1,8 @@
 #ifndef SAS_SAS_TASK_H
 #define SAS_SAS_TASK_H
 
+#include "../algorithms/small_vector.h"
+
 #include <ostream>
 #include <string>
 #include <tuple>
@@ -11,6 +13,9 @@ namespace translate::sas {
 inline constexpr int SAS_FILE_VERSION = 3;
 
 using VarVal = std::pair<int, int>;
+
+// Store empty and single-pair effect guards inline; larger guards use the heap.
+using EffectConditions = small_vector::SmallVector<VarVal, 1>;
 
 struct SASVariables {
     std::vector<int> ranges;
@@ -42,15 +47,14 @@ struct SASGoal {
 /*
   One conditional effect: variable `var` changes from `pre` (-1 if
   unconditioned) to `post`, guarded by the (var, val) pairs in `conditions`.
-  Member order matches the old tuple<int, int, int, vector<VarVal>>, so the
-  defaulted comparison keeps the exact (var, pre, post, conditions) ordering
-  the canonicalization/dedup/output paths rely on.
+  Member order and lexicographic condition comparison keep the exact
+  (var, pre, post, conditions) ordering used by canonicalization and dedup.
 */
 struct PrePost {
     int var;
     int pre;
     int post;
-    std::vector<VarVal> conditions;
+    EffectConditions conditions;
     auto operator<=>(const PrePost &) const = default;
 };
 

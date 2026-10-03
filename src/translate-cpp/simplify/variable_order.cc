@@ -297,8 +297,9 @@ class VariableOrder {
     // Original variable IDs are dense; -1 marks variables removed by filtering.
     vector<int> new_var;
 
-    vector<VarVal> remap_facts(const vector<VarVal> &facts) const {
-        vector<VarVal> remapped;
+    template<typename Facts>
+    Facts remap_facts(const Facts &facts) const {
+        Facts remapped;
         for (const auto &[var, value] : facts) {
             int mapped = new_var[var];
             if (mapped != -1)

@@ -33,6 +33,7 @@
 using namespace std;
 namespace translate::pipeline {
 using namespace pddl;
+using sas::EffectConditions;
 using sas::PrePost;
 using sas::SASAxiom;
 using sas::SASGoal;
@@ -490,7 +491,7 @@ optional<SASOperator> build_sas_operator(
                 pre = 1 - post;
             }
             for (auto &eff_cond : eff_conds) {
-                vector<VarVal> filtered;
+                EffectConditions filtered;
                 bool contradict = false;
                 for (const auto &[cv, cval] : eff_cond) {
                     auto pit = prevail_and_pre.find(cv);

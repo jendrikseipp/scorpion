@@ -87,7 +87,7 @@ vector<DTG> build_dtgs(const SASTask &task) {
             dtgs[var_no].add_arc(pre_spec, post);
     };
     auto effective_pre = [](int var_no, const vector<VarVal> &conds,
-                            const vector<VarVal> &eff_cond) -> optional<int> {
+                            const EffectConditions &eff_cond) -> optional<int> {
         int result = -1;
         for (const auto &[cv, cval] : conds)
             if (cv == var_no) {
@@ -168,8 +168,9 @@ struct Renaming {
     }
 };
 
-bool convert_pairs(const Renaming &r, vector<VarVal> &pairs) {
-    vector<VarVal> out;
+template<typename Facts>
+bool convert_pairs(const Renaming &r, Facts &pairs) {
+    Facts out;
     for (const auto &[v, val] : pairs) {
         auto [nv, nval] = r.translate(v, val);
         if (nval == ALWAYS_FALSE)
@@ -295,7 +296,7 @@ bool translate_operator(const Renaming &r, SASOperator &op) {
         }
         if (new_post == new_pre)
             continue;
-        vector<VarVal> new_cond = cond;
+        EffectConditions new_cond = cond;
         if (!convert_pairs(r, new_cond))
             continue;
         bool incompat = false;

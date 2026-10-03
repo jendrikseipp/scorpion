@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <compare>
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
@@ -219,6 +220,11 @@ public:
 
     bool operator==(const SmallVector &o) const {
         return size_ == o.size_ && std::equal(begin(), end(), o.begin());
+    }
+
+    auto operator<=>(const SmallVector &o) const {
+        return std::lexicographical_compare_three_way(
+            begin(), end(), o.begin(), o.end());
     }
 };
 }
