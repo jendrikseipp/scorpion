@@ -87,10 +87,6 @@ public:
 
     Invariant() = default;
     explicit Invariant(std::vector<InvariantPart> parts_);
-    Invariant(const Invariant &other);
-    Invariant(Invariant &&other) noexcept;
-    Invariant &operator=(const Invariant &other);
-    Invariant &operator=(Invariant &&other) noexcept;
 
     int arity() const {
         return parts.empty() ? 0 : parts.front().arity();
@@ -115,15 +111,10 @@ public:
     std::vector<std::string> get_parameters(const pddl::Literal &atom) const;
 
 private:
-    void compute_predicate_map();
     // The part (if any) whose predicate matches, or nullptr. An invariant has a
-    // handful of parts, so predicate_to_part_ is a flat vector scanned linearly
-    // rather than a hash map: it allocates one buffer instead of a node per
-    // part (the map was rebuilt on every candidate copy) and avoids hashing
-    // predicate strings on the many balance-check probes.
+    // handful of parts, so scan the owned parts directly without a separate
+    // name-to-part table or pointers that must be maintained across copies.
     const InvariantPart *part_or_null(const std::string &predicate) const;
-    std::vector<std::pair<std::string, const InvariantPart *>>
-        predicate_to_part_;
 
     EqualityConjunction get_cover_equivalence_conjunction(
         const pddl::Literal &literal) const;

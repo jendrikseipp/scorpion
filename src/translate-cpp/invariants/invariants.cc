@@ -136,44 +136,6 @@ Invariant::Invariant(vector<InvariantPart> parts_) {
     sort(parts_.begin(), parts_.end());
     parts_.erase(unique(parts_.begin(), parts_.end()), parts_.end());
     parts = move(parts_);
-    compute_predicate_map();
-}
-
-Invariant::Invariant(const Invariant &other) : parts(other.parts) {
-    compute_predicate_map();
-}
-
-Invariant::Invariant(Invariant &&other) noexcept
-    : parts(move(other.parts)),
-      predicate_to_part_(move(other.predicate_to_part_)) {
-    // A vector move transfers the buffer without relocating elements, so the
-    // pointers in predicate_to_part_ (which point into `parts`) stay valid --
-    // move the map rather than rebuild it. `other` is left with an empty parts
-    // vector and an empty map, consistently moved-from.
-}
-
-Invariant &Invariant::operator=(const Invariant &other) {
-    if (this != &other) {
-        parts = other.parts;
-        compute_predicate_map();
-    }
-    return *this;
-}
-
-Invariant &Invariant::operator=(Invariant &&other) noexcept {
-    if (this != &other) {
-        parts = move(other.parts);
-        // See the move constructor: the pointers survive the buffer transfer.
-        predicate_to_part_ = move(other.predicate_to_part_);
-    }
-    return *this;
-}
-
-void Invariant::compute_predicate_map() {
-    predicate_to_part_.clear();
-    predicate_to_part_.reserve(parts.size());
-    for (const auto &p : parts)
-        predicate_to_part_.emplace_back(p.predicate, &p);
 }
 
 const InvariantPart *Invariant::part_or_null(const string &predicate) const {
@@ -181,9 +143,9 @@ const InvariantPart *Invariant::part_or_null(const string &predicate) const {
     // (parts are unique by predicate in practice, so this returns the one
     // part).
     const InvariantPart *found = nullptr;
-    for (const auto &[pred, part] : predicate_to_part_)
-        if (pred == predicate)
-            found = part;
+    for (const auto &part : parts)
+        if (part.predicate == predicate)
+            found = &part;
     return found;
 }
 
