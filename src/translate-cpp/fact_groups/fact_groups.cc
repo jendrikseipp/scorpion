@@ -50,8 +50,8 @@ GroundKey atom_key(const Literal &lit) {
   like sokoban), we index the reachable atoms on interned-int keys:
 
     - `exact`: key -> stored atom, for concrete candidates (one probe each).
-    - `by_wildcard`: for each reachable atom and each argument position, the key
-      with that position blanked to WILDCARD -> the atoms sharing that pattern.
+    - `by_wildcard`: for each requested placeholder position, the key with that
+      position blanked to WILDCARD -> the atoms sharing that pattern.
       A placeholder candidate then does a single lookup that returns *all* its
       matches at once, instead of looping over every object and probing each.
 */
@@ -61,20 +61,51 @@ struct ReachableIndex {
 };
 
 ReachableIndex build_reachable_index(
-    const vector<shared_ptr<const Atom>> &reachable_facts) {
+    const vector<shared_ptr<const Atom>> &reachable_facts,
+    const vector<vector<ConditionPtr>> &groups) {
+    struct IndexModes {
+        bool exact = false;
+        vector<int> wildcard_positions;
+    };
+    // Index only the lookup modes that these groups use. Predicates without
+    // group candidates need neither exact nor wildcard entries.
+    unordered_map<int, IndexModes> requested;
+    for (const auto &group : groups) {
+        for (const auto &fact : group) {
+            if (!fact || fact->kind() != Condition::Kind::ATOM)
+                continue;
+            const auto &atom = static_cast<const Atom &>(*fact);
+            auto &modes = requested[atom.predicate_id];
+            int pos = find_placeholder(atom);
+            if (pos < 0)
+                modes.exact = true;
+            else if (ranges::find(modes.wildcard_positions, pos) ==
+                     modes.wildcard_positions.end())
+                modes.wildcard_positions.push_back(pos);
+        }
+    }
+    if (requested.empty())
+        return {};
     ReachableIndex index;
-    index.exact.reserve(reachable_facts.size());
     for (const auto &f : reachable_facts) {
         if (!f || f->kind() != Condition::Kind::ATOM)
             continue;
-        GroundKey key = atom_key(static_cast<const Literal &>(*f));
-        for (size_t pos = 0; pos < key.args.size(); ++pos) {
+        const auto &atom = static_cast<const Atom &>(*f);
+        auto it = requested.find(atom.predicate_id);
+        if (it == requested.end())
+            continue;
+        const auto &modes = it->second;
+        GroundKey key = atom_key(atom);
+        for (int pos : modes.wildcard_positions) {
+            if (static_cast<size_t>(pos) >= key.args.size())
+                continue;
             int obj = key.args[pos];
             key.args[pos] = WILDCARD;
             index.by_wildcard[key].push_back(f);
             key.args[pos] = obj;
         }
-        index.exact.emplace(move(key), f);
+        if (modes.exact)
+            index.exact.emplace(move(key), f);
     }
     return index;
 }
@@ -109,7 +140,7 @@ vector<ConditionPtr> expand_group(
 vector<vector<ConditionPtr>> instantiate_groups(
     const vector<vector<ConditionPtr>> &groups,
     const vector<shared_ptr<const Atom>> &reachable_facts) {
-    ReachableIndex reachable = build_reachable_index(reachable_facts);
+    ReachableIndex reachable = build_reachable_index(reachable_facts, groups);
     vector<vector<ConditionPtr>> result;
     result.reserve(groups.size());
     for (const auto &g : groups)
