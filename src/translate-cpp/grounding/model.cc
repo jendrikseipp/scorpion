@@ -7,6 +7,7 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -353,10 +354,10 @@ public:
   pushed us past 8 GB while the Python translator fits in ~4 GB.
 
   Instead the dedup set stores 4-byte indices into `items`, with a hash
-  and equality that dereference `items`. To test/insert a candidate we
-  tentatively append it to `items`, try to insert its index, and roll
-  back the append if an equal atom was already present. `items` only
-  ever grows (pop just advances `pos`), so stored indices stay valid;
+  and equality that dereference `items`. We probe a candidate before
+  appending it, then store its index only if it is new. Duplicate attempts
+  do not modify the model or cached hashes. `items` only ever grows
+  (pop just advances `pos`), so stored indices stay valid;
   reallocation moves the buffer but the index->Atom mapping is unchanged.
 */
 /*
@@ -377,23 +378,25 @@ public:
     IndexSet(const vector<Atom> &items, const vector<uint32_t> &hashes)
         : items_(&items), hashes_(&hashes) {
     }
-    // Insert index `idx` (its atom already appended to items/hashes). Returns
-    // true if newly inserted, false if an equal atom was already present.
-    bool insert(int idx) {
+    // Locate a candidate's vacant slot, or report an equal stored atom. The
+    // slot stays valid while AtomQueue appends to items/hashes before insert_at.
+    optional<size_t> find_empty_slot(const Atom &atom, uint32_t hash) {
         if (cap_ == 0 || (count_ + 1) * 10 > cap_ * 7) // keep load factor < 0.7
             grow();
         size_t mask = cap_ - 1;
-        size_t h = (*hashes_)[idx] & mask;
+        size_t h = hash & mask;
         while (slots_[h] != EMPTY) {
             int other = slots_[h];
-            if ((*hashes_)[other] == (*hashes_)[idx] &&
-                (*items_)[other] == (*items_)[idx])
-                return false;
+            if ((*hashes_)[other] == hash && (*items_)[other] == atom)
+                return nullopt;
             h = (h + 1) & mask;
         }
-        slots_[h] = idx;
+        return h;
+    }
+    // Commit only after the atom and its cached hash have both been appended.
+    void insert_at(size_t slot, int idx) {
+        slots_[slot] = idx;
         ++count_;
-        return true;
     }
 
 private:
@@ -446,15 +449,16 @@ private:
     vector<uint32_t> hashes;
     IndexSet seen{items, hashes};
 
-    // Append `a` to items, keep it only if not already seen.
+    // Probe once and append only new atoms, preserving first-seen model order.
     void insert_if_new(Atom &&a) {
-        hashes.push_back(static_cast<uint32_t>(mix_hash(AtomHash{}(a))));
+        uint32_t hash = static_cast<uint32_t>(mix_hash(AtomHash{}(a)));
+        auto slot = seen.find_empty_slot(a, hash);
+        if (!slot)
+            return;
+        int idx = static_cast<int>(items.size());
+        hashes.push_back(hash);
         items.push_back(move(a));
-        int idx = static_cast<int>(items.size()) - 1;
-        if (!seen.insert(idx)) {
-            items.pop_back();
-            hashes.pop_back();
-        }
+        seen.insert_at(*slot, idx);
     }
 
 public:
