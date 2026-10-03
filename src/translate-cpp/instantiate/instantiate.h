@@ -32,14 +32,9 @@ struct Result {
     */
     std::optional<std::vector<pddl::ConditionPtr>> instantiated_goal;
     std::vector<std::shared_ptr<pddl::PropositionalAxiom>> instantiated_axioms;
-    // For each action (by index in task.actions), the list of argument tuples
-    // that gave a reachable grounding (mirrors Python's
-    // reachable_action_parameters dict). Arguments are interned object ids
-    // (grounding symbol table) rather than name strings: this table is only
-    // consumed by the invariant finder's per-parameter "ever equal?" test,
-    // which needs equality, and ids are far smaller to hold through the
-    // memory-heavy translation phase.
-    std::vector<std::vector<std::vector<int>>> reachable_action_parameters;
+    // For each action schema, parameter pairs never equal in a reachable
+    // grounding. Includes groundings discarded during action instantiation.
+    std::vector<pddl::ParameterEqualitySummary> parameter_equalities;
 };
 
 /*

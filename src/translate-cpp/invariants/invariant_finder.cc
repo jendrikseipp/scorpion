@@ -24,40 +24,11 @@ namespace translate::invariants {
 using namespace pddl;
 
 namespace {
-// Copy `act` and, for each parameter pair that no reachable tuple ever binds to
-// the same object, add an inequality (!= p1 p2) precondition. Rather than
-// rescan the whole (large) tuple table once per pair, make a single pass over
-// the table and mark each pair the first time it is seen equal, stopping early
-// once every pair has been marked -- same result and pair order, one read of
-// the table instead of one per pair.
+// Add the parameter inequalities accumulated over all reachable groundings.
 Action patch_action_inequalities(
-    const Action &act, const vector<vector<int>> &reachable_tuples) {
+    const Action &act, const ParameterEqualitySummary &parameter_equalities) {
     Action patched = act;
-    if (act.parameters.size() < 2)
-        return patched;
-    struct PairFlag {
-        int p1, p2;
-        bool ever_equal = false;
-    };
-    vector<PairFlag> pairs;
-    for (size_t p1 = 0; p1 < act.parameters.size(); ++p1)
-        for (size_t p2 = p1 + 1; p2 < act.parameters.size(); ++p2)
-            pairs.push_back({static_cast<int>(p1), static_cast<int>(p2)});
-    size_t remaining = pairs.size();
-    for (const auto &t : reachable_tuples) {
-        if (remaining == 0)
-            break;
-        for (auto &pf : pairs)
-            if (!pf.ever_equal && t.size() > static_cast<size_t>(pf.p2) &&
-                t[pf.p1] == t[pf.p2]) {
-                pf.ever_equal = true;
-                --remaining;
-            }
-    }
-    vector<pair<int, int>> inequal_pairs;
-    for (const auto &pf : pairs)
-        if (!pf.ever_equal)
-            inequal_pairs.emplace_back(pf.p1, pf.p2);
+    const auto &inequal_pairs = parameter_equalities.always_distinct;
     if (!inequal_pairs.empty()) {
         vector<ConditionPtr> parts;
         parts.push_back(patched.precondition);
@@ -74,23 +45,22 @@ Action patch_action_inequalities(
 
 BalanceChecker::BalanceChecker(
     const Task &task,
-    const vector<vector<vector<int>>> *reachable_action_parameters)
+    const vector<ParameterEqualitySummary> *parameter_equalities)
     : random_(314159), cpython_random_(314159) {
-    build_patched_actions(task, reachable_action_parameters);
+    build_patched_actions(task, parameter_equalities);
     build_heavy_actions();
     build_predicate_map();
 }
 
 void BalanceChecker::build_patched_actions(
     const Task &task,
-    const vector<vector<vector<int>>> *reachable_action_parameters) {
+    const vector<ParameterEqualitySummary> *parameter_equalities) {
     patched_actions_.reserve(task.actions.size());
     for (size_t i = 0; i < task.actions.size(); ++i) {
         const Action &act = task.actions[i];
-        if (reachable_action_parameters &&
-            i < reachable_action_parameters->size())
+        if (parameter_equalities && i < parameter_equalities->size())
             patched_actions_.push_back(patch_action_inequalities(
-                act, (*reachable_action_parameters)[i]));
+                act, (*parameter_equalities)[i]));
         else
             patched_actions_.push_back(act);
     }
@@ -203,7 +173,7 @@ vector<Invariant> initial_invariants(const Task &task, int limit) {
 
 vector<Invariant> find_invariants(
     const Task &task,
-    const vector<vector<vector<int>>> *reachable_action_parameters) {
+    const vector<ParameterEqualitySummary> *parameter_equalities) {
     const Options &opts = get_options();
     int limit = opts.invariant_generation_max_candidates;
     auto initial = initial_invariants(task, limit);
@@ -211,7 +181,7 @@ vector<Invariant> find_invariants(
     deque<Invariant> queue(initial.begin(), initial.end());
     unordered_set<Invariant, InvariantHash> seen(
         initial.begin(), initial.end());
-    BalanceChecker checker(task, reachable_action_parameters);
+    BalanceChecker checker(task, parameter_equalities);
 
     auto enqueue = [&](Invariant inv) {
         if (static_cast<int>(seen.size()) >= limit)
@@ -237,9 +207,9 @@ vector<Invariant> find_invariants(
 
 vector<vector<ConditionPtr>> get_groups(
     const Task &task,
-    const vector<vector<vector<int>>> *reachable_action_parameters) {
+    const vector<ParameterEqualitySummary> *parameter_equalities) {
     cout << "Finding invariants..." << endl;
-    auto invariants = find_invariants(task, reachable_action_parameters);
+    auto invariants = find_invariants(task, parameter_equalities);
     cout << "Checking invariant weight..." << endl;
 
     // Group by predicate.

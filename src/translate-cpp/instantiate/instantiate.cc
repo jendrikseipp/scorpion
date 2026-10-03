@@ -241,11 +241,12 @@ long long resolve_action_cost(
 }
 
 optional<PropositionalAction> instantiate_action(
-    const Action &action, const vector<string> &args,
+    const Action &action, const grounding::ArgList &args,
     const InitAssignments &init_assignments, const FactMap &fluent_facts,
     const unordered_map<string, vector<int>> &objects_by_type,
     bool use_metric) {
-    if (args.size() != action.parameters.size())
+    // Applicability heads may include additional existential bindings.
+    if (args.size() < action.parameters.size())
         return nullopt;
     // Reused across ground actions (instantiate_action is never re-entrant):
     // clear() keeps the backing buffer, so rebinding per ground action neither
@@ -254,8 +255,7 @@ optional<PropositionalAction> instantiate_action(
     static thread_local VarMapping var_mapping;
     var_mapping.clear();
     for (size_t i = 0; i < action.parameters.size(); ++i)
-        var_mapping[action.parameters[i].name] =
-            grounding::symbols().intern(args[i]);
+        var_mapping[action.parameters[i].name] = args[i].v;
 
     // Build the grounded name using only external parameters.
     //
@@ -269,7 +269,7 @@ optional<PropositionalAction> instantiate_action(
     for (int i = 0; i < action.num_external_parameters; ++i) {
         if (i > 0)
             name.push_back(' ');
-        name += args[i];
+        name += args[i].name();
     }
     name.push_back(')');
 
@@ -366,7 +366,14 @@ Result instantiate(
     const Task &task, const vector<grounding::Atom> &model,
     const grounding::PredicateRoles &roles) {
     Result out;
-    out.reachable_action_parameters.resize(task.actions.size());
+    out.parameter_equalities.resize(task.actions.size());
+    for (size_t i = 0; i < task.actions.size(); ++i) {
+        auto &pairs = out.parameter_equalities[i].always_distinct;
+        size_t parameter_count = task.actions[i].parameters.size();
+        for (size_t p1 = 0; p1 < parameter_count; ++p1)
+            for (size_t p2 = p1 + 1; p2 < parameter_count; ++p2)
+                pairs.emplace_back(static_cast<int>(p1), static_cast<int>(p2));
+    }
     auto fluent_preds = get_fluent_predicates(task);
     auto fluent = build_fluent_facts(model, fluent_preds);
     out.fluent_facts = move(fluent.set);
@@ -388,24 +395,15 @@ Result instantiate(
             const Action &action = task.actions[action_idx];
             if (atom.args.size() < action.parameters.size())
                 break;
-            vector<string> args;
-            args.reserve(action.parameters.size());
-            // Interned object ids for the reachable-parameters table (kept for
-            // invariant finding). Storing ids instead of the argument strings
-            // shrinks this long-lived table ~8x and lets its only consumer
-            // (BalanceChecker's "ever equal?" test) compare ints; equal object
-            // names always intern to the same id, so the test is unchanged.
-            vector<int> arg_ids;
-            arg_ids.reserve(action.parameters.size());
-            for (size_t i = 0; i < action.parameters.size(); ++i) {
-                args.push_back(grounding::arg_to_string(atom.args[i]));
-                arg_ids.push_back(atom.args[i].v);
-            }
+            // A single equal assignment disproves a pair's inequality.
+            // Record every reachable grounding, even if instantiation fails.
+            auto &pairs = out.parameter_equalities[action_idx].always_distinct;
+            erase_if(pairs, [&](const auto &pair) {
+                return atom.args[pair.first] == atom.args[pair.second];
+            });
             auto inst = instantiate_action(
-                action, args, init_assignments, fluent_facts, objects_by_type,
-                task.use_min_cost_metric);
-            out.reachable_action_parameters[action_idx].push_back(
-                move(arg_ids));
+                action, atom.args, init_assignments, fluent_facts,
+                objects_by_type, task.use_min_cost_metric);
             if (inst)
                 out.instantiated_actions.push_back(move(*inst));
             break;

@@ -115,6 +115,13 @@ struct GroundEffect {
     GroundLiteral literal;
 };
 
+// Action-parameter pairs that differ in every reachable grounding, in
+// lexicographic pair order. Invariant finding only needs these inequalities,
+// so retain this summary instead of every reachable parameter tuple.
+struct ParameterEqualitySummary {
+    std::vector<std::pair<int, int>> always_distinct;
+};
+
 // Marks a fact that is static and true in the initial state (present in init
 // but not a reachable fluent). Distinguished from a fluent fact's FactId (>= 0)
 // and from a fact absent from the map (unreachable / static-false).

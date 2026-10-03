@@ -298,9 +298,9 @@ vector<vector<string>> build_translation_key(
 
 ComputedGroups compute_groups(
     const Task &task, const AtomSet &atoms,
-    const vector<vector<vector<int>>> *reachable_action_parameters,
+    const vector<ParameterEqualitySummary> *parameter_equalities,
     const AtomSet &negative_in_goal) {
-    auto raw = invariants::get_groups(task, reachable_action_parameters);
+    auto raw = invariants::get_groups(task, parameter_equalities);
     auto instantiated = instantiate_groups(raw, atoms);
     auto sorted = sort_groups(move(instantiated));
     ComputedGroups out;
