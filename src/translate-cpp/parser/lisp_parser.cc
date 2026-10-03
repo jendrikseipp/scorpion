@@ -2,6 +2,7 @@
 
 #include <cctype>
 #include <fstream>
+#include <locale>
 #include <sstream>
 #include <string>
 
@@ -38,6 +39,8 @@ void to_lower_inplace(string &s) {
 
 vector<string> tokenize(istream &input) {
     vector<string> tokens;
+    const locale token_locale;
+    const auto &whitespace = use_facet<ctype<char>>(token_locale);
     string line;
     while (getline(input, line)) {
         // Strip comments at the first ';'.
@@ -52,26 +55,22 @@ vector<string> tokenize(istream &input) {
                 throw ParseError("Non-ASCII character outside comment.");
             }
         }
-        // Pad parens and '?' so they tokenize cleanly. The original Python
-        // replaces "(" with " ( ", ")" with " ) ", and "?" with " ?".
-        string padded;
-        padded.reserve(line.size() * 2);
-        for (char c : line) {
-            if (c == '(' || c == ')') {
-                padded.push_back(' ');
-                padded.push_back(c);
-                padded.push_back(' ');
-            } else if (c == '?') {
-                padded.push_back(' ');
-                padded.push_back('?');
-            } else {
-                padded.push_back(c);
+        // Parentheses stand alone; '?' starts a token and stays attached to
+        // following text, matching the Python tokenizer's padding rules.
+        size_t pos = 0;
+        while (pos < line.size()) {
+            if (whitespace.is(ctype_base::space, line[pos])) {
+                ++pos;
+                continue;
             }
-        }
-        // Split on whitespace, lowercasing each token.
-        istringstream iss(padded);
-        string tok;
-        while (iss >> tok) {
+            size_t start = pos++;
+            if (line[start] != '(' && line[start] != ')') {
+                while (pos < line.size() &&
+                       !whitespace.is(ctype_base::space, line[pos]) &&
+                       line[pos] != '(' && line[pos] != ')' && line[pos] != '?')
+                    ++pos;
+            }
+            string tok = line.substr(start, pos - start);
             to_lower_inplace(tok);
             tokens.push_back(move(tok));
         }
