@@ -137,9 +137,8 @@ private:
         const std::vector<const pddl::Effect *> &del_effects,
         const std::function<void(Invariant)> &enqueue_func) const;
     /*
-      A literal "produced" by the action (from its precondition or an effect
-      condition), as a pointer plus an explicit sign. Keeping the sign outside
-      the literal lets the negation of an existing literal be represented
+      A condition or effect literal as a pointer plus an explicit sign. Keeping
+      the sign outside the literal lets its negation be represented
       without materializing a new Atom: the balance check only reads
       (predicate, args, sign), and it runs per (candidate x action x effect).
     */
@@ -147,37 +146,9 @@ private:
         const pddl::Literal *lit;
         bool negated;
     };
-    /*
-      Produced literals grouped by predicate. A flat vector rather than a hash
-      map: an action produces only a handful of predicates, so linear lookup
-      beats a per-predicate node allocation plus predicate-string hashing on
-      every (candidate x add-effect) rebuild.
-    */
-    class ProducedMap {
-    public:
-        // Insert-or-access the group for `predicate` (used while building).
-        std::vector<ProducedLit> &operator[](const std::string &predicate) {
-            for (auto &e : entries_)
-                if (e.first == predicate)
-                    return e.second;
-            entries_.emplace_back(predicate, std::vector<ProducedLit>{});
-            return entries_.back().second;
-        }
-        // The group for `predicate`, or nullptr if none was produced.
-        const std::vector<ProducedLit> *find_group(
-            const std::string &predicate) const {
-            for (const auto &e : entries_)
-                if (e.first == predicate)
-                    return &e.second;
-            return nullptr;
-        }
-
-    private:
-        std::vector<std::pair<std::string, std::vector<ProducedLit>>> entries_;
-    };
     bool balances(
-        const pddl::Effect &del_effect, const pddl::Effect &add_effect,
-        const ProducedMap &produced, const EqualityConjunction &add_cover,
+        const pddl::Action &action, const pddl::Effect &del_effect,
+        const pddl::Effect &add_effect, const EqualityConjunction &add_cover,
         const ConstraintSystem &param_system) const;
     void refine_candidate(
         const pddl::Effect &add_effect, const pddl::Action &action,

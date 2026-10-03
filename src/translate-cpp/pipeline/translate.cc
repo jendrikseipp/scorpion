@@ -942,6 +942,7 @@ SASTask pddl_to_sas(Task &task) {
 
         // Build operators.
         vector<SASOperator> sas_operators;
+        sas_operators.reserve(inst.instantiated_actions.size());
         phase("Translating task", [&] {
             for (const auto &op : inst.instantiated_actions) {
                 auto sub = translate_strips_operator(

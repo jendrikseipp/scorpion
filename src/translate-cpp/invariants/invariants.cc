@@ -227,22 +227,22 @@ EqualityConjunction Invariant::get_cover_equivalence_conjunction(
 }
 
 namespace {
-vector<const Literal *> get_literals(const ConditionPtr &cond) {
-    vector<const Literal *> out;
+// Visit a literal or the direct literal children of a conjunction.
+template<typename Visit>
+void for_each_literal(const Condition *cond, const Visit &visit) {
     if (!cond)
-        return out;
+        return;
     if (cond->kind() == Condition::Kind::ATOM ||
         cond->kind() == Condition::Kind::NEGATED_ATOM) {
-        out.push_back(static_cast<const Literal *>(cond.get()));
+        visit(static_cast<const Literal *>(cond));
     } else if (cond->kind() == Condition::Kind::CONJUNCTION) {
         for (const auto &p : cond->parts()) {
             if (p && (p->kind() == Condition::Kind::ATOM ||
                       p->kind() == Condition::Kind::NEGATED_ATOM)) {
-                out.push_back(static_cast<const Literal *>(p.get()));
+                visit(static_cast<const Literal *>(p.get()));
             }
         }
     }
-    return out;
 }
 
 void ensure_inequality(
@@ -258,10 +258,10 @@ void ensure_inequality(
 
 void ensure_conjunction_sat(
     ConstraintSystem &system,
-    initializer_list<vector<const Literal *>> groups) {
+    initializer_list<const Condition *> groups) {
     unordered_map<string, vector<const Literal *>> pos, neg;
     for (const auto &grp : groups) {
-        for (const auto *lit : grp) {
+        for_each_literal(grp, [&](const Literal *lit) {
             if (lit->predicate == "=") {
                 vector<pair<Term, Term>> parts;
                 if (lit->args.size() == 2)
@@ -277,7 +277,7 @@ void ensure_conjunction_sat(
             } else {
                 pos[lit->predicate].push_back(lit);
             }
-        }
+        });
     }
     for (auto &[pred, p_atoms] : pos) {
         auto it = neg.find(pred);
@@ -354,15 +354,11 @@ bool Invariant::operator_too_heavy(const Action &h_action) const {
                 get_cover_equivalence_conjunction(lit1));
             system.add_equality_conjunction(
                 get_cover_equivalence_conjunction(lit2));
-            auto pre_lits = get_literals(h_action.precondition);
-            auto cond1 = get_literals(add_effects[i]->condition);
-            auto cond2 = get_literals(add_effects[j]->condition);
-            vector<const Literal *> n1, n2;
             auto neg1 = lit1.negate();
             auto neg2 = lit2.negate();
-            n1.push_back(static_cast<const Literal *>(neg1.get()));
-            n2.push_back(static_cast<const Literal *>(neg2.get()));
-            ensure_conjunction_sat(system, {pre_lits, cond1, cond2, n1, n2});
+            ensure_conjunction_sat(system, {
+                h_action.precondition.get(), add_effects[i]->condition.get(),
+                add_effects[j]->condition.get(), neg1.get(), neg2.get()});
             if (system.is_solvable())
                 return true;
         }
@@ -392,15 +388,6 @@ bool Invariant::add_effect_unbalanced(
     const vector<const Effect *> &del_effects,
     const function<void(Invariant)> &enqueue_func) const {
     const auto &add_lit = static_cast<const Literal &>(*add_effect.literal);
-    ProducedMap produced;
-    auto extend_produced = [&](const ConditionPtr &c) {
-        for (const auto *lit : get_literals(c))
-            produced[lit->predicate].push_back({lit, lit->negated()});
-    };
-    extend_produced(action.precondition);
-    extend_produced(add_effect.condition);
-    // The add effect's negation is produced too: same literal, flipped sign.
-    produced[add_lit.predicate].push_back({&add_lit, !add_lit.negated()});
     auto add_cover = get_cover_equivalence_conjunction(add_lit);
 
     ConstraintSystem param_system;
@@ -437,7 +424,7 @@ bool Invariant::add_effect_unbalanced(
         }
     }
     for (const auto *del : del_effects) {
-        if (balances(*del, add_effect, produced, add_cover, param_system))
+        if (balances(action, *del, add_effect, add_cover, param_system))
             return false;
     }
     refine_candidate(add_effect, action, enqueue_func);
@@ -445,8 +432,8 @@ bool Invariant::add_effect_unbalanced(
 }
 
 bool Invariant::balances(
-    const Effect &del_effect, const Effect &add_effect,
-    const ProducedMap &produced, const EqualityConjunction &add_cover,
+    const Action &action, const Effect &del_effect, const Effect &add_effect,
+    const EqualityConjunction &add_cover,
     const ConstraintSystem &param_system) const {
     const auto &add_lit = static_cast<const Literal &>(*add_effect.literal);
     const auto &del_lit = static_cast<const Literal &>(*del_effect.literal);
@@ -456,23 +443,29 @@ bool Invariant::balances(
     // no materialized negation).
     ConstraintSystem balance_system;
     vector<ProducedLit> all_lits;
-    for (const auto *lit : get_literals(del_effect.condition))
+    for_each_literal(del_effect.condition.get(), [&](const Literal *lit) {
         all_lits.push_back({lit, lit->negated()});
+    });
     all_lits.push_back({&del_lit, !del_lit.negated()});
     for (const auto &[lit, lit_negated] : all_lits) {
         vector<EqualityConjunction> possibilities;
-        const auto *group = produced.find_group(lit->predicate);
-        if (!group)
-            return false;
-        for (const auto &m : *group) {
-            if (m.negated != lit_negated)
-                continue;
+        auto append_produced = [&](const Literal &produced, bool negated) {
+            if (produced.predicate != lit->predicate || negated != lit_negated)
+                return;
             vector<pair<Term, Term>> eqs;
-            size_t n = min(lit->args.size(), m.lit->args.size());
+            size_t n = min(lit->args.size(), produced.args.size());
             for (size_t i = 0; i < n; ++i)
-                eqs.emplace_back(Term(lit->args[i]), Term(m.lit->args[i]));
+                eqs.emplace_back(Term(lit->args[i]), Term(produced.args[i]));
             possibilities.emplace_back(move(eqs));
-        }
+        };
+        auto append_condition_literal = [&](const Literal *produced) {
+            append_produced(*produced, produced->negated());
+        };
+        // Filter the produced literals by predicate and sign, retaining source
+        // order.
+        for_each_literal(action.precondition.get(), append_condition_literal);
+        for_each_literal(add_effect.condition.get(), append_condition_literal);
+        append_produced(add_lit, !add_lit.negated());
         if (possibilities.empty())
             return false;
         balance_system.add_equality_DNF(move(possibilities));
