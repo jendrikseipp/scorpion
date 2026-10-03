@@ -145,9 +145,11 @@ int main(int argc, const char **argv) {
         // translator parser captures them as translator_time_<phase>.
         utils::log() << "Parsing..." << endl;
         utils::PhaseTimer parse_t;
-        auto domain_sexpr = parser::parse_pddl_file("domain", opts.domain);
-        auto problem_sexpr = parser::parse_pddl_file("problem", opts.problem);
-        auto task = parser::parse_task(domain_sexpr, problem_sexpr);
+        auto task = [&] {
+            auto domain_sexpr = parser::parse_pddl_file("domain", opts.domain);
+            auto problem_sexpr = parser::parse_pddl_file("problem", opts.problem);
+            return parser::parse_task(domain_sexpr, problem_sexpr);
+        }();
         utils::log() << "Parsing: " << parse_t.str() << endl;
 
         if (opts.dump_predicates)

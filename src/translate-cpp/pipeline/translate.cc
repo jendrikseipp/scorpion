@@ -867,133 +867,134 @@ SASTask pddl_to_sas(Task &task) {
         cout << label << ": " << t.str() << endl;
         return v;
     };
-    cout << "Instantiating..." << endl;
-    auto prog = phase("Generating Datalog program", [&] {
-        return grounding::build_program(task);
-    });
-    phase("Normalizing Datalog program", [&] {
-        grounding::split_rules(prog);
-        return 0;
-    });
-    auto model = phase(
-        "Computing model", [&] { return grounding::compute_model(prog); });
-    if (get_options().dump_static_atoms)
-        instantiate::dump_static_atoms(task, model);
-    auto inst = phase("Completing instantiation", [&] {
-        return instantiate::instantiate(task, model, prog.predicate_roles);
-    });
-    // The grounded model and the Datalog program are only needed through
-    // instantiation. Release them now (they can be hundreds of MB on large
-    // tasks) so the memory-heavy STRIPS->SAS phases below don't hold them --
-    // on logistics/blocksworld-large the peak occurs during translation, not
-    // grounding, so this directly lowers peak RSS.
-    model = vector<grounding::Atom>{};
-    prog = grounding::Program{};
-
-    if (!inst.relaxed_reachable) {
-        cout << "No relaxed solution! Generating unsolvable task..." << endl;
-        return trivial_task(false);
-    }
-    if (!inst.instantiated_goal) {
-        cout << "Trivially false goal! Generating unsolvable task..." << endl;
-        return trivial_task(false);
-    }
-    AtomSet negative_in_goal =
-        collect_negative_in_goal(*inst.instantiated_goal);
-
-    cout << "Computing fact groups..." << endl;
-    auto groups = phase("Computing fact groups", [&] {
-        return fact_groups::compute_groups(
-            task, inst.fluent_facts, &inst.reachable_action_parameters,
-            negative_in_goal);
-    });
-
-    bool use_partial = get_options().use_partial_encoding;
-    const FactMap &fluent_ids = inst.fluent_fact_ids;
-    size_t num_facts = inst.fact_by_id.size();
-    auto strips_to_sas =
-        build_dictionary(groups.groups, num_facts, fluent_ids, use_partial);
-    auto mutex_dict =
-        build_dictionary(groups.mutex_groups, num_facts, fluent_ids, false);
-
-    // Facts implied by other facts (only used by --add-implied-preconditions).
-    ImpliedFacts implied_facts;
-    if (get_options().add_implied_preconditions)
-        implied_facts = build_implied_facts(groups, strips_to_sas, fluent_ids);
-
-    // Build init.
-    SASInit sas_init = build_sas_init(strips_to_sas, task, fluent_ids);
-    // Build goal.
-    auto goal_gl = to_ground_literals(*inst.instantiated_goal, fluent_ids);
-    auto goal_conds = translate_strips_conditions(
-        goal_gl, strips_to_sas.factvals, strips_to_sas.ranges,
-        mutex_dict.factvals, mutex_dict.ranges);
-    if (!goal_conds) {
-        cout << "Goal violates a mutex! Generating unsolvable task..." << endl;
-        return trivial_task(false);
-    }
-    if (goal_conds->size() != 1)
-        throw runtime_error("Negative goal not supported");
-    SASGoal sas_goal;
-    for (const auto &[v, val] : goal_conds->front())
-        sas_goal.pairs.emplace_back(v, val);
-    ranges::sort(sas_goal.pairs);
-    if (sas_goal.pairs.empty()) {
-        cout << "Empty goal! Generating solvable task..." << endl;
-        return trivial_task(true);
-    }
-
-    // Process axioms and compute axiom layers.
-    auto axiom_layering = phase("Processing axioms", [&] {
-        return axioms::handle_axioms(
-            inst.instantiated_actions, inst.instantiated_axioms,
-            *inst.instantiated_goal, inst.fact_by_id,
-            get_options().layer_strategy);
-    });
-
-    // Build operators.
-    vector<SASOperator> sas_operators;
-    phase("Translating task", [&] {
-        for (const auto &op : inst.instantiated_actions) {
-            auto sub = translate_strips_operator(
-                op, strips_to_sas.factvals, strips_to_sas.ranges,
-                mutex_dict.factvals, mutex_dict.ranges, implied_facts);
-            for (auto &o : sub)
-                sas_operators.push_back(move(o));
-        }
-        return 0;
-    });
-    // Build SAS axioms from the simplified axiom list.
-    vector<SASAxiom> sas_axioms;
-    for (const auto &ax : axiom_layering.axioms) {
-        if (!ax)
-            continue;
-        auto sub = translate_strips_axiom(
-            *ax, strips_to_sas.factvals, strips_to_sas.ranges,
-            mutex_dict.factvals, mutex_dict.ranges, fluent_ids);
-        for (auto &a : sub)
-            sas_axioms.push_back(move(a));
-    }
-    // Variables.
-    SASVariables sas_vars;
-    sas_vars.ranges = strips_to_sas.ranges;
-    sas_vars.axiom_layers =
-        build_axiom_layers(strips_to_sas, axiom_layering, fluent_ids);
-    sas_vars.value_names = groups.translation_key;
-
-    vector<SASMutexGroup> sas_mutexes =
-        build_sas_mutexes(groups, strips_to_sas, fluent_ids, use_partial);
-
-    sort_operators_canonically(sas_operators);
-
     SASTask sas_task;
-    sas_task.variables = move(sas_vars);
-    sas_task.mutexes = move(sas_mutexes);
-    sas_task.init = move(sas_init);
-    sas_task.goal = move(sas_goal);
-    sas_task.operators = move(sas_operators);
-    sas_task.axioms = move(sas_axioms);
-    sas_task.metric = task.use_min_cost_metric;
+    vector<shared_ptr<const Atom>> static_facts;
+    // Grounding data and translation dictionaries are no longer needed once
+    // the SAS task is built. Release them before sorting and simplification;
+    // only --dump-static-atoms needs the fluent atom list afterwards.
+    {
+        cout << "Instantiating..." << endl;
+        auto inst = [&] {
+            auto prog = phase("Generating Datalog program", [&] {
+                return grounding::build_program(task);
+            });
+            phase("Normalizing Datalog program", [&] {
+                grounding::split_rules(prog);
+                return 0;
+            });
+            auto model = phase(
+                "Computing model", [&] { return grounding::compute_model(prog); });
+            if (get_options().dump_static_atoms)
+                instantiate::dump_static_atoms(task, model);
+            return phase("Completing instantiation", [&] {
+                return instantiate::instantiate(task, model, prog.predicate_roles);
+            });
+        }();
+
+        if (!inst.relaxed_reachable) {
+            cout << "No relaxed solution! Generating unsolvable task..." << endl;
+            return trivial_task(false);
+        }
+        if (!inst.instantiated_goal) {
+            cout << "Trivially false goal! Generating unsolvable task..." << endl;
+            return trivial_task(false);
+        }
+        cout << "Computing fact groups..." << endl;
+        auto groups = phase("Computing fact groups", [&] {
+            AtomSet negative_in_goal =
+                collect_negative_in_goal(*inst.instantiated_goal);
+            return fact_groups::compute_groups(
+                task, inst.fluent_facts, &inst.reachable_action_parameters,
+                negative_in_goal);
+        });
+
+        bool use_partial = get_options().use_partial_encoding;
+        const FactMap &fluent_ids = inst.fluent_fact_ids;
+        size_t num_facts = inst.fact_by_id.size();
+        auto strips_to_sas =
+            build_dictionary(groups.groups, num_facts, fluent_ids, use_partial);
+        auto mutex_dict =
+            build_dictionary(groups.mutex_groups, num_facts, fluent_ids, false);
+
+        // Facts implied by other facts (only used by --add-implied-preconditions).
+        ImpliedFacts implied_facts;
+        if (get_options().add_implied_preconditions)
+            implied_facts = build_implied_facts(groups, strips_to_sas, fluent_ids);
+
+        // Build init.
+        SASInit sas_init = build_sas_init(strips_to_sas, task, fluent_ids);
+        // Build goal.
+        auto goal_gl = to_ground_literals(*inst.instantiated_goal, fluent_ids);
+        auto goal_conds = translate_strips_conditions(
+            goal_gl, strips_to_sas.factvals, strips_to_sas.ranges,
+            mutex_dict.factvals, mutex_dict.ranges);
+        if (!goal_conds) {
+            cout << "Goal violates a mutex! Generating unsolvable task..." << endl;
+            return trivial_task(false);
+        }
+        if (goal_conds->size() != 1)
+            throw runtime_error("Negative goal not supported");
+        SASGoal sas_goal;
+        for (const auto &[v, val] : goal_conds->front())
+            sas_goal.pairs.emplace_back(v, val);
+        ranges::sort(sas_goal.pairs);
+        if (sas_goal.pairs.empty()) {
+            cout << "Empty goal! Generating solvable task..." << endl;
+            return trivial_task(true);
+        }
+
+        // Process axioms and compute axiom layers.
+        auto axiom_layering = phase("Processing axioms", [&] {
+            return axioms::handle_axioms(
+                inst.instantiated_actions, inst.instantiated_axioms,
+                *inst.instantiated_goal, inst.fact_by_id,
+                get_options().layer_strategy);
+        });
+
+        // Build operators.
+        vector<SASOperator> sas_operators;
+        phase("Translating task", [&] {
+            for (const auto &op : inst.instantiated_actions) {
+                auto sub = translate_strips_operator(
+                    op, strips_to_sas.factvals, strips_to_sas.ranges,
+                    mutex_dict.factvals, mutex_dict.ranges, implied_facts);
+                for (auto &o : sub)
+                    sas_operators.push_back(move(o));
+            }
+            return 0;
+        });
+        // Build SAS axioms from the simplified axiom list.
+        vector<SASAxiom> sas_axioms;
+        for (const auto &ax : axiom_layering.axioms) {
+            if (!ax)
+                continue;
+            auto sub = translate_strips_axiom(
+                *ax, strips_to_sas.factvals, strips_to_sas.ranges,
+                mutex_dict.factvals, mutex_dict.ranges, fluent_ids);
+            for (auto &a : sub)
+                sas_axioms.push_back(move(a));
+        }
+        // Variables.
+        SASVariables sas_vars;
+        sas_vars.axiom_layers =
+            build_axiom_layers(strips_to_sas, axiom_layering, fluent_ids);
+        sas_vars.ranges = move(strips_to_sas.ranges);
+        sas_vars.value_names = move(groups.translation_key);
+
+        vector<SASMutexGroup> sas_mutexes =
+            build_sas_mutexes(groups, strips_to_sas, fluent_ids, use_partial);
+
+        sas_task.variables = move(sas_vars);
+        sas_task.mutexes = move(sas_mutexes);
+        sas_task.init = move(sas_init);
+        sas_task.goal = move(sas_goal);
+        sas_task.operators = move(sas_operators);
+        sas_task.axioms = move(sas_axioms);
+        sas_task.metric = task.use_min_cost_metric;
+        if (get_options().dump_static_atoms)
+            static_facts = move(inst.fact_by_id);
+    }
+    sort_operators_canonically(sas_task.operators);
 
     if (get_options().filter_unreachable_facts) {
         cout << "Detecting unreachable propositions..." << endl;
@@ -1023,7 +1024,7 @@ SASTask pddl_to_sas(Task &task) {
     // SASTask::output (post-remap), matching the Python translator's final
     // axiom sort.
     if (get_options().dump_static_atoms)
-        append_static_atoms(task, sas_task, inst.fact_by_id);
+        append_static_atoms(task, sas_task, static_facts);
     return sas_task;
 }
 }
