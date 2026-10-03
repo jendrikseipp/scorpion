@@ -287,48 +287,37 @@ bool add_negative_conditions(
         if (varvals.empty())
             continue;
         bool done = false;
-        CondMap new_condition;
+        int best_var = -1;
+        int excluded_value = -1;
         for (const auto &[var, val] : varvals) {
-            // Ascending order => sorted and duplicate-free by construction.
-            ValueSet poss_vals;
-            poss_vals.reserve(ranges[var] - 1);
-            for (int v = 0; v < ranges[var]; ++v)
-                if (v != val)
-                    poss_vals.push_back(v);
             auto cit = condition.find(var);
-            if (cit == condition.end()) {
-                new_condition[var] = move(poss_vals);
-            } else {
+            if (cit != condition.end()) {
                 done = true;
-                ValueSet intersection;
-                set_intersection(
-                    cit->second.begin(), cit->second.end(), poss_vals.begin(),
-                    poss_vals.end(), back_inserter(intersection));
-                if (intersection.empty())
+                ValueSet remaining;
+                remaining.reserve(cit->second.size());
+                for (int v : cit->second)
+                    if (v != val)
+                        remaining.push_back(v);
+                if (remaining.empty())
                     return false;
-                cit->second = move(intersection);
+                cit->second = move(remaining);
+            } else if (best_var == -1 || ranges[var] < ranges[best_var]) {
+                // Every unbound representation has ranges[var] - 1 allowed
+                // values. Keep the first dictionary entry on equal sizes.
+                best_var = var;
+                excluded_value = val;
+            } else if (var == best_var) {
+                // The old temporary map overwrote repeated entries for a var.
+                excluded_value = val;
             }
         }
-        if (!done && !new_condition.empty()) {
-            // Pick the smallest-cardinality candidate, breaking ties by the
-            // order the representations appear in the dictionary. Python sorts
-            // new_condition.items() by cardinality with a stable sort, so among
-            // equal sizes it keeps the first-inserted (= dictionary) order. We
-            // must iterate the dictionary entries (it->second) here rather than
-            // the unordered new_condition map, whose iteration order is
-            // unspecified -- otherwise full-encoding facts with several equal-
-            // size representations pick a different variable than Python.
-            int best_var = -1;
-            size_t best_size = SIZE_MAX;
-            for (const auto &[var, val] : varvals) {
-                auto nit = new_condition.find(var);
-                if (nit != new_condition.end() &&
-                    nit->second.size() < best_size) {
-                    best_size = nit->second.size();
-                    best_var = var;
-                }
-            }
-            condition[best_var] = move(new_condition[best_var]);
+        if (!done) {
+            ValueSet allowed;
+            allowed.reserve(ranges[best_var] - 1);
+            for (int v = 0; v < ranges[best_var]; ++v)
+                if (v != excluded_value)
+                    allowed.push_back(v);
+            condition[best_var] = move(allowed);
         }
     }
     return true;
