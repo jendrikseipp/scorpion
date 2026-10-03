@@ -52,14 +52,14 @@ class PropositionalAction {
 public:
     std::string name;
     // Ground literals as (FactId, sign); see GroundLiteral in condition.h.
-    std::vector<GroundLiteral> precondition;
+    GroundLiteralList precondition;
     // Each effect: (condition list, literal).
     std::vector<GroundEffect> add_effects;
     std::vector<GroundEffect> del_effects;
     int cost;
 
     PropositionalAction(
-        std::string name, std::vector<GroundLiteral> precondition,
+        std::string name, GroundLiteralList precondition,
         const std::vector<GroundEffect> &effects, int cost);
 
     void dump(std::ostream &os) const;

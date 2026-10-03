@@ -103,7 +103,7 @@ public:
     */
     virtual bool instantiate(
         const VarMapping &var_mapping, const FactMap &fluent_facts,
-        std::vector<GroundLiteral> &result) const;
+        GroundLiteralList &result) const;
 
     /*
       Make all quantifier-bound variable names globally unique. `type_map`
@@ -167,7 +167,7 @@ public:
     }
     bool instantiate(
         const VarMapping &, const FactMap &,
-        std::vector<GroundLiteral> &) const override {
+        GroundLiteralList &) const override {
         return true;
     }
 };
@@ -189,7 +189,7 @@ public:
     }
     bool instantiate(
         const VarMapping &, const FactMap &,
-        std::vector<GroundLiteral> &) const override;
+        GroundLiteralList &) const override;
 };
 
 class Literal : public Condition {
@@ -244,7 +244,7 @@ public:
     }
     bool instantiate(
         const VarMapping &var_mapping, const FactMap &fluent_facts,
-        std::vector<GroundLiteral> &result) const override;
+        GroundLiteralList &result) const override;
 };
 
 class NegatedAtom final : public Literal {
@@ -262,7 +262,7 @@ public:
     }
     bool instantiate(
         const VarMapping &var_mapping, const FactMap &fluent_facts,
-        std::vector<GroundLiteral> &result) const override;
+        GroundLiteralList &result) const override;
 };
 
 class JunctorCondition : public Condition {
@@ -311,7 +311,7 @@ public:
     }
     bool instantiate(
         const VarMapping &var_mapping, const FactMap &fluent_facts,
-        std::vector<GroundLiteral> &result) const override;
+        GroundLiteralList &result) const override;
 };
 
 class Disjunction final : public JunctorCondition {
@@ -403,7 +403,7 @@ public:
     }
     bool instantiate(
         const VarMapping &var_mapping, const FactMap &fluent_facts,
-        std::vector<GroundLiteral> &result) const override;
+        GroundLiteralList &result) const override;
 };
 
 // Convenience factories. Truth and Falsity are immutable, value-equal

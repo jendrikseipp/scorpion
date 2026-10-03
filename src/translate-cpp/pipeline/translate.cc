@@ -145,9 +145,9 @@ ImpliedFacts build_implied_facts(
 
 // Convert atom-based literals (goal, axioms) to GroundLiterals so they share
 // the operator translation path. Every kept literal is a fluent fact.
-vector<GroundLiteral> to_ground_literals(
+GroundLiteralList to_ground_literals(
     const vector<ConditionPtr> &lits, const FactMap &fluent_ids) {
-    vector<GroundLiteral> out;
+    GroundLiteralList out;
     out.reserve(lits.size());
     for (const auto &c : lits) {
         const auto &lit = static_cast<const Literal &>(*c);
@@ -253,7 +253,7 @@ inline bool value_set_contains(const ValueSet &s, int v) {
 // to a single value. Returns false if that contradicts an existing entry (the
 // condition is then unsatisfiable).
 bool add_positive_conditions(
-    const vector<GroundLiteral> &conditions, const FactToVarVals &factvals,
+    const GroundLiteralList &conditions, const FactToVarVals &factvals,
     CondMap &condition) {
     for (const auto &lit : conditions) {
         if (lit.negated)
@@ -278,7 +278,7 @@ bool add_positive_conditions(
 // Refine `condition` with the negative literals: each excludes one value from
 // its variable's domain. Returns false if that empties a domain.
 bool add_negative_conditions(
-    const vector<GroundLiteral> &conditions, const FactToVarVals &factvals,
+    const GroundLiteralList &conditions, const FactToVarVals &factvals,
     const vector<int> &ranges, CondMap &condition) {
     for (const auto &lit : conditions) {
         if (!lit.negated)
@@ -354,7 +354,7 @@ vector<VarMap> expand_condition_map(const CondMap &condition) {
 }
 
 optional<vector<VarMap>> translate_strips_conditions_aux(
-    const vector<GroundLiteral> &conditions, const FactToVarVals &factvals,
+    const GroundLiteralList &conditions, const FactToVarVals &factvals,
     const vector<int> &ranges) {
     CondMap condition;
     if (!add_positive_conditions(conditions, factvals, condition))
@@ -365,7 +365,7 @@ optional<vector<VarMap>> translate_strips_conditions_aux(
 }
 
 optional<vector<VarMap>> translate_strips_conditions(
-    const vector<GroundLiteral> &conditions, const FactToVarVals &factvals,
+    const GroundLiteralList &conditions, const FactToVarVals &factvals,
     const vector<int> &ranges, const FactToVarVals &mutex_factvals,
     const vector<int> &mutex_ranges) {
     if (conditions.empty())
@@ -378,7 +378,7 @@ optional<vector<VarMap>> translate_strips_conditions(
 }
 
 optional<vector<VarMap>> negate_and_translate_condition(
-    const vector<vector<GroundLiteral>> &condition,
+    const vector<GroundLiteralList> &condition,
     const FactToVarVals &factvals, const vector<int> &ranges,
     const FactToVarVals &mutex_factvals, const vector<int> &mutex_ranges) {
     vector<VarMap> negation;
@@ -401,7 +401,7 @@ optional<vector<VarMap>> negate_and_translate_condition(
     // Iterate over the cartesian product of literals.
     vector<size_t> idx(condition.size(), 0);
     while (true) {
-        vector<GroundLiteral> combination;
+        GroundLiteralList combination;
         for (size_t i = 0; i < condition.size(); ++i)
             combination.push_back(condition[i][idx[i]].negate());
         auto cond = translate_strips_conditions(
@@ -548,7 +548,7 @@ optional<SASOperator> translate_strips_operator_aux(
     // fresh for every operator, so a tree/hash node per entry across millions
     // of operators is pure allocator churn. Iteration order is not used (the
     // del loop below walks del_var_order); both are pure var-keyed lookups.
-    FlatMap<vector<vector<GroundLiteral>>> add_conds_by_var;
+    FlatMap<vector<GroundLiteralList>> add_conds_by_var;
 
     for (const auto &[conds, fact] : op.add_effects) {
         auto eff_cond_list = translate_strips_conditions(

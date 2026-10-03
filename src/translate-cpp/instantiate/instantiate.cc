@@ -179,11 +179,11 @@ void instantiate_effect(
     const unordered_map<string, vector<int>> &objects_by_type,
     vector<GroundEffect> &result) {
     auto inst_once = [&]() {
-        vector<GroundLiteral> condition;
+        GroundLiteralList condition;
         if (eff.condition &&
             !eff.condition->instantiate(var_mapping, fluent_facts, condition))
             return;
-        vector<GroundLiteral> lit_out;
+        GroundLiteralList lit_out;
         if (eff.literal &&
             !eff.literal->instantiate(var_mapping, fluent_facts, lit_out))
             return;
@@ -269,7 +269,7 @@ optional<PropositionalAction> instantiate_action(
     }
     name.push_back(')');
 
-    vector<GroundLiteral> precondition;
+    GroundLiteralList precondition;
     if (action.precondition && !action.precondition->instantiate(
                                    var_mapping, fluent_facts, precondition))
         return nullopt;
@@ -319,7 +319,7 @@ shared_ptr<PropositionalAxiom> instantiate_axiom(
     }
     name.push_back(')');
 
-    vector<GroundLiteral> condition_lits;
+    GroundLiteralList condition_lits;
     if (axiom.condition && !axiom.condition->instantiate(
                                var_mapping, fluent_facts, condition_lits))
         return nullptr;
@@ -346,7 +346,7 @@ shared_ptr<PropositionalAxiom> instantiate_axiom(
 optional<vector<ConditionPtr>> instantiate_goal(
     const ConditionPtr &goal, const FactMap &fluent_facts,
     const vector<shared_ptr<const Atom>> &fact_by_id) {
-    vector<GroundLiteral> lits;
+    GroundLiteralList lits;
     VarMapping empty;
     if (goal && !goal->instantiate(empty, fluent_facts, lits))
         return nullopt;

@@ -105,13 +105,16 @@ struct GroundLiteral {
     bool operator==(const GroundLiteral &) const = default;
 };
 
+// Keep empty and single-literal lists inline, with heap storage for larger
+// conditions. This also shrinks the list header in grounded actions/effects.
+using GroundLiteralList = small_vector::SmallVector<GroundLiteral, 1>;
+
 // One instantiated (conditional) effect: `literal` fires when every ground
 // literal in `conditions` holds (an empty list is an unconditional effect).
-// Replaces the anonymous pair<vector<GroundLiteral>, GroundLiteral>; member
-// order matches the old pair so structured bindings and aggregate init still
-// work.
+// Member order preserves the former pair representation, so structured
+// bindings and aggregate initialization still work.
 struct GroundEffect {
-    std::vector<GroundLiteral> conditions;
+    GroundLiteralList conditions;
     GroundLiteral literal;
 };
 

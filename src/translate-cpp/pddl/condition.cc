@@ -242,12 +242,12 @@ ConditionPtr UniversalCondition::negate() const {
 // -- instantiate() -----------------------------------------------------------
 
 bool Condition::instantiate(
-    const VarMapping &, const FactMap &, vector<GroundLiteral> &) const {
+    const VarMapping &, const FactMap &, GroundLiteralList &) const {
     throw runtime_error("Cannot instantiate condition: not normalized");
 }
 
 bool Falsity::instantiate(
-    const VarMapping &, const FactMap &, vector<GroundLiteral> &) const {
+    const VarMapping &, const FactMap &, GroundLiteralList &) const {
     return false;
 }
 
@@ -272,7 +272,7 @@ void resolve_key(
 
 bool Atom::instantiate(
     const VarMapping &var_mapping, const FactMap &facts,
-    vector<GroundLiteral> &result) const {
+    GroundLiteralList &result) const {
     static thread_local GroundKey key;
     resolve_key(key, predicate_id, args, var_mapping);
     // Single probe: fluent -> a real precondition on that fact; static-true ->
@@ -288,7 +288,7 @@ bool Atom::instantiate(
 
 bool NegatedAtom::instantiate(
     const VarMapping &var_mapping, const FactMap &facts,
-    vector<GroundLiteral> &result) const {
+    GroundLiteralList &result) const {
     static thread_local GroundKey key;
     resolve_key(key, predicate_id, args, var_mapping);
     // Mirror image of Atom: absent (static-false) -> negation holds, drop the
@@ -306,7 +306,7 @@ bool NegatedAtom::instantiate(
 
 bool Conjunction::instantiate(
     const VarMapping &var_mapping, const FactMap &facts,
-    vector<GroundLiteral> &result) const {
+    GroundLiteralList &result) const {
     for (const auto &p : children) {
         if (p && !p->instantiate(var_mapping, facts, result))
             return false;
@@ -316,7 +316,7 @@ bool Conjunction::instantiate(
 
 bool ExistentialCondition::instantiate(
     const VarMapping &var_mapping, const FactMap &facts,
-    vector<GroundLiteral> &result) const {
+    GroundLiteralList &result) const {
     if (!body.empty() && body[0])
         return body[0]->instantiate(var_mapping, facts, result);
     return true;
