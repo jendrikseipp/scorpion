@@ -4,6 +4,7 @@
 #include "evaluation_context.h"
 #include "operator_id.h"
 
+#include <optional>
 #include <set>
 
 class StateID;
@@ -50,6 +51,17 @@ public:
       Remove and return the entry that should be expanded next.
     */
     virtual Entry remove_min() = 0;
+
+    /*
+      Return the value that the open list stored for the given evaluator
+      when inserting the entry that remove_min() returns next, or
+      std::nullopt if the open list does not store this value. This allows
+      looking up values like the f value of the next entry without
+      reevaluating it.
+
+      The default implementation returns std::nullopt.
+    */
+    virtual std::optional<int> get_min_entry_value(Evaluator *eval) const;
 
     // Return true if the open list is empty.
     virtual bool empty() const = 0;
@@ -139,6 +151,11 @@ OpenList<Entry>::OpenList(bool only_preferred)
 
 template<class Entry>
 void OpenList<Entry>::boost_preferred() {
+}
+
+template<class Entry>
+std::optional<int> OpenList<Entry>::get_min_entry_value(Evaluator *) const {
+    return std::nullopt;
 }
 
 template<class Entry>

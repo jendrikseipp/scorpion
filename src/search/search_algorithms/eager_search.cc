@@ -133,6 +133,10 @@ SearchStatus EagerSearch::step() {
 
 optional<SearchNode> EagerSearch::get_next_node_to_expand() {
     while (!open_list->empty()) {
+        // Look up the f value before the open list discards it.
+        optional<int> f_value;
+        if (f_evaluator)
+            f_value = open_list->get_min_entry_value(f_evaluator.get());
         StateID id = open_list->remove_min();
         State s = state_registry.lookup_state(id);
         SearchNode node = search_space.get_node(s);
@@ -183,7 +187,7 @@ optional<SearchNode> EagerSearch::get_next_node_to_expand() {
 
         node.close();
         assert(!node.is_dead_end());
-        update_f_value_statistics(eval_context);
+        update_f_value_statistics(eval_context, f_value);
         return node;
     }
     return nullopt;
@@ -338,13 +342,16 @@ void EagerSearch::start_f_value_statistics(EvaluationContext &eval_context) {
     }
 }
 
-/* TODO: HACK! This is very inefficient for simply looking up an h value.
-   Also, if h values are not saved it would recompute h for each and every
-   state. */
-void EagerSearch::update_f_value_statistics(EvaluationContext &eval_context) {
+/*
+  Prefer the f value that the open list stored for the expanded node (e.g., in
+  A*) over evaluating f_evaluator, which recomputes uncached heuristic values.
+*/
+void EagerSearch::update_f_value_statistics(
+    EvaluationContext &eval_context, optional<int> f_value) {
     if (f_evaluator) {
-        int f_value = eval_context.get_evaluator_value(f_evaluator.get());
-        statistics.report_f_value_progress(f_value);
+        if (!f_value)
+            f_value = eval_context.get_evaluator_value(f_evaluator.get());
+        statistics.report_f_value_progress(*f_value);
     }
 }
 

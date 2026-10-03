@@ -31,7 +31,8 @@ class EagerSearch : public SearchAlgorithm {
     std::shared_ptr<PruningMethod> pruning_method;
 
     void start_f_value_statistics(EvaluationContext &eval_context);
-    void update_f_value_statistics(EvaluationContext &eval_context);
+    void update_f_value_statistics(
+        EvaluationContext &eval_context, std::optional<int> f_value);
     void reward_progress();
 
     std::optional<SearchNode> get_next_node_to_expand();
