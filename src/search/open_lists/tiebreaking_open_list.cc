@@ -41,6 +41,8 @@ public:
         bool pref_only);
 
     virtual Entry remove_min() override;
+    virtual Entry remove_min_with_value(
+        Evaluator *eval, optional<int> &value) override;
     virtual bool empty() const override;
     virtual void clear() override;
     virtual void get_path_dependent_evaluators(
@@ -76,11 +78,27 @@ void TieBreakingOpenList<Entry>::do_insertion(
 
 template<class Entry>
 Entry TieBreakingOpenList<Entry>::remove_min() {
+    optional<int> value;
+    return remove_min_with_value(nullptr, value);
+}
+
+template<class Entry>
+Entry TieBreakingOpenList<Entry>::remove_min_with_value(
+    Evaluator *eval, optional<int> &value) {
+    value.reset();
     assert(size > 0);
     typename map<const vector<int>, Bucket>::iterator it;
     it = buckets.begin();
     assert(it != buckets.end());
     assert(!it->second.empty());
+    if (eval) {
+        for (size_t i = 0; i < evaluators.size(); ++i) {
+            if (evaluators[i].get() == eval) {
+                value = it->first[i];
+                break;
+            }
+        }
+    }
     --size;
     Entry result = it->second.front();
     it->second.pop_front();

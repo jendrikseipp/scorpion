@@ -4,6 +4,7 @@
 #include "evaluation_context.h"
 #include "operator_id.h"
 
+#include <optional>
 #include <set>
 
 class StateID;
@@ -50,6 +51,18 @@ public:
       Remove and return the entry that should be expanded next.
     */
     virtual Entry remove_min() = 0;
+
+    /*
+      Remove and return the entry that should be expanded next, optionally
+      copying its stored priority for eval into value. The value is the
+      historical insertion key, not a reevaluation of the entry. It remains
+      valid after the entry and its bucket have been removed.
+
+      Reset value if eval is null or its priority is unavailable. The default
+      implementation does not provide a value and delegates to remove_min().
+    */
+    virtual Entry remove_min_with_value(
+        Evaluator *eval, std::optional<int> &value);
 
     // Return true if the open list is empty.
     virtual bool empty() const = 0;
@@ -139,6 +152,13 @@ OpenList<Entry>::OpenList(bool only_preferred)
 
 template<class Entry>
 void OpenList<Entry>::boost_preferred() {
+}
+
+template<class Entry>
+Entry OpenList<Entry>::remove_min_with_value(
+    Evaluator *, std::optional<int> &value) {
+    value.reset();
+    return remove_min();
 }
 
 template<class Entry>
