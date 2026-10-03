@@ -18,6 +18,7 @@
 #include <iostream>
 #include <optional>
 #include <set>
+#include <span>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -439,7 +440,7 @@ pair<string, int> get_predicate_id_and_arity(
 // rebuilding that set from `predicate_dict` for every literal was the
 // dominant parse-time cost on pre-grounded large domains (trucks-strips/p29).
 void check_predicate_and_terms_existence(
-    Context &ctx, const string &predicate_name, const SexprList &terms,
+    Context &ctx, const string &predicate_name, span<const Sexpr> terms,
     const PredicateMap &predicate_dict,
     const unordered_set<string> &valid_term_names) {
     if (!predicate_dict.contains(predicate_name))
@@ -466,10 +467,10 @@ ConditionPtr parse_literal(
             "Literal definition has to be a non-empty block.", &empty,
             "(PREDICATE ARGUMENTS*) or (not (PREDICATE ARGUMENTS*))");
     }
-    SexprList current = alist;
+    span<const Sexpr> current(alist);
     if (current[0].is_atom() && current[0].atom() == "not") {
         if (current.size() != 2) {
-            Sexpr e(current);
+            Sexpr e(SexprList(current.begin(), current.end()));
             ctx.error(
                 "Negated literal definition has to have exactly one "
                 "block as argument.",
@@ -487,7 +488,7 @@ ConditionPtr parse_literal(
     if (!current[0].is_atom())
         ctx.error("Predicate name must be a word.", &current[0]);
     string predicate_name = current[0].atom();
-    SexprList terms(current.begin() + 1, current.end());
+    auto terms = current.subspan(1);
 
     check_predicate_and_terms_existence(
         ctx, predicate_name, terms, predicate_dict, term_names);
@@ -495,7 +496,7 @@ ConditionPtr parse_literal(
         ctx, predicate_name, type_dict, predicate_dict);
     int got_arity = static_cast<int>(terms.size());
     if (arity != got_arity) {
-        Sexpr e(current);
+        Sexpr e(SexprList(current.begin(), current.end()));
         ctx.error(
             "Predicate '" + predicate_name + "' of arity " + to_string(arity) +
                 " used with " + to_string(got_arity) + " arguments.",
@@ -543,9 +544,9 @@ ConditionPtr parse_condition_aux(
     }
     const string &tag = alist[0].atom();
     vector<TypedObject> parameters;
-    SexprList args;
+    span<const Sexpr> args;
     if (tag == "and" || tag == "or" || tag == "not" || tag == "imply") {
-        args = SexprList(alist.begin() + 1, alist.end());
+        args = span<const Sexpr>(alist).subspan(1);
         if (tag == "imply" && args.size() != 2) {
             ctx.error(
                 "'imply' expects exactly two arguments.", nullptr,
@@ -572,7 +573,7 @@ ConditionPtr parse_condition_aux(
                 nullptr, SYNTAX_CONDITION_FORALL_EXISTS);
         }
         parameters = parse_typed_list(ctx, alist[1].list());
-        args.push_back(alist[2]);
+        args = span<const Sexpr>(alist).subspan(2, 1);
     } else if (predicate_dict.contains(tag) || type_dict.contains(tag)) {
         return parse_literal(
             ctx, alist, type_dict, predicate_dict, term_names, negated);
@@ -591,6 +592,7 @@ ConditionPtr parse_condition_aux(
     }
 
     vector<ConditionPtr> parts;
+    parts.reserve(args.size());
     string effective_tag = tag;
     if (tag == "imply") {
         parts.push_back(parse_condition_aux(
@@ -598,14 +600,16 @@ ConditionPtr parse_condition_aux(
         parts.push_back(parse_condition_aux(
             ctx, args[1], negated, type_dict, predicate_dict, term_names));
         effective_tag = "or";
-    } else {
+    } else if (tag == "forall" || tag == "exists") {
         unordered_set<string> new_term_names = term_names;
-        if (tag == "forall" || tag == "exists")
-            for (const auto &p : parameters)
-                new_term_names.insert(p.name);
+        for (const auto &p : parameters)
+            new_term_names.insert(p.name);
+        parts.push_back(parse_condition_aux(
+            ctx, args[0], negated, type_dict, predicate_dict, new_term_names));
+    } else {
         for (const auto &part : args) {
             parts.push_back(parse_condition_aux(
-                ctx, part, negated, type_dict, predicate_dict, new_term_names));
+                ctx, part, negated, type_dict, predicate_dict, term_names));
         }
     }
 
@@ -1001,7 +1005,7 @@ Axiom parse_axiom(
 }
 
 void parse_axioms_and_actions(
-    Context &ctx, const vector<Sexpr> &entries, const TypeMap &type_dict,
+    Context &ctx, span<const Sexpr> entries, const TypeMap &type_dict,
     const PredicateMap &predicate_dict, unordered_set<string> &constant_names,
     vector<Axiom> &axioms, vector<Action> &actions) {
     int no = 1;
@@ -1103,7 +1107,7 @@ void parse_init_atom(
     const unordered_set<string> &term_names,
     InitPropositionValues &initial_proposition_values) {
     bool atom_value = true;
-    SexprList atom_list = flist;
+    span<const Sexpr> atom_list(flist);
     if (flist[0].is_atom() && flist[0].atom() == "not") {
         atom_value = false;
         if (flist.size() != 2)
@@ -1115,14 +1119,14 @@ void parse_init_atom(
         atom_list = flist[1].list();
     }
     const string &pname = atom_list[0].atom();
-    SexprList terms(atom_list.begin() + 1, atom_list.end());
+    auto terms = atom_list.subspan(1);
     check_predicate_and_terms_existence(
         ctx, pname, terms, predicate_dict, term_names);
     auto pred_it = predicate_dict.find(pname);
     int expected_arity = pred_it->second->get_arity();
     int got_arity = static_cast<int>(terms.size());
     if (expected_arity != got_arity) {
-        Sexpr e(atom_list);
+        Sexpr e(SexprList(atom_list.begin(), atom_list.end()));
         ctx.error(
             "Predicate '" + pname + "' of arity " + to_string(expected_arity) +
                 " used with " + to_string(got_arity) + " arguments.",
@@ -1251,20 +1255,14 @@ DomainPart parse_domain_pddl(Context &ctx, const Sexpr &domain_pddl) {
     const vector<string> action_axiom = {":derived", ":action"};
     vector<string> seen_fields;
     size_t idx = 2;
-    vector<Sexpr> entries; // saved action/axiom-style entries
-    bool first_action_seen = false;
     for (; idx < top.size(); ++idx) {
         vector<string> allowed = correct_order;
         for (const auto &n : action_axiom)
             allowed.push_back(n);
         check_named_block(ctx, top[idx], allowed);
         const string &field = top[idx].list()[0].atom();
-        if (ranges::find(correct_order, field) == correct_order.end()) {
-            entries.push_back(top[idx]);
-            first_action_seen = true;
-            ++idx;
+        if (ranges::find(correct_order, field) == correct_order.end())
             break;
-        }
         if (ranges::find(seen_fields, field) != seen_fields.end()) {
             ctx.error(
                 "Error in domain specification\nReason: two '" + field +
@@ -1314,10 +1312,6 @@ DomainPart parse_domain_pddl(Context &ctx, const Sexpr &domain_pddl) {
                 /*either_allowed=*/false, wrap, "number");
         }
     }
-    if (first_action_seen) {
-        for (; idx < top.size(); ++idx)
-            entries.push_back(top[idx]);
-    }
     set_supertypes(out.types);
 
     TypeMap type_dict;
@@ -1330,8 +1324,8 @@ DomainPart parse_domain_pddl(Context &ctx, const Sexpr &domain_pddl) {
     for (const auto &c : out.constants)
         constant_names.insert(c.name);
     parse_axioms_and_actions(
-        ctx, entries, type_dict, predicate_dict, constant_names, out.axioms,
-        out.actions);
+        ctx, span<const Sexpr>(top).subspan(idx), type_dict, predicate_dict,
+        constant_names, out.axioms, out.actions);
     return out;
 }
 
