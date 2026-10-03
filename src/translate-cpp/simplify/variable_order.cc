@@ -9,7 +9,6 @@
 #include <iostream>
 #include <numeric>
 #include <queue>
-#include <set>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
@@ -45,16 +44,30 @@ public:
         weighted_graph.assign(num_variables, {});
         for (const auto &[v, val] : task.goal.pairs)
             goal_map[v] = val;
-        // Collect every src->tgt edge occurrence flat (one push per occurrence,
-        // no per-edge tree node), then sort+reduce each source's targets into
-        // (tgt, weight) pairs. This replaces `++weighted_graph[src][tgt]` on a
-        // std::map over millions of operator-effect edges with a contiguous
-        // sort; weighted_graph stays sorted by tgt, as get_ordering requires.
-        vector<vector<int>> raw_targets(num_variables);
-        weight_from_ops(task.operators, raw_targets);
-        weight_from_axioms(task.axioms, raw_targets);
-        for (int src = 0; src < num_variables; ++src)
-            weighted_graph[src] = reduce_to_weighted(move(raw_targets[src]));
+        if (num_variables <= 512) {
+            // At most 1 MiB: count repeated edges directly instead of
+            // storing and sorting millions of occurrences on small graphs.
+            vector<int> weights(num_variables * num_variables, 0);
+            for_each_edge(task, [&](int src, int tgt) {
+                ++weights[src * num_variables + tgt];
+            });
+            for (int src = 0; src < num_variables; ++src) {
+                for (int tgt = 0; tgt < num_variables; ++tgt) {
+                    int weight = weights[src * num_variables + tgt];
+                    if (weight != 0)
+                        weighted_graph[src].emplace_back(tgt, weight);
+                }
+            }
+        } else {
+            // Large graphs retain sparse storage: collect edge occurrences,
+            // then sort and reduce each source's targets into weighted edges.
+            vector<vector<int>> raw_targets(num_variables);
+            for_each_edge(task, [&](int src, int tgt) {
+                raw_targets[src].push_back(tgt);
+            });
+            for (int src = 0; src < num_variables; ++src)
+                weighted_graph[src] = reduce_to_weighted(move(raw_targets[src]));
+        }
         build_predecessor_graph();
     }
 
@@ -78,10 +91,11 @@ public:
                 predecessor_graph[tgt].push_back(src);
     }
 
-    void weight_from_ops(
-        const vector<SASOperator> &operators,
-        vector<vector<int>> &raw_targets) {
-        for (const auto &op : operators) {
+    // Visit every occurrence, preserving duplicate precondition/condition
+    // sources because each one contributes to the edge's weight.
+    template<typename AddEdge>
+    static void for_each_edge(const SASTask &task, const AddEdge &add_edge) {
+        for (const auto &op : task.operators) {
             vector<int> source_vars;
             source_vars.reserve(op.prevail.size() + op.pre_post.size());
             for (const auto &[v, _] : op.prevail)
@@ -97,25 +111,21 @@ public:
                 // Copy the structured binding: Clang < 16 cannot capture
                 // structured bindings in lambdas.
                 int target = tgt;
-                auto add_edge = [&](int src) {
+                auto add_source = [&](int src) {
                     if (src != target)
-                        raw_targets[src].push_back(target);
+                        add_edge(src, target);
                 };
                 for (int src : source_vars)
-                    add_edge(src);
+                    add_source(src);
                 for (const auto &[cv, cval] : cond)
-                    add_edge(cv);
+                    add_source(cv);
             }
         }
-    }
-
-    void weight_from_axioms(
-        const vector<SASAxiom> &axioms, vector<vector<int>> &raw_targets) {
-        for (const auto &ax : axioms) {
+        for (const auto &ax : task.axioms) {
             int tgt = ax.effect.first;
             for (const auto &[src, _] : ax.condition) {
                 if (src != tgt)
-                    raw_targets[src].push_back(tgt);
+                    add_edge(src, tgt);
             }
         }
     }
@@ -149,8 +159,7 @@ public:
             for (int var : scc) {
                 auto &edges = subgraph[var];
                 // weighted_graph[var] is already sorted by target id
-                // (see reduce_to_weighted), matching Python's
-                // sorted(items()).
+                // in both weighting paths, matching Python's sorted(items()).
                 for (const auto &[tgt, cost] : weighted_graph[var]) {
                     if (!scc_set.contains(tgt))
                         continue;
@@ -284,11 +293,23 @@ public:
 };
 
 class VariableOrder {
-public:
     vector<int> ordering;
-    unordered_map<int, int> new_var;
+    // Original variable IDs are dense; -1 marks variables removed by filtering.
+    vector<int> new_var;
 
-    explicit VariableOrder(vector<int> ord) : ordering(move(ord)) {
+    vector<VarVal> remap_facts(const vector<VarVal> &facts) const {
+        vector<VarVal> remapped;
+        for (const auto &[var, value] : facts) {
+            int mapped = new_var[var];
+            if (mapped != -1)
+                remapped.emplace_back(mapped, value);
+        }
+        return remapped;
+    }
+
+public:
+    VariableOrder(vector<int> ord, int num_variables)
+        : ordering(move(ord)), new_var(num_variables, -1) {
         for (int i = 0; i < static_cast<int>(ordering.size()); ++i)
             new_var[ordering[i]] = i;
     }
@@ -297,10 +318,13 @@ public:
         // Variables.
         vector<int> ranges, layers;
         vector<vector<string>> names;
+        ranges.reserve(ordering.size());
+        layers.reserve(ordering.size());
+        names.reserve(ordering.size());
         for (int var : ordering) {
             ranges.push_back(task.variables.ranges[var]);
             layers.push_back(task.variables.axiom_layers[var]);
-            names.push_back(task.variables.value_names[var]);
+            names.push_back(move(task.variables.value_names[var]));
         }
         task.variables.ranges = move(ranges);
         task.variables.axiom_layers = move(layers);
@@ -312,29 +336,20 @@ public:
             new_init.push_back(task.init.values[var]);
         task.init.values = move(new_init);
         // Goal.
-        vector<VarVal> new_goal;
-        for (const auto &[v, val] : task.goal.pairs) {
-            auto it = new_var.find(v);
-            if (it != new_var.end())
-                new_goal.emplace_back(it->second, val);
-        }
-        ranges::sort(new_goal);
-        task.goal.pairs = move(new_goal);
+        task.goal.pairs = remap_facts(task.goal.pairs);
+        ranges::sort(task.goal.pairs);
         // Mutexes.
         vector<SASMutexGroup> new_mutexes;
-        for (auto &m : task.mutexes) {
-            vector<VarVal> facts;
-            set<int> vars;
-            for (const auto &[v, val] : m.facts) {
-                auto it = new_var.find(v);
-                if (it != new_var.end()) {
-                    facts.emplace_back(it->second, val);
-                    vars.insert(it->second);
-                }
-            }
-            if (vars.size() > 1) {
-                m.facts = move(facts);
-                new_mutexes.push_back(move(m));
+        for (auto &mutex : task.mutexes) {
+            auto facts = remap_facts(mutex.facts);
+            if (facts.empty())
+                continue;
+            int first_var = facts.front().first;
+            if (ranges::any_of(facts, [first_var](const VarVal &fact) {
+                return fact.first != first_var;
+            })) {
+                mutex.facts = move(facts);
+                new_mutexes.push_back(move(mutex));
             }
         }
         cout << new_mutexes.size() << " of " << task.mutexes.size()
@@ -342,29 +357,20 @@ public:
         task.mutexes = move(new_mutexes);
         // Operators.
         vector<SASOperator> new_ops;
+        bool keep_no_ops = get_options().keep_no_ops;
         for (auto &op : task.operators) {
             vector<PrePost> new_pre_post;
-            for (auto &[v, pre, post, cond] : op.pre_post) {
-                auto it = new_var.find(v);
-                if (it == new_var.end())
+            for (const auto &effect : op.pre_post) {
+                int mapped = new_var[effect.var];
+                if (mapped == -1)
                     continue;
-                vector<VarVal> new_cond;
-                for (const auto &[cv, cval] : cond) {
-                    auto cit = new_var.find(cv);
-                    if (cit != new_var.end())
-                        new_cond.emplace_back(cit->second, cval);
-                }
-                new_pre_post.push_back({it->second, pre, post, move(new_cond)});
+                new_pre_post.push_back({
+                    mapped, effect.pre, effect.post,
+                    remap_facts(effect.conditions)});
             }
-            if (new_pre_post.empty() && !get_options().keep_no_ops)
+            if (new_pre_post.empty() && !keep_no_ops)
                 continue;
-            vector<VarVal> new_prevail;
-            for (const auto &[v, val] : op.prevail) {
-                auto it = new_var.find(v);
-                if (it != new_var.end())
-                    new_prevail.emplace_back(it->second, val);
-            }
-            op.prevail = move(new_prevail);
+            op.prevail = remap_facts(op.prevail);
             op.pre_post = move(new_pre_post);
             new_ops.push_back(move(op));
         }
@@ -373,19 +379,13 @@ public:
         task.operators = move(new_ops);
         // Axioms.
         vector<SASAxiom> new_ax;
-        for (auto &ax : task.axioms) {
-            auto it = new_var.find(ax.effect.first);
-            if (it == new_var.end())
+        for (auto &axiom : task.axioms) {
+            int mapped = new_var[axiom.effect.first];
+            if (mapped == -1)
                 continue;
-            vector<VarVal> new_cond;
-            for (const auto &[v, val] : ax.condition) {
-                auto cit = new_var.find(v);
-                if (cit != new_var.end())
-                    new_cond.emplace_back(cit->second, val);
-            }
-            ax.condition = move(new_cond);
-            ax.effect = {it->second, ax.effect.second};
-            new_ax.push_back(move(ax));
+            axiom.condition = remap_facts(axiom.condition);
+            axiom.effect.first = mapped;
+            new_ax.push_back(move(axiom));
         }
         cout << new_ax.size() << " of " << task.axioms.size()
              << " axiom rules necessary." << endl;
@@ -416,7 +416,7 @@ void find_and_apply_variable_order(
                 filtered.push_back(v);
         order = move(filtered);
     }
-    VariableOrder vo(move(order));
+    VariableOrder vo(move(order), cg.num_variables);
     vo.apply(task);
 }
 }
