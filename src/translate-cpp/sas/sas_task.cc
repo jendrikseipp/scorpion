@@ -35,6 +35,8 @@ int SASTask::remove_duplicate_operators() {
 }
 
 namespace {
+constexpr size_t OUTPUT_BUFFER_SIZE = 8u << 20;
+
 /*
   Fast writer that appends to a string buffer using locale-free
   to_chars for integers. Used by SASTask::output to avoid the
@@ -69,9 +71,20 @@ public:
     void nl() {
         buf.push_back('\n');
     }
+    void flush(ostream &os) {
+        if (!buf.empty()) {
+            os.write(buf.data(), static_cast<streamsize>(buf.size()));
+            buf.clear();
+        }
+    }
+    void flush_if_full(ostream &os) {
+        if (buf.size() >= OUTPUT_BUFFER_SIZE)
+            flush(os);
+    }
 };
 
-void write_variables(FastWriter &w, const SASVariables &vars) {
+void write_variables(
+    FastWriter &w, const SASVariables &vars, ostream *chunked_output = nullptr) {
     w.put(vars.ranges.size());
     w.nl();
     for (size_t i = 0; i < vars.ranges.size(); ++i) {
@@ -90,6 +103,8 @@ void write_variables(FastWriter &w, const SASVariables &vars) {
         }
         w.put(string_view("end_variable"));
         w.nl();
+        if (chunked_output)
+            w.flush_if_full(*chunked_output);
     }
 }
 
@@ -212,7 +227,7 @@ void write_axiom(FastWriter &w, const SASAxiom &ax) {
 
 // Legacy ostream-based versions retained for callers that pass an
 // ostream (e.g. dump for debugging). The fast path is via SASTask::output
-// which routes through FastWriter + a single ofstream::write.
+// which routes through FastWriter with bounded buffering.
 void SASVariables::output(ostream &os) const {
     string buf;
     FastWriter w(buf);
@@ -263,10 +278,10 @@ void SASAxiom::output(ostream &os) const {
 }
 
 void SASTask::output(ostream &os) const {
-    // Stream everything into a single string buffer using locale-free
-    // formatters, then write it out with one os.write() call.
+    // Keep the locale-free formatter, but flush at record boundaries so the
+    // complete SAS file never has to coexist with the task in memory.
     string buf;
-    buf.reserve(1u << 20); // start at 1 MB
+    buf.reserve(1u << 20); // start at 1 MiB, growing only as needed
     FastWriter w(buf);
 
     w.put(string_view("begin_version"));
@@ -282,13 +297,17 @@ void SASTask::output(ostream &os) const {
     w.put(string_view("end_metric"));
     w.nl();
 
-    write_variables(w, variables);
+    write_variables(w, variables, &os);
     w.put(mutexes.size());
     w.nl();
-    for (const auto &m : mutexes)
+    for (const auto &m : mutexes) {
         write_mutex(w, m);
+        w.flush_if_full(os);
+    }
     write_init(w, init);
+    w.flush_if_full(os);
     write_goal(w, goal);
+    w.flush_if_full(os);
 
     // Emit operators and axioms in their current list order.
     // Canonical sorting is done once at SASTask construction in
@@ -297,8 +316,10 @@ void SASTask::output(ostream &os) const {
     // variable numbers and produce a different (but valid) order.
     w.put(operators.size());
     w.nl();
-    for (const auto &op : operators)
+    for (const auto &op : operators) {
         write_operator(w, op);
+        w.flush_if_full(os);
+    }
 
     auto axs = axioms;
     // Canonicalize within-rule condition order (by final variable number)
@@ -314,9 +335,11 @@ void SASTask::output(ostream &os) const {
     });
     w.put(axs.size());
     w.nl();
-    for (const auto &a : axs)
+    for (const auto &a : axs) {
         write_axiom(w, a);
+        w.flush_if_full(os);
+    }
 
-    os.write(buf.data(), static_cast<streamsize>(buf.size()));
+    w.flush(os);
 }
 }
