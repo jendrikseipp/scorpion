@@ -146,7 +146,7 @@ struct ConditionPtrEqual {
     }
 };
 
-// Set of ground atoms (the Result's fluent facts; used by fact_groups).
+// Value-based set of atoms, used to exclude negative goal facts from groups.
 using AtomSet =
     std::unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>;
 

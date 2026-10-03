@@ -4,6 +4,7 @@
 #include "../pddl/condition.h"
 #include "../pddl/task.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -29,7 +30,8 @@ struct ComputedGroups {
 };
 
 ComputedGroups compute_groups(
-    const pddl::Task &task, const pddl::AtomSet &atoms,
+    const pddl::Task &task,
+    const std::vector<std::shared_ptr<const pddl::Atom>> &atoms,
     const std::vector<pddl::ParameterEqualitySummary> *parameter_equalities,
     const pddl::AtomSet &negative_in_goal);
 }

@@ -60,7 +60,8 @@ struct ReachableIndex {
     unordered_map<GroundKey, vector<ConditionPtr>, GroundKeyHash> by_wildcard;
 };
 
-ReachableIndex build_reachable_index(const AtomSet &reachable_facts) {
+ReachableIndex build_reachable_index(
+    const vector<shared_ptr<const Atom>> &reachable_facts) {
     ReachableIndex index;
     index.exact.reserve(reachable_facts.size());
     for (const auto &f : reachable_facts) {
@@ -107,7 +108,7 @@ vector<ConditionPtr> expand_group(
 
 vector<vector<ConditionPtr>> instantiate_groups(
     const vector<vector<ConditionPtr>> &groups,
-    const AtomSet &reachable_facts) {
+    const vector<shared_ptr<const Atom>> &reachable_facts) {
     ReachableIndex reachable = build_reachable_index(reachable_facts);
     vector<vector<ConditionPtr>> result;
     result.reserve(groups.size());
@@ -155,7 +156,8 @@ vector<vector<ConditionPtr>> sort_groups(vector<vector<ConditionPtr>> groups) {
 using AtomIds = unordered_map<const Condition *, int>;
 
 vector<vector<ConditionPtr>> collect_all_mutex_groups(
-    const vector<vector<ConditionPtr>> &groups, const AtomSet &atoms,
+    const vector<vector<ConditionPtr>> &groups,
+    const vector<shared_ptr<const Atom>> &atoms,
     const AtomIds &id_of) {
     vector<vector<ConditionPtr>> result;
     vector<char> in_group(id_of.size(), 0);
@@ -175,7 +177,8 @@ vector<vector<ConditionPtr>> collect_all_mutex_groups(
 }
 
 vector<vector<ConditionPtr>> choose_groups(
-    const vector<vector<ConditionPtr>> &groups_in, const AtomSet &atoms,
+    const vector<vector<ConditionPtr>> &groups_in,
+    const vector<shared_ptr<const Atom>> &atoms,
     const AtomSet &negative_in_goal, const AtomIds &id_of) {
     // Optionally remove negative-in-goal atoms.
     vector<vector<ConditionPtr>> groups;
@@ -297,7 +300,7 @@ vector<vector<string>> build_translation_key(
 }
 
 ComputedGroups compute_groups(
-    const Task &task, const AtomSet &atoms,
+    const Task &task, const vector<shared_ptr<const Atom>> &atoms,
     const vector<ParameterEqualitySummary> *parameter_equalities,
     const AtomSet &negative_in_goal) {
     auto raw = invariants::get_groups(task, parameter_equalities);

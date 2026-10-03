@@ -904,7 +904,7 @@ SASTask pddl_to_sas(Task &task) {
             AtomSet negative_in_goal =
                 collect_negative_in_goal(*inst.instantiated_goal);
             return fact_groups::compute_groups(
-                task, inst.fluent_facts, &inst.parameter_equalities,
+                task, inst.fact_by_id, &inst.parameter_equalities,
                 negative_in_goal);
         });
 
