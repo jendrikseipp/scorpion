@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <functional>
 #include <initializer_list>
-#include <set>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -449,6 +448,11 @@ void Invariant::refine_candidate(
     const InvariantPart *found = part_or_null(add_lit.predicate);
     if (!found)
         return;
+    // The delete-predicate check below prevents a new duplicate, so validate
+    // the existing sorted parts once instead of every proposed refinement.
+    if (ranges::adjacent_find(parts, equal_to{}, &InvariantPart::predicate) !=
+        parts.end())
+        return;
     const InvariantPart &part = *found;
     for (const auto &del_eff : action.effects) {
         if (!del_eff.literal)
@@ -463,17 +467,6 @@ void Invariant::refine_candidate(
         for (auto &m : matches) {
             vector<InvariantPart> new_parts = parts;
             new_parts.push_back(move(m));
-            // Deduplicate by predicate: skip if duplicate predicate.
-            set<string> preds;
-            bool dup = false;
-            for (const auto &p : new_parts) {
-                if (!preds.insert(p.predicate).second) {
-                    dup = true;
-                    break;
-                }
-            }
-            if (dup)
-                continue;
             enqueue_func(Invariant(move(new_parts)));
         }
     }
