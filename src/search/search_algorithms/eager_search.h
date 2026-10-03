@@ -23,6 +23,7 @@ class EagerSearch : public SearchAlgorithm {
 
     std::unique_ptr<StateOpenList> open_list;
     std::shared_ptr<Evaluator> f_evaluator;
+    const bool use_open_list_f_values;
 
     std::vector<Evaluator *> path_dependent_evaluators;
     std::vector<std::shared_ptr<Evaluator>> preferred_operator_evaluators;
@@ -31,7 +32,8 @@ class EagerSearch : public SearchAlgorithm {
     std::shared_ptr<PruningMethod> pruning_method;
 
     void start_f_value_statistics(EvaluationContext &eval_context);
-    void update_f_value_statistics(EvaluationContext &eval_context);
+    void update_f_value_statistics(
+        EvaluationContext &eval_context, std::optional<int> open_list_f_value);
     void reward_progress();
 
     std::optional<SearchNode> get_next_node_to_expand();
@@ -54,7 +56,8 @@ public:
         const std::shared_ptr<PruningMethod> &pruning,
         const std::shared_ptr<Evaluator> &lazy_evaluator,
         OperatorCost cost_type, int bound, double max_time,
-        const std::string &description, utils::Verbosity verbosity);
+        const std::string &description, utils::Verbosity verbosity,
+        bool use_open_list_f_values = false);
 
     virtual void print_statistics() const override;
 

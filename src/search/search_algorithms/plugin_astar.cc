@@ -31,13 +31,21 @@ public:
             "s is not expanded, but instead reinserted into the open list. "
             "This option is currently only present for the A* algorithm.");
         document_note(
-            "Equivalent statements using general eager search",
+            "f-value statistics",
+            "Without a lazy evaluator, f-value jump statistics report the "
+            "stored queue priority of the selected node, avoiding heuristic "
+            "reevaluation solely for statistics. With a lazy evaluator, "
+            "statistics use the expansion-time evaluation context.");
+        document_note(
+            "Corresponding configuration using general eager search",
             "\n```\n--search \"astar(evaluator)\"\n```\n"
-            "is equivalent to\n"
+            "uses the same open-list configuration as\n"
             "```\n--search \"let(h, evaluator, \n"
             "              eager(tiebreaking([sum([g(), h]), h], unsafe_pruning=false),\n"
             "                    reopen_closed=true, f_eval=sum([g(), h])))\"\n"
-            "```\n",
+            "```\n"
+            "General eager search additionally evaluates f_eval at expansion time. "
+            "For changing evaluators, this can affect jump statistics and search behavior.\n",
             true);
     }
 
@@ -62,8 +70,8 @@ public:
                 "f_eval", nullptr),
             options_copy.get_list<shared_ptr<TaskIndependentEvaluator>>(
                 "preferred"),
-            eager_search::get_eager_search_arguments_from_options(
-                options_copy));
+            eager_search::get_eager_search_arguments_from_options(options_copy),
+            true);
     }
 };
 

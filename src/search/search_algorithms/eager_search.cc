@@ -28,11 +28,13 @@ EagerSearch::EagerSearch(
     const shared_ptr<PruningMethod> &pruning,
     const shared_ptr<Evaluator> &lazy_evaluator, OperatorCost cost_type,
     int bound, double max_time, const string &description,
-    utils::Verbosity verbosity)
+    utils::Verbosity verbosity, bool use_open_list_f_values)
     : SearchAlgorithm(task, cost_type, bound, max_time, description, verbosity),
       reopen_closed_nodes(reopen_closed),
       open_list(open->create_state_open_list()),
       f_evaluator(f_eval), // default nullptr
+      use_open_list_f_values(
+          use_open_list_f_values && f_eval && !lazy_evaluator),
       preferred_operator_evaluators(preferred),
       lazy_evaluator(lazy_evaluator), // default nullptr
       pruning_method(pruning) {
@@ -133,7 +135,11 @@ SearchStatus EagerSearch::step() {
 
 optional<SearchNode> EagerSearch::get_next_node_to_expand() {
     while (!open_list->empty()) {
-        StateID id = open_list->remove_min();
+        optional<int> open_list_f_value;
+        StateID id = use_open_list_f_values
+                         ? open_list->remove_min_with_value(
+                               f_evaluator.get(), open_list_f_value)
+                         : open_list->remove_min();
         State s = state_registry.lookup_state(id);
         SearchNode node = search_space.get_node(s);
 
@@ -183,7 +189,7 @@ optional<SearchNode> EagerSearch::get_next_node_to_expand() {
 
         node.close();
         assert(!node.is_dead_end());
-        update_f_value_statistics(eval_context);
+        update_f_value_statistics(eval_context, open_list_f_value);
         return node;
     }
     return nullopt;
@@ -338,12 +344,14 @@ void EagerSearch::start_f_value_statistics(EvaluationContext &eval_context) {
     }
 }
 
-/* TODO: HACK! This is very inefficient for simply looking up an h value.
-   Also, if h values are not saved it would recompute h for each and every
-   state. */
-void EagerSearch::update_f_value_statistics(EvaluationContext &eval_context) {
+void EagerSearch::update_f_value_statistics(
+    EvaluationContext &eval_context, optional<int> open_list_f_value) {
     if (f_evaluator) {
-        int f_value = eval_context.get_evaluator_value(f_evaluator.get());
+        // Non-lazy A* reports the selected queue priority. General eager search
+        // and lazy reevaluation retain expansion-time evaluator semantics.
+        int f_value = open_list_f_value
+                          ? *open_list_f_value
+                          : eval_context.get_evaluator_value(f_evaluator.get());
         statistics.report_f_value_progress(f_value);
     }
 }
