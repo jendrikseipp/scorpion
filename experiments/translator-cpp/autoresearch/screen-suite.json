@@ -1,0 +1,12 @@
+[
+  "airport-adl:p26-airport4halfMUC-p6.pddl",
+  "airport-adl:p50-airport5MUC-p15.pddl",
+  "agricola-opt18-strips:p20.pddl",
+  "organic-synthesis-split-sat18-strips:p01.pddl",
+  "organic-synthesis-split-sat18-strips:p11.pddl",
+  "organic-synthesis-split-sat18-strips:p20.pddl",
+  "rovers:p40.pddl",
+  "tpp:p30.pddl",
+  "transport-sat14-strips:p20.pddl",
+  "psr-large:p26-s170-n20-l3-f10.pddl"
+]
