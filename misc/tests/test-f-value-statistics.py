@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -15,7 +16,8 @@ GRAPHS = {
 
 @pytest.fixture(params=["release", "debug"])
 def downward(request):
-    binary = REPO / "builds" / request.param / "bin" / "downward"
+    binary_name = "downward.exe" if os.name == "nt" else "downward"
+    binary = REPO / "builds" / request.param / "bin" / binary_name
     assert binary.is_file(), f"Build {request.param} before running these tests."
     return binary
 
