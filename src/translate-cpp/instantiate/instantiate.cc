@@ -12,6 +12,7 @@
 #include "../utils/system.h"
 
 #include <algorithm>
+#include <array>
 #include <bit>
 #include <fstream>
 #include <functional>
@@ -155,17 +156,27 @@ unordered_map<string, vector<int>> get_objects_by_type(const Task &task) {
     return result;
 }
 
-// Restrict a single quantified parameter using its first, static binary guard.
+// Restrict one quantified parameter using its first static binary/ternary guard.
 // Relations are shared across types. Unsorted typed pools use the old path.
 // Plans borrow task/type storage, which stays unchanged during instantiate().
 // Retained assignments still evaluate the full condition in its original order.
 class StaticGuardDomains {
+    struct FixedPairHash {
+        size_t operator()(const array<int, 2> &key) const noexcept {
+            size_t h = hash<int>{}(key[0]);
+            utils::hash_combine(h, hash<int>{}(key[1]));
+            return h;
+        }
+    };
     struct Plan {
         const string *fixed_arg;
+        const string *second_fixed_arg; // nullptr for a binary guard
         const vector<int> *objects;
         size_t relation;
     };
     vector<unordered_map<int, vector<int>>> relations_;
+    vector<unordered_map<array<int, 2>, vector<int>, FixedPairHash>>
+        ternary_relations_;
     unordered_map<const Effect *, Plan> plans_;
     const vector<int> empty_;
 
@@ -179,7 +190,9 @@ public:
         const Task &task, const unordered_set<int> &fluent_preds,
         const FactMap &facts,
         const unordered_map<string, vector<int>> &objects_by_type) {
-        map<pair<int, int>, size_t> modes;
+        // Separate mode namespaces preserve arity even for internal Tasks.
+        array<map<pair<int, int>, size_t>, 2> modes;
+        vector<const vector<int> *> ternary_pools;
         unordered_map<const vector<int> *, bool> sorted_types;
         for (const auto &action : task.actions) {
             for (const auto &eff : action.effects) {
@@ -193,14 +206,19 @@ public:
                 if (!first || first->kind() != Condition::Kind::ATOM)
                     continue;
                 const auto &guard = static_cast<const Literal &>(*first);
-                if (guard.args.size() != 2 ||
+                size_t arity = guard.args.size();
+                if ((arity != 2 && arity != 3) ||
                     fluent_preds.contains(guard.predicate_id))
                     continue;
-                bool left = guard.args[0] == eff.parameters[0].name;
-                bool right = guard.args[1] == eff.parameters[0].name;
-                if (left == right)
+                int quantified_arg = -1;
+                size_t occurrences = 0;
+                for (size_t i = 0; i < arity; ++i)
+                    if (guard.args[i] == eff.parameters[0].name) {
+                        quantified_arg = static_cast<int>(i);
+                        ++occurrences;
+                    }
+                if (occurrences != 1)
                     continue;
-                int quantified_arg = left ? 0 : 1;
                 auto objects = objects_by_type.find(eff.parameters[0].type_name);
                 if (objects == objects_by_type.end() || objects->second.empty())
                     continue;
@@ -214,25 +232,61 @@ public:
                     sorted->second = ranges::is_sorted(objects->second);
                 if (!sorted->second)
                     continue;
-                auto [mode, new_mode] = modes.try_emplace(
-                    pair{guard.predicate_id, quantified_arg}, relations_.size());
-                if (new_mode)
-                    relations_.emplace_back();
+                auto [mode, new_mode] = modes[arity - 2].try_emplace(
+                    pair{guard.predicate_id, quantified_arg},
+                    arity == 2 ? relations_.size() : ternary_relations_.size());
+                if (new_mode) {
+                    if (arity == 2)
+                        relations_.emplace_back();
+                    else {
+                        ternary_relations_.emplace_back();
+                        ternary_pools.push_back(&objects->second);
+                    }
+                } else if (arity == 3 &&
+                           ternary_pools[mode->second] != &objects->second) {
+                    // A shared ternary mode needs one exact typed universe.
+                    ternary_pools[mode->second] = nullptr;
+                }
+                array<const string *, 2> fixed_args{};
+                size_t fixed_position = 0;
+                for (size_t i = 0; i < arity; ++i)
+                    if (static_cast<int>(i) != quantified_arg)
+                        fixed_args[fixed_position++] = &guard.args[i];
                 plans_.emplace(&eff, Plan{
-                    &guard.args[1 - quantified_arg], &objects->second,
-                    mode->second});
+                    fixed_args[0], fixed_args[1], &objects->second, mode->second});
             }
         }
-        if (modes.empty())
+        // Mixed typed pools use the original evaluator; do not build their rows.
+        erase_if(plans_, [&](const auto &entry) {
+            const Plan &plan = entry.second;
+            return plan.second_fixed_arg && !ternary_pools[plan.relation];
+        });
+        erase_if(modes[1], [&](const auto &entry) {
+            return !ternary_pools[entry.second];
+        });
+        if (modes[0].empty() && modes[1].empty())
             return;
         for (const auto &element : task.init) {
             const auto *atom = get_if<shared_ptr<const Atom>>(&element);
-            if (!atom || !*atom || (*atom)->args.size() != 2)
+            if (!atom || !*atom)
+                continue;
+            size_t arity = (*atom)->args.size();
+            if (arity != 2 && arity != 3)
                 continue;
             int predicate = (*atom)->predicate_id;
-            auto left = modes.find({predicate, 0});
-            auto right = modes.find({predicate, 1});
-            if (left == modes.end() && right == modes.end())
+            const auto &arity_modes = modes[arity - 2];
+            if (arity_modes.empty())
+                continue;
+            array<optional<size_t>, 3> requested{};
+            bool any_requested = false;
+            for (size_t i = 0; i < arity; ++i) {
+                auto mode = arity_modes.find({predicate, static_cast<int>(i)});
+                if (mode != arity_modes.end()) {
+                    requested[i] = mode->second;
+                    any_requested = true;
+                }
+            }
+            if (!any_requested)
                 continue;
             GroundKey key;
             key.predicate = predicate;
@@ -241,12 +295,32 @@ public:
             const FactId *id = facts.find(key);
             if (!id || *id != STATIC_FACT)
                 continue;
-            if (left != modes.end())
-                relations_[left->second][key.args[1]].push_back(key.args[0]);
-            if (right != modes.end())
-                relations_[right->second][key.args[0]].push_back(key.args[1]);
+            for (size_t i = 0; i < arity; ++i) {
+                if (!requested[i])
+                    continue;
+                if (arity == 2) {
+                    relations_[*requested[i]][key.args[1 - i]].push_back(
+                        key.args[i]);
+                } else {
+                    if (!ranges::binary_search(
+                            *ternary_pools[*requested[i]], key.args[i]))
+                        continue;
+                    array<int, 2> fixed;
+                    size_t fixed_position = 0;
+                    for (size_t j = 0; j < arity; ++j)
+                        if (j != i)
+                            fixed[fixed_position++] = key.args[j];
+                    ternary_relations_[*requested[i]][fixed].push_back(
+                        key.args[i]);
+                }
+            }
         }
         for (auto &relation : relations_)
+            for (auto &[fixed, values] : relation) {
+                ranges::sort(values);
+                values.erase(unique(values.begin(), values.end()), values.end());
+            }
+        for (auto &relation : ternary_relations_)
             for (auto &[fixed, values] : relation) {
                 ranges::sort(values);
                 values.erase(unique(values.begin(), values.end()), values.end());
@@ -265,17 +339,33 @@ public:
             return nullopt;
         int fixed = binding == mapping.end()
                         ? grounding::symbols().intern(arg) : binding->second;
-        const auto &relation = relations_[plan->second.relation];
-        auto matches = relation.find(fixed);
+        const vector<int> *matches = &empty_;
+        if (plan->second.second_fixed_arg) {
+            const string &second_arg = *plan->second.second_fixed_arg;
+            auto second_binding = mapping.find(second_arg);
+            if (second_binding == mapping.end() &&
+                !second_arg.empty() && second_arg[0] == '?')
+                return nullopt;
+            int second_fixed = second_binding == mapping.end()
+                                   ? grounding::symbols().intern(second_arg)
+                                   : second_binding->second;
+            const auto &relation = ternary_relations_[plan->second.relation];
+            auto row = relation.find(array<int, 2>{fixed, second_fixed});
+            if (row != relation.end())
+                matches = &row->second;
+        } else {
+            const auto &relation = relations_[plan->second.relation];
+            auto row = relation.find(fixed);
+            if (row != relation.end())
+                matches = &row->second;
+        }
         // Bound indexed searches by one scan of the typed pool; broad or dense
         // relation rows may otherwise cost more than the original enumeration.
-        if (matches != relation.end() &&
-            matches->second.size() > plan->second.objects->size() /
+        if (!matches->empty() &&
+            matches->size() > plan->second.objects->size() /
                 (2 * bit_width(plan->second.objects->size())))
             return nullopt;
-        return Domain{
-            *plan->second.objects,
-            matches == relation.end() ? empty_ : matches->second};
+        return Domain{*plan->second.objects, *matches};
     }
 };
 
