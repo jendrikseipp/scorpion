@@ -73,10 +73,6 @@ ostream &operator<<(ostream &os, const Rule &r) {
 }
 
 void Program::add_fact(Atom atom) {
-    for (const auto &a : atom.args) {
-        if (a.is_symbol())
-            objects.insert(a.v);
-    }
     facts.push_back(move(atom));
 }
 
@@ -165,9 +161,14 @@ void Program::normalize() {
     }
     if (must_add_predicate) {
         cout << "Unbound effect variables: Adding @object predicate." << endl;
-        // Snapshot objects to avoid invalidating during add_fact.
-        vector<int> objs(objects.begin(), objects.end());
-        for (int o : objs)
+        // Only this branch needs the object inventory from the existing facts.
+        unordered_set<int> objects;
+        for (const auto &atom : facts) {
+            for (const auto &a : atom.args)
+                if (a.is_symbol())
+                    objects.insert(a.v);
+        }
+        for (int o : objects)
             add_fact(Atom("@object", ArgList{Arg::from_symbol(o)}));
     }
     // split_duplicate_arguments

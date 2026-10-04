@@ -173,9 +173,6 @@ class Program {
 public:
     std::vector<Atom> facts;
     std::vector<Rule> rules;
-    // Interned ids of every object appearing in a fact argument, used only to
-    // synthesize @object facts for otherwise-unbound effect variables.
-    std::unordered_set<int> objects;
     // Role of each head predicate (by interned id), for the instantiation
     // pass. See PredicateRoles.
     PredicateRoles predicate_roles;
