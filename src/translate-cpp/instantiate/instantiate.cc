@@ -558,6 +558,8 @@ shared_ptr<PropositionalAxiom> instantiate_axiom(
     for (const auto &l : condition_lits)
         condition.push_back(to_condition(l, fact_by_id));
 
+    GroundKey effect_key;
+    bool all_effect_args_bound = true;
     vector<string> eff_args;
     eff_args.reserve(axiom.num_external_parameters);
     for (int i = 0; i < axiom.num_external_parameters; ++i) {
@@ -566,8 +568,30 @@ shared_ptr<PropositionalAxiom> instantiate_axiom(
         eff_args.push_back(
             it == var_mapping.end() ? n
                                     : grounding::symbols().name(it->second));
+        if (it == var_mapping.end())
+            all_effect_args_bound = false;
+        else
+            effect_key.args.push_back(it->second);
     }
-    auto effect = make_shared<const Atom>(axiom.name, move(eff_args));
+    // Positive condition literals already share these immutable fact atoms.
+    // Preserve the fresh-Atom fallback for unmatched internal model inputs.
+    effect_key.predicate = grounding::symbols().intern(axiom.name);
+    shared_ptr<const Atom> effect;
+    if (all_effect_args_bound) {
+        const FactId *id = fluent_facts.find(effect_key);
+        if (id && *id >= 0 && static_cast<size_t>(*id) < fact_by_id.size()) {
+            const auto &canonical = fact_by_id[*id];
+            if (canonical &&
+                canonical->predicate_id == effect_key.predicate &&
+                canonical->predicate == axiom.name &&
+                canonical->args == eff_args &&
+                canonical->hash() ==
+                    pddl::detail::literal_hash(axiom.name, eff_args))
+                effect = canonical;
+        }
+    }
+    if (!effect)
+        effect = make_shared<const Atom>(axiom.name, move(eff_args));
     return make_shared<PropositionalAxiom>(
         move(name), move(condition), move(effect));
 }
