@@ -12,8 +12,10 @@
 #include "../utils/system.h"
 
 #include <algorithm>
+#include <bit>
 #include <fstream>
 #include <functional>
+#include <map>
 #include <memory>
 #include <optional>
 #include <set>
@@ -153,6 +155,130 @@ unordered_map<string, vector<int>> get_objects_by_type(const Task &task) {
     return result;
 }
 
+// Restrict a single quantified parameter using its first, static binary guard.
+// Relations are shared across types. Unsorted typed pools use the old path.
+// Plans borrow task/type storage, which stays unchanged during instantiate().
+// Retained assignments still evaluate the full condition in its original order.
+class StaticGuardDomains {
+    struct Plan {
+        const string *fixed_arg;
+        const vector<int> *objects;
+        size_t relation;
+    };
+    vector<unordered_map<int, vector<int>>> relations_;
+    unordered_map<const Effect *, Plan> plans_;
+    const vector<int> empty_;
+
+public:
+    struct Domain {
+        const vector<int> &objects;
+        const vector<int> &matches;
+    };
+
+    StaticGuardDomains(
+        const Task &task, const unordered_set<int> &fluent_preds,
+        const FactMap &facts,
+        const unordered_map<string, vector<int>> &objects_by_type) {
+        map<pair<int, int>, size_t> modes;
+        unordered_map<const vector<int> *, bool> sorted_types;
+        for (const auto &action : task.actions) {
+            for (const auto &eff : action.effects) {
+                if (eff.parameters.size() != 1 || !eff.condition)
+                    continue;
+                const Condition *first = eff.condition.get();
+                if (first->kind() == Condition::Kind::CONJUNCTION) {
+                    const auto &parts = first->parts();
+                    first = parts.empty() ? nullptr : parts.front().get();
+                }
+                if (!first || first->kind() != Condition::Kind::ATOM)
+                    continue;
+                const auto &guard = static_cast<const Literal &>(*first);
+                if (guard.args.size() != 2 ||
+                    fluent_preds.contains(guard.predicate_id))
+                    continue;
+                bool left = guard.args[0] == eff.parameters[0].name;
+                bool right = guard.args[1] == eff.parameters[0].name;
+                if (left == right)
+                    continue;
+                int quantified_arg = left ? 0 : 1;
+                auto objects = objects_by_type.find(eff.parameters[0].type_name);
+                if (objects == objects_by_type.end() || objects->second.empty())
+                    continue;
+                // No nonempty row can pass the query bound for this pool.
+                size_t pool_size = objects->second.size();
+                if (pool_size / (2 * bit_width(pool_size)) == 0)
+                    continue;
+                auto [sorted, new_type] = sorted_types.try_emplace(
+                    &objects->second, false);
+                if (new_type)
+                    sorted->second = ranges::is_sorted(objects->second);
+                if (!sorted->second)
+                    continue;
+                auto [mode, new_mode] = modes.try_emplace(
+                    pair{guard.predicate_id, quantified_arg}, relations_.size());
+                if (new_mode)
+                    relations_.emplace_back();
+                plans_.emplace(&eff, Plan{
+                    &guard.args[1 - quantified_arg], &objects->second,
+                    mode->second});
+            }
+        }
+        if (modes.empty())
+            return;
+        for (const auto &element : task.init) {
+            const auto *atom = get_if<shared_ptr<const Atom>>(&element);
+            if (!atom || !*atom || (*atom)->args.size() != 2)
+                continue;
+            int predicate = (*atom)->predicate_id;
+            auto left = modes.find({predicate, 0});
+            auto right = modes.find({predicate, 1});
+            if (left == modes.end() && right == modes.end())
+                continue;
+            GroundKey key;
+            key.predicate = predicate;
+            for (const auto &arg : (*atom)->args)
+                key.args.push_back(grounding::symbols().intern(arg));
+            const FactId *id = facts.find(key);
+            if (!id || *id != STATIC_FACT)
+                continue;
+            if (left != modes.end())
+                relations_[left->second][key.args[1]].push_back(key.args[0]);
+            if (right != modes.end())
+                relations_[right->second][key.args[0]].push_back(key.args[1]);
+        }
+        for (auto &relation : relations_)
+            for (auto &[fixed, values] : relation) {
+                ranges::sort(values);
+                values.erase(unique(values.begin(), values.end()), values.end());
+            }
+    }
+
+    // nullopt means unsupported; an empty match list means no assignment.
+    optional<Domain> restrict_assignments(
+        const Effect &eff, const VarMapping &mapping) const {
+        auto plan = plans_.find(&eff);
+        if (plan == plans_.end())
+            return nullopt;
+        const string &arg = *plan->second.fixed_arg;
+        auto binding = mapping.find(arg);
+        if (binding == mapping.end() && !arg.empty() && arg[0] == '?')
+            return nullopt;
+        int fixed = binding == mapping.end()
+                        ? grounding::symbols().intern(arg) : binding->second;
+        const auto &relation = relations_[plan->second.relation];
+        auto matches = relation.find(fixed);
+        // Bound indexed searches by one scan of the typed pool; broad or dense
+        // relation rows may otherwise cost more than the original enumeration.
+        if (matches != relation.end() &&
+            matches->second.size() > plan->second.objects->size() /
+                (2 * bit_width(plan->second.objects->size())))
+            return nullopt;
+        return Domain{
+            *plan->second.objects,
+            matches == relation.end() ? empty_ : matches->second};
+    }
+};
+
 // Recursively iterate over the cartesian product of objects-by-type for
 // each parameter, calling `fn(var_mapping)` for each assignment.
 void for_each_assignment(
@@ -177,6 +303,7 @@ void for_each_assignment(
 void instantiate_effect(
     const Effect &eff, VarMapping &var_mapping, const FactMap &fluent_facts,
     const unordered_map<string, vector<int>> &objects_by_type,
+    const StaticGuardDomains &guard_domains,
     vector<GroundEffect> &result) {
     auto inst_once = [&]() {
         GroundLiteralList condition;
@@ -193,6 +320,15 @@ void instantiate_effect(
     };
     if (eff.parameters.empty()) {
         inst_once();
+    } else if (auto domain =
+                   guard_domains.restrict_assignments(eff, var_mapping)) {
+        for (int object : domain->matches) {
+            auto [begin, end] = ranges::equal_range(domain->objects, object);
+            for (auto pos = begin; pos != end; ++pos) {
+                var_mapping[eff.parameters[0].name] = *pos;
+                inst_once();
+            }
+        }
     } else {
         for_each_assignment(
             eff.parameters, var_mapping, objects_by_type, inst_once);
@@ -240,6 +376,7 @@ optional<PropositionalAction> instantiate_action(
     const Action &action, const grounding::ArgList &args,
     const InitAssignments &init_assignments, const FactMap &fluent_facts,
     const unordered_map<string, vector<int>> &objects_by_type,
+    const StaticGuardDomains &guard_domains,
     bool use_metric) {
     // Applicability heads may include additional existential bindings.
     if (args.size() < action.parameters.size())
@@ -281,11 +418,13 @@ optional<PropositionalAction> instantiate_action(
             // only reads var_mapping, so share the action's mapping
             // directly instead of copying the whole map per effect.
             instantiate_effect(
-                eff, var_mapping, fluent_facts, objects_by_type, effects);
+                eff, var_mapping, fluent_facts, objects_by_type,
+                guard_domains, effects);
         } else {
             VarMapping local_mapping = var_mapping;
             instantiate_effect(
-                eff, local_mapping, fluent_facts, objects_by_type, effects);
+                eff, local_mapping, fluent_facts, objects_by_type,
+                guard_domains, effects);
         }
     }
     if (!effects.empty() || get_options().keep_no_ops) {
@@ -379,6 +518,8 @@ Result instantiate(
     add_static_init_facts(task, out.fluent_fact_ids);
     auto init_assignments = build_init_assignments(task);
     auto objects_by_type = get_objects_by_type(task);
+    StaticGuardDomains guard_domains(
+        task, fluent_preds, fluent_facts, objects_by_type);
 
     for (const auto &atom : model) {
         switch (roles.role_of(atom.predicate)) {
@@ -398,7 +539,7 @@ Result instantiate(
             });
             auto inst = instantiate_action(
                 action, atom.args, init_assignments, fluent_facts,
-                objects_by_type, task.use_min_cost_metric);
+                objects_by_type, guard_domains, task.use_min_cost_metric);
             if (inst)
                 out.instantiated_actions.push_back(move(*inst));
             break;
