@@ -685,7 +685,6 @@ vector<SASAxiom> translate_strips_axiom(
 
 SASTask trivial_task(bool solvable) {
     SASTask t;
-    t.variables.ranges = {2};
     t.variables.axiom_layers = {-1};
     t.variables.value_names = {{"Atom dummy(val1)", "Atom dummy(val2)"}};
     t.init.values = {0};
@@ -971,7 +970,6 @@ SASTask pddl_to_sas(Task &task) {
         SASVariables sas_vars;
         sas_vars.axiom_layers =
             build_axiom_layers(strips_to_sas, axiom_layering, fluent_ids);
-        sas_vars.ranges = move(strips_to_sas.ranges);
         sas_vars.value_names = move(groups.translation_key);
 
         vector<SASMutexGroup> sas_mutexes =

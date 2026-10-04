@@ -99,8 +99,8 @@ void dump_statistics(const sas::SASTask &task) {
         if (l >= 0)
             ++derived;
     int facts = 0;
-    for (int r : task.variables.ranges)
-        facts += r;
+    for (size_t var = 0; var < task.variables.get_num_variables(); ++var)
+        facts += task.variables.get_domain_size(var);
     int mutex_total = 0;
     for (const auto &m : task.mutexes)
         mutex_total += static_cast<int>(m.facts.size());
@@ -119,7 +119,7 @@ void dump_statistics(const sas::SASTask &task) {
     for (const auto &ax : task.axioms)
         task_size += 1 + static_cast<int>(ax.condition.size());
 
-    utils::log() << "Translator variables: " << task.variables.ranges.size()
+    utils::log() << "Translator variables: " << task.variables.get_num_variables()
                  << endl;
     utils::log() << "Translator derived variables: " << derived << endl;
     utils::log() << "Translator facts: " << facts << endl;

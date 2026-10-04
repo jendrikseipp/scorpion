@@ -77,9 +77,9 @@ struct DTG {
 
 vector<DTG> build_dtgs(const SASTask &task) {
     vector<DTG> dtgs;
-    dtgs.reserve(task.variables.ranges.size());
-    for (size_t i = 0; i < task.variables.ranges.size(); ++i)
-        dtgs.emplace_back(task.init.values[i], task.variables.ranges[i]);
+    dtgs.reserve(task.variables.get_num_variables());
+    for (size_t i = 0; i < task.variables.get_num_variables(); ++i)
+        dtgs.emplace_back(task.init.values[i], task.variables.get_domain_size(i));
     auto add_arc_var = [&](int var_no, int pre_spec, int post) {
         if (pre_spec == -1)
             dtgs[var_no].add_unconditional(post);
@@ -190,7 +190,6 @@ void apply_to_variables(const Renaming &r, SASVariables &vars) {
         if (nv >= 0)
             new_axiom_layers[nv] = vars.axiom_layers[old];
     }
-    vars.ranges = r.new_sizes;
     vars.axiom_layers = move(new_axiom_layers);
     vector<vector<string>> new_names(r.new_var_count);
     for (int nv = 0; nv < r.new_var_count; ++nv)

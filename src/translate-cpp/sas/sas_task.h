@@ -3,6 +3,7 @@
 
 #include "../algorithms/small_vector.h"
 
+#include <cstddef>
 #include <ostream>
 #include <string>
 #include <tuple>
@@ -18,9 +19,15 @@ using VarVal = std::pair<int, int>;
 using EffectConditions = small_vector::SmallVector<VarVal, 1>;
 
 struct SASVariables {
-    std::vector<int> ranges;
     std::vector<int> axiom_layers;
+    // Each row owns all values of a variable, including its domain size.
     std::vector<std::vector<std::string>> value_names;
+    std::size_t get_num_variables() const {
+        return value_names.size();
+    }
+    int get_domain_size(std::size_t var) const {
+        return static_cast<int>(value_names[var].size());
+    }
     void output(std::ostream &os) const;
     int get_encoding_size() const;
 };

@@ -85,9 +85,9 @@ public:
 
 void write_variables(
     FastWriter &w, const SASVariables &vars, ostream *chunked_output = nullptr) {
-    w.put(vars.ranges.size());
+    w.put(vars.get_num_variables());
     w.nl();
-    for (size_t i = 0; i < vars.ranges.size(); ++i) {
+    for (size_t i = 0; i < vars.get_num_variables(); ++i) {
         w.put(string_view("begin_variable"));
         w.nl();
         w.put(string_view("var"));
@@ -95,7 +95,7 @@ void write_variables(
         w.nl();
         w.put(vars.axiom_layers[i]);
         w.nl();
-        w.put(vars.ranges[i]);
+        w.put(vars.get_domain_size(i));
         w.nl();
         for (const auto &v : vars.value_names[i]) {
             w.put(v);
@@ -235,9 +235,9 @@ void SASVariables::output(ostream &os) const {
     os.write(buf.data(), static_cast<streamsize>(buf.size()));
 }
 int SASVariables::get_encoding_size() const {
-    int size = static_cast<int>(ranges.size());
-    for (int r : ranges)
-        size += r;
+    int size = static_cast<int>(get_num_variables());
+    for (size_t var = 0; var < get_num_variables(); ++var)
+        size += get_domain_size(var);
     return size;
 }
 SASMutexGroup::SASMutexGroup(vector<VarVal> f) : facts(move(f)) {

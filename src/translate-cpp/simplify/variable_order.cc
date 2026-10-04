@@ -40,7 +40,7 @@ public:
     unordered_map<int, int> goal_map;
 
     explicit CausalGraph(const SASTask &task) {
-        num_variables = static_cast<int>(task.variables.ranges.size());
+        num_variables = static_cast<int>(task.variables.get_num_variables());
         weighted_graph.assign(num_variables, {});
         for (const auto &[v, val] : task.goal.pairs)
             goal_map[v] = val;
@@ -317,17 +317,14 @@ public:
 
     void apply(SASTask &task) const {
         // Variables.
-        vector<int> ranges, layers;
+        vector<int> layers;
         vector<vector<string>> names;
-        ranges.reserve(ordering.size());
         layers.reserve(ordering.size());
         names.reserve(ordering.size());
         for (int var : ordering) {
-            ranges.push_back(task.variables.ranges[var]);
             layers.push_back(task.variables.axiom_layers[var]);
             names.push_back(move(task.variables.value_names[var]));
         }
-        task.variables.ranges = move(ranges);
         task.variables.axiom_layers = move(layers);
         task.variables.value_names = move(names);
         // Init.
