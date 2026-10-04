@@ -9,11 +9,20 @@
 #include "../utils/cpython_random.h"
 
 #include <cstddef>
+#include <optional>
 #include <random>
 #include <unordered_map>
 #include <vector>
 
 namespace translate::invariants {
+// The immutable inputs used by balance checks. Views borrow checker-owned
+// rows only; they are assembled on demand rather than stored across moves.
+struct ActionView {
+    const std::vector<pddl::TypedObject> &parameters;
+    const pddl::ConditionPtr &precondition;
+    const std::vector<pddl::Effect> &effects;
+};
+
 class BalanceChecker {
 public:
     BalanceChecker(
@@ -24,11 +33,16 @@ public:
     // Indices (rather than pointers) let callers deduplicate threats with the
     // epoch stamp below instead of a per-call hash set.
     const std::vector<int> &get_threats(const std::string &predicate) const;
-    const pddl::Action &action(int index) const {
-        return patched_actions_[index];
+    ActionView action(int index) const {
+        const auto &row = action_rows_[index];
+        return {row.parameters, row.precondition, row.effects};
     }
-    const pddl::Action &heavy_action(int index) const {
-        return heavy_actions_[index];
+    ActionView heavy_action(int index) const {
+        const auto &row = action_rows_[index];
+        if (!row.heavy)
+            return action(index);
+        return {
+            row.parameters, row.heavy->precondition, row.heavy->effects};
     }
     int next_index(std::size_t upper_bound);
 
@@ -50,6 +64,17 @@ public:
     }
 
 private:
+    struct HeavyBody {
+        pddl::ConditionPtr precondition;
+        std::vector<pddl::Effect> effects;
+    };
+    struct ActionRow {
+        std::vector<pddl::TypedObject> parameters;
+        pddl::ConditionPtr precondition;
+        std::vector<pddl::Effect> effects;
+        std::optional<HeavyBody> heavy;
+    };
+
     // Constructor phases (each fills the members below).
     void build_patched_actions(
         const pddl::Task &task,
@@ -57,8 +82,7 @@ private:
     void build_heavy_actions();
     void build_predicate_map();
 
-    std::vector<pddl::Action> patched_actions_; // owns patched actions
-    std::vector<pddl::Action> heavy_actions_; // owns heavy versions (aligned)
+    std::vector<ActionRow> action_rows_; // owns ordinary and heavy check inputs
     std::unordered_map<std::string, std::vector<int>>
         predicates_to_add_actions_;
     std::vector<long> action_stamp_; // epoch of last insert, per action

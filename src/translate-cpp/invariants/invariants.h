@@ -18,6 +18,7 @@
 
 namespace translate::invariants {
 class BalanceChecker; // fwd
+struct ActionView; // immutable checker-owned inputs
 
 inline constexpr int COUNTED = -1;
 
@@ -119,12 +120,12 @@ private:
     EqualityConjunction get_cover_equivalence_conjunction(
         const pddl::Literal &literal) const;
 
-    bool operator_too_heavy(const pddl::Action &heavy_action) const;
+    bool operator_too_heavy(const ActionView &heavy_action) const;
     bool operator_unbalanced(
-        const pddl::Action &action,
+        const ActionView &action,
         const std::function<void(Invariant)> &enqueue_func) const;
     bool add_effect_unbalanced(
-        const pddl::Action &action, const pddl::Effect &add_effect,
+        const ActionView &action, const pddl::Effect &add_effect,
         const std::vector<const pddl::Effect *> &del_effects,
         const std::function<void(Invariant)> &enqueue_func) const;
     /*
@@ -138,11 +139,11 @@ private:
         bool negated;
     };
     bool balances(
-        const pddl::Action &action, const pddl::Effect &del_effect,
+        const ActionView &action, const pddl::Effect &del_effect,
         const pddl::Effect &add_effect, const EqualityConjunction &add_cover,
         const ConstraintSystem &param_system) const;
     void refine_candidate(
-        const pddl::Effect &add_effect, const pddl::Action &action,
+        const pddl::Effect &add_effect, const ActionView &action,
         const std::function<void(Invariant)> &enqueue_func) const;
 };
 

@@ -292,7 +292,7 @@ bool Invariant::check_balance(
     return true;
 }
 
-bool Invariant::operator_too_heavy(const Action &h_action) const {
+bool Invariant::operator_too_heavy(const ActionView &h_action) const {
     vector<const Effect *> add_effects;
     for (const auto &eff : h_action.effects) {
         if (!eff.literal)
@@ -328,7 +328,8 @@ bool Invariant::operator_too_heavy(const Action &h_action) const {
 }
 
 bool Invariant::operator_unbalanced(
-    const Action &action, const function<void(Invariant)> &enqueue_func) const {
+    const ActionView &action,
+    const function<void(Invariant)> &enqueue_func) const {
     vector<const Effect *> add_effects, del_effects;
     for (const auto &eff : action.effects) {
         if (!eff.literal)
@@ -345,7 +346,7 @@ bool Invariant::operator_unbalanced(
 }
 
 bool Invariant::add_effect_unbalanced(
-    const Action &action, const Effect &add_effect,
+    const ActionView &action, const Effect &add_effect,
     const vector<const Effect *> &del_effects,
     const function<void(Invariant)> &enqueue_func) const {
     const auto &add_lit = static_cast<const Literal &>(*add_effect.literal);
@@ -393,7 +394,7 @@ bool Invariant::add_effect_unbalanced(
 }
 
 bool Invariant::balances(
-    const Action &action, const Effect &del_effect, const Effect &add_effect,
+    const ActionView &action, const Effect &del_effect, const Effect &add_effect,
     const EqualityConjunction &add_cover,
     const ConstraintSystem &param_system) const {
     const auto &add_lit = static_cast<const Literal &>(*add_effect.literal);
@@ -442,7 +443,7 @@ bool Invariant::balances(
 }
 
 void Invariant::refine_candidate(
-    const Effect &add_effect, const Action &action,
+    const Effect &add_effect, const ActionView &action,
     const function<void(Invariant)> &enqueue_func) const {
     const auto &add_lit = static_cast<const Literal &>(*add_effect.literal);
     const InvariantPart *found = part_or_null(add_lit.predicate);

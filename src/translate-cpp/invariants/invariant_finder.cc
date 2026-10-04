@@ -25,18 +25,18 @@ using namespace pddl;
 
 namespace {
 // Add the parameter inequalities accumulated over all reachable groundings.
-Action patch_action_inequalities(
+ConditionPtr patch_precondition_inequalities(
     const Action &act, const ParameterEqualitySummary &parameter_equalities) {
-    Action patched = act;
+    ConditionPtr patched = act.precondition;
     const auto &inequal_pairs = parameter_equalities.always_distinct;
     if (!inequal_pairs.empty()) {
         vector<ConditionPtr> parts;
-        parts.push_back(patched.precondition);
+        parts.push_back(patched);
         for (const auto &[p1, p2] : inequal_pairs)
             parts.push_back(make_shared<NegatedAtom>(
                 "=", vector<string>{
                          act.parameters[p1].name, act.parameters[p2].name}));
-        patched.precondition =
+        patched =
             make_shared<Conjunction>(move(parts))->simplified();
     }
     return patched;
@@ -55,48 +55,45 @@ BalanceChecker::BalanceChecker(
 void BalanceChecker::build_patched_actions(
     const Task &task,
     const vector<ParameterEqualitySummary> *parameter_equalities) {
-    patched_actions_.reserve(task.actions.size());
+    action_rows_.reserve(task.actions.size());
     for (size_t i = 0; i < task.actions.size(); ++i) {
         const Action &act = task.actions[i];
+        ConditionPtr precondition = act.precondition;
         if (parameter_equalities && i < parameter_equalities->size())
-            patched_actions_.push_back(patch_action_inequalities(
-                act, (*parameter_equalities)[i]));
-        else
-            patched_actions_.push_back(act);
+            precondition = patch_precondition_inequalities(
+                act, (*parameter_equalities)[i]);
+        action_rows_.push_back(
+            {act.parameters, move(precondition), act.effects, nullopt});
     }
 }
 
 void BalanceChecker::build_heavy_actions() {
-    heavy_actions_.reserve(patched_actions_.size());
-    for (auto &patched : patched_actions_) {
+    for (auto &row : action_rows_) {
+        if (ranges::none_of(row.effects, [](const Effect &eff) {
+                return !eff.parameters.empty();
+            }))
+            continue;
         // Build heavy action: duplicate universal effects.
-        vector<Effect> heavy_effects;
-        bool any_universal = false;
-        for (const auto &eff : patched.effects) {
-            heavy_effects.push_back(eff);
-            if (!eff.parameters.empty()) {
-                any_universal = true;
-                heavy_effects.push_back(eff);
-            }
+        Action heavy;
+        heavy.parameters = row.parameters;
+        heavy.precondition = row.precondition;
+        for (const auto &eff : row.effects) {
+            heavy.effects.push_back(eff);
+            if (!eff.parameters.empty())
+                heavy.effects.push_back(eff);
         }
-        Action heavy = patched;
-        if (any_universal) {
-            heavy.effects = move(heavy_effects);
-            // Mirror Python: building the heavy action via the Action
-            // constructor re-uniquifies all variables, so the duplicated
-            // universal effects get disjoint quantified-variable names.
-            // Without this, operator_too_heavy compares an add effect with an
-            // identically-named copy of itself (inequality is unsatisfiable)
-            // and never fires, wrongly confirming counter-style invariants.
-            heavy.uniquify_variables();
-        }
-        heavy_actions_.push_back(move(heavy));
+        // Mirror Python: duplicated universal effects need disjoint quantified
+        // variable names. Without this, operator_too_heavy compares an effect
+        // with an identically-named copy and wrongly confirms counter mutexes.
+        heavy.uniquify_variables();
+        row.heavy.emplace(
+            HeavyBody{move(heavy.precondition), move(heavy.effects)});
     }
 }
 
 void BalanceChecker::build_predicate_map() {
-    for (size_t i = 0; i < patched_actions_.size(); ++i) {
-        for (const auto &eff : patched_actions_[i].effects) {
+    for (size_t i = 0; i < action_rows_.size(); ++i) {
+        for (const auto &eff : action_rows_[i].effects) {
             if (!eff.literal)
                 continue;
             const auto &lit = static_cast<const Literal &>(*eff.literal);
@@ -107,7 +104,7 @@ void BalanceChecker::build_predicate_map() {
                 list.push_back(static_cast<int>(i));
         }
     }
-    action_stamp_.assign(patched_actions_.size(), 0);
+    action_stamp_.assign(action_rows_.size(), 0);
 }
 
 const vector<int> &BalanceChecker::get_threats(const string &predicate) const {
