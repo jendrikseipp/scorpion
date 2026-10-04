@@ -57,11 +57,11 @@ bool atom_name_less(const Atom &a, const Atom &b) {
 }
 
 struct AxiomDependencies {
-    KeySet derived_variables;
+    // Each derived variable owns its representative effect atom. Repeated
+    // heads keep the last representative in input order.
+    KeyMap<shared_ptr<const Atom>> derived_variables;
     KeyMap<KeySet> positive_dependencies;
     KeyMap<KeySet> negative_dependencies;
-    // Key -> representative atom (an Atom object for the derived variable).
-    KeyMap<shared_ptr<const Atom>> repr;
 
     AxiomDependencies() = default;
     explicit AxiomDependencies(
@@ -70,8 +70,7 @@ struct AxiomDependencies {
             if (!ax || !ax->effect)
                 continue;
             AtomKey k = atom_key(*ax->effect);
-            derived_variables.insert(k);
-            repr[k] = ax->effect;
+            derived_variables[k] = ax->effect;
         }
         for (const auto &ax : axioms) {
             if (!ax || !ax->effect)
@@ -93,16 +92,14 @@ struct AxiomDependencies {
     }
 
     void remove_unnecessary_variables(const KeySet &necessary) {
-        KeySet kept;
-        for (const auto &v : derived_variables) {
+        erase_if(derived_variables, [&](const auto &entry) {
+            const auto &v = entry.first;
             if (necessary.contains(v))
-                kept.insert(v);
-            else {
-                positive_dependencies.erase(v);
-                negative_dependencies.erase(v);
-            }
-        }
-        derived_variables = move(kept);
+                return false;
+            positive_dependencies.erase(v);
+            negative_dependencies.erase(v);
+            return true;
+        });
     }
 };
 
@@ -159,10 +156,13 @@ KeySet compute_necessary_atoms(
 }
 
 vector<vector<AtomKey>> compute_sccs(const AxiomDependencies &deps) {
-    vector<AtomKey> sorted_vars(
-        deps.derived_variables.begin(), deps.derived_variables.end());
+    vector<AtomKey> sorted_vars;
+    sorted_vars.reserve(deps.derived_variables.size());
+    for (const auto &[key, _] : deps.derived_variables)
+        sorted_vars.push_back(key);
     ranges::sort(sorted_vars, [&deps](const AtomKey &a, const AtomKey &b) {
-        return atom_name_less(*deps.repr.at(a), *deps.repr.at(b));
+        return atom_name_less(
+            *deps.derived_variables.at(a), *deps.derived_variables.at(b));
     });
     KeyMap<int> idx;
     for (size_t i = 0; i < sorted_vars.size(); ++i)
@@ -380,7 +380,7 @@ AxiomLayering handle_axioms(
     AxiomLayering out;
     for (auto &c : clusters) {
         for (auto &v : c.variables) {
-            out.axiom_layers.push_back({deps.repr.at(v), c.layer});
+            out.axiom_layers.push_back({deps.derived_variables.at(v), c.layer});
             for (auto &ax : c.axioms[v])
                 out.axioms.push_back(move(ax));
         }
