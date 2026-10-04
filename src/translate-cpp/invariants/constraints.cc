@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <functional>
 #include <string>
+#include <unordered_set>
 #include <variant>
 
 using namespace std;
@@ -152,24 +153,34 @@ bool ConstraintSystem::is_solvable() const {
         [&](const vector<const EqualityConjunction *> &p) {
             if (found)
                 return;
-            // Combine equalities.
-            vector<pair<Term, Term>> all;
+            UnionFind uf;
             for (const auto *c : p)
-                for (const auto &e : c->equalities)
-                    all.push_back(e);
-            EqualityConjunction combined(move(all));
-            if (!combined.is_consistent())
-                return;
-            const auto *rep = combined.get_representative();
+                for (const auto &[a, b] : c->equalities) {
+                    uf.parent[a] = a;
+                    uf.parent[b] = b;
+                }
+            for (const auto *c : p)
+                for (const auto &[a, b] : c->equalities)
+                    uf.unite(a, b);
+
+            // This boolean query needs class identity and object membership,
+            // not a chosen representative name. Flatten the existing parent
+            // map and reject classes containing two distinct objects.
+            unordered_set<Term, TermHash> object_roots;
+            for (auto &[term, root] : uf.parent) {
+                root = uf.find(term);
+                if (is_object(term) && !object_roots.insert(root).second)
+                    return;
+            }
             // not_constant check.
             auto lookup = [&](const Term &t) -> Term {
-                auto it = rep->find(t);
-                return it == rep->end() ? t : it->second;
+                auto it = uf.parent.find(t);
+                return it == uf.parent.end() ? t : it->second;
             };
             bool bad = false;
             for (const auto &nc : not_constant) {
-                Term r = lookup(Term(nc));
-                if (is_object(r)) {
+                Term term(nc);
+                if (is_object(term) || object_roots.contains(lookup(term))) {
                     bad = true;
                     break;
                 }
