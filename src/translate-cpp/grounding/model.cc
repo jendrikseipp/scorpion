@@ -131,6 +131,7 @@ class JoinRuleB : public BuildRule {
 public:
     // Positions of common variable args in each of the two conditions.
     array<vector<int>, 2> common_positions;
+    array<bool, 2> contributes_head_args;
     // For each side: key (interned arg ids at the common positions) -> list of
     // indices into the model's `items` vector. We dereference items[idx].args
     // in fire(); storing indices instead of args copies keeps the join index
@@ -147,6 +148,7 @@ public:
         for (const auto &a : ra)
             if (a.is_position())
                 rvars.push_back(a.position());
+        contributes_head_args = {!lvars.empty(), !rvars.empty()};
         ranges::sort(lvars);
         ranges::sort(rvars);
         vector<int> common;
@@ -181,7 +183,12 @@ public:
         // The atom's key on this condition serves both to index it and to look
         // up matches on the other condition, so compute it once.
         JoinKey k = key_of(new_atom, common_positions[cond_index]);
-        atoms_by_key[cond_index][k].push_back(atom_index);
+        auto &same_key = atoms_by_key[cond_index][k];
+        // Without head positions, later matches only repeat heads already
+        // emitted with the first match. Keep its first index for future joins.
+        if (!contributes_head_args[cond_index] && !same_key.empty())
+            return;
+        same_key.push_back(atom_index);
         int other = 1 - cond_index;
         auto it = atoms_by_key[other].find(k);
         if (it == atoms_by_key[other].end())
