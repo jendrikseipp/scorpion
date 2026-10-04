@@ -354,7 +354,7 @@ vector<VarMap> expand_condition_map(const CondMap &condition) {
     return flat_conds;
 }
 
-optional<vector<VarMap>> translate_strips_conditions_aux(
+optional<CondMap> build_condition_map(
     const GroundLiteralList &conditions, const FactToVarVals &factvals,
     const vector<int> &ranges) {
     CondMap condition;
@@ -362,7 +362,7 @@ optional<vector<VarMap>> translate_strips_conditions_aux(
         return nullopt;
     if (!add_negative_conditions(conditions, factvals, ranges, condition))
         return nullopt;
-    return expand_condition_map(condition);
+    return condition;
 }
 
 optional<vector<VarMap>> translate_strips_conditions(
@@ -371,11 +371,13 @@ optional<vector<VarMap>> translate_strips_conditions(
     const vector<int> &mutex_ranges) {
     if (conditions.empty())
         return vector<VarMap>{{}};
-    auto mtx = translate_strips_conditions_aux(
-        conditions, mutex_factvals, mutex_ranges);
-    if (!mtx)
+    // Mutex domains only need validation; expanding them can be exponential.
+    if (!build_condition_map(conditions, mutex_factvals, mutex_ranges))
         return nullopt;
-    return translate_strips_conditions_aux(conditions, factvals, ranges);
+    auto condition = build_condition_map(conditions, factvals, ranges);
+    if (!condition)
+        return nullopt;
+    return expand_condition_map(*condition);
 }
 
 optional<vector<VarMap>> negate_and_translate_condition(
