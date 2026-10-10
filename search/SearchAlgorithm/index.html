@@ -1201,9 +1201,9 @@
 <div class="language-text highlight"><pre><span></span><code>--search &quot;astar(evaluator)&quot;
 </code></pre></div>
 <p>is equivalent to</p>
-<div class="language-text highlight"><pre><span></span><code>--search &quot;let(h, evaluator, 
-              eager(tiebreaking([sum([g(), h]), h], unsafe_pruning=false),
-                    reopen_closed=true, f_eval=sum([g(), h])))&quot;
+<div class="language-text highlight"><pre><span></span><code>--search &quot;let(h, evaluator, let(f, sum([g(), h]),
+              eager(tiebreaking([f, h], unsafe_pruning=false),
+                    reopen_closed=true, f_eval=f)))&quot;
 </code></pre></div>
 <h2 id="breadth-first_search">Breadth-first search<a class="headerlink" href="#breadth-first_search" title="Permanent link">#</a></h2>
 <p>Breadth-first graph search.
