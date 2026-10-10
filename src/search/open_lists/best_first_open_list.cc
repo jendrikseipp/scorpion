@@ -8,6 +8,7 @@
 #include <cassert>
 #include <deque>
 #include <map>
+#include <optional>
 
 using namespace std;
 
@@ -29,6 +30,7 @@ public:
     BestFirstOpenList(const shared_ptr<Evaluator> &eval, bool preferred_only);
 
     virtual Entry remove_min() override;
+    virtual optional<int> get_min_entry_value(Evaluator *eval) const override;
     virtual bool empty() const override;
     virtual void clear() override;
     virtual void get_path_dependent_evaluators(
@@ -66,6 +68,15 @@ Entry BestFirstOpenList<Entry>::remove_min() {
         buckets.erase(it);
     --size;
     return result;
+}
+
+template<class Entry>
+optional<int>
+BestFirstOpenList<Entry>::get_min_entry_value(Evaluator *eval) const {
+    assert(size > 0);
+    if (eval == evaluator.get())
+        return buckets.begin()->first;
+    return nullopt;
 }
 
 template<class Entry>

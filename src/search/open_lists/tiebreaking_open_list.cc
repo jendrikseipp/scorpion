@@ -8,6 +8,7 @@
 #include <cassert>
 #include <deque>
 #include <map>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -41,6 +42,7 @@ public:
         bool pref_only);
 
     virtual Entry remove_min() override;
+    virtual optional<int> get_min_entry_value(Evaluator *eval) const override;
     virtual bool empty() const override;
     virtual void clear() override;
     virtual void get_path_dependent_evaluators(
@@ -87,6 +89,18 @@ Entry TieBreakingOpenList<Entry>::remove_min() {
     if (it->second.empty())
         buckets.erase(it);
     return result;
+}
+
+template<class Entry>
+optional<int>
+TieBreakingOpenList<Entry>::get_min_entry_value(Evaluator *eval) const {
+    assert(size > 0);
+    const vector<int> &key = buckets.begin()->first;
+    for (int i = 0; i < dimension(); ++i) {
+        if (evaluators[i].get() == eval)
+            return key[i];
+    }
+    return nullopt;
 }
 
 template<class Entry>
