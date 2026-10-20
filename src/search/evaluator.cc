@@ -24,6 +24,10 @@ bool Evaluator::is_safe() const {
     return true;
 }
 
+bool Evaluator::must_be_notified_last() const {
+    return false;
+}
+
 void Evaluator::report_value_for_initial_state(
     const EvaluationResult &result) const {
     if (log.is_at_least_normal()) {

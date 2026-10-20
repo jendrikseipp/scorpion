@@ -38,6 +38,17 @@ public:
     virtual bool is_safe() const;
 
     /*
+      Return true if this evaluator evaluates other path-dependent evaluators
+      when it is notified of the initial state or a state transition. Search
+      algorithms notify such evaluators after all other path-dependent
+      evaluators, so that the evaluators they use are up to date. Chains of
+      such evaluators are not supported.
+
+      The default implementation returns false.
+    */
+    virtual bool must_be_notified_last() const;
+
+    /*
       get_path_dependent_evaluators should insert all path-dependent
       evaluators that this evaluator directly or indirectly depends on
       into the result set, including itself if necessary.

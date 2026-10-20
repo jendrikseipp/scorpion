@@ -125,7 +125,8 @@ bool MatchTree::incoming_operator_only_loops(
 Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
     Operators operators;
     vector<OperatorID> operator_ids;
-    backward_successor_generator.generate_applicable_ops(state, operator_ids);
+    backward_successor_generator.generate_applicable_ops(
+        state.get_cartesian_set(), operator_ids);
     for (OperatorID op_id : operator_ids) {
         int op = op_id.get_index();
         assert(
@@ -147,7 +148,8 @@ Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
 Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
     Operators operators;
     vector<OperatorID> operator_ids;
-    forward_successor_generator.generate_applicable_ops(state, operator_ids);
+    forward_successor_generator.generate_applicable_ops(
+        state.get_cartesian_set(), operator_ids);
     for (OperatorID op_id : operator_ids) {
         int op = op_id.get_index();
         assert(
@@ -291,7 +293,7 @@ vector<bool> MatchTree::get_looping_operators(
     for (auto &state : states) {
         applicable_ops.clear();
         forward_successor_generator.generate_applicable_ops(
-            *state, applicable_ops);
+            state->get_cartesian_set(), applicable_ops);
         for (OperatorID op_id : applicable_ops) {
             int op = op_id.get_index();
             if (looping[op]) {

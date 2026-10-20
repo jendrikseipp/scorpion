@@ -21,9 +21,9 @@ void SuccessorGenerator::generate_applicable_ops(
 }
 
 void SuccessorGenerator::generate_applicable_ops(
-    const cartesian_abstractions::AbstractState &state,
+    const cartesian_abstractions::CartesianSet &cartesian_set,
     vector<OperatorID> &applicable_ops) const {
-    root->generate_applicable_ops(state, applicable_ops);
+    root->generate_applicable_ops(cartesian_set, applicable_ops);
 }
 
 PerTaskInformation<SuccessorGenerator> g_successor_generators;

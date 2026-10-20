@@ -121,6 +121,11 @@ bool NoveltyEvaluator::is_safe() const {
     return false;
 }
 
+bool NoveltyEvaluator::must_be_notified_last() const {
+    // We evaluate the underlying evaluators (e.g., landmark heuristics).
+    return true;
+}
+
 int NoveltyEvaluator::compute_heuristic(const State &) {
     ABORT("Novelty should already be stored in heuristic cache.");
 }

@@ -3,7 +3,6 @@
 #include "../open_list_factory.h"
 
 #include "../algorithms/ordered_set.h"
-#include "../novelty/novelty_evaluator.h"
 #include "../plugins/options.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
@@ -61,11 +60,12 @@ void LazySearch::initialize() {
 
     path_dependent_evaluators.assign(evals.begin(), evals.end());
 
-    // HACK: we need to notify landmark heuristics before evaluating the novelty
-    // heuristics that depend on them.
-    sort(
+    // Notify evaluators that use other path-dependent evaluators last.
+    stable_partition(
         path_dependent_evaluators.begin(), path_dependent_evaluators.end(),
-        novelty::OrderNoveltyEvaluatorsLastHack());
+        [](const Evaluator *evaluator) {
+            return !evaluator->must_be_notified_last();
+        });
 
     State initial_state = state_registry.get_initial_state();
     for (Evaluator *evaluator : path_dependent_evaluators) {

@@ -11,7 +11,7 @@ class State;
 class TaskProxy;
 
 namespace cartesian_abstractions {
-class AbstractState;
+class CartesianSet;
 }
 
 namespace successor_generator {
@@ -32,7 +32,7 @@ public:
     void generate_applicable_ops(
         const State &state, std::vector<OperatorID> &applicable_ops) const;
     void generate_applicable_ops(
-        const cartesian_abstractions::AbstractState &state,
+        const cartesian_abstractions::CartesianSet &cartesian_set,
         std::vector<OperatorID> &applicable_ops) const;
 };
 

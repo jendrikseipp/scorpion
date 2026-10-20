@@ -10,7 +10,7 @@
 class State;
 
 namespace cartesian_abstractions {
-class AbstractState;
+class CartesianSet;
 }
 
 namespace successor_generator {
@@ -23,7 +23,7 @@ public:
         const std::vector<int> &state,
         std::vector<OperatorID> &applicable_ops) const = 0;
     virtual void generate_applicable_ops(
-        const cartesian_abstractions::AbstractState &state,
+        const cartesian_abstractions::CartesianSet &cartesian_set,
         std::vector<OperatorID> &applicable_ops) const = 0;
 };
 
@@ -38,7 +38,7 @@ public:
         const std::vector<int> &state,
         std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
-        const cartesian_abstractions::AbstractState &state,
+        const cartesian_abstractions::CartesianSet &cartesian_set,
         std::vector<OperatorID> &applicable_ops) const override;
 };
 
@@ -50,7 +50,7 @@ public:
         const std::vector<int> &state,
         std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
-        const cartesian_abstractions::AbstractState &state,
+        const cartesian_abstractions::CartesianSet &cartesian_set,
         std::vector<OperatorID> &applicable_ops) const override;
 };
 
@@ -65,7 +65,7 @@ public:
         const std::vector<int> &state,
         std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
-        const cartesian_abstractions::AbstractState &state,
+        const cartesian_abstractions::CartesianSet &cartesian_set,
         std::vector<OperatorID> &applicable_ops) const override;
 };
 
@@ -81,7 +81,7 @@ public:
         const std::vector<int> &state,
         std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
-        const cartesian_abstractions::AbstractState &state,
+        const cartesian_abstractions::CartesianSet &cartesian_set,
         std::vector<OperatorID> &applicable_ops) const override;
 };
 
@@ -97,7 +97,7 @@ public:
         const std::vector<int> &state,
         std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
-        const cartesian_abstractions::AbstractState &state,
+        const cartesian_abstractions::CartesianSet &cartesian_set,
         std::vector<OperatorID> &applicable_ops) const override;
 };
 
@@ -109,7 +109,7 @@ public:
         const std::vector<int> &state,
         std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
-        const cartesian_abstractions::AbstractState &state,
+        const cartesian_abstractions::CartesianSet &cartesian_set,
         std::vector<OperatorID> &applicable_ops) const override;
 };
 
@@ -121,7 +121,7 @@ public:
         const std::vector<int> &state,
         std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
-        const cartesian_abstractions::AbstractState &state,
+        const cartesian_abstractions::CartesianSet &cartesian_set,
         std::vector<OperatorID> &applicable_ops) const override;
 };
 }

@@ -39,22 +39,7 @@ public:
     virtual void notify_state_transition(
         const State &parent, OperatorID op_id, const State &state) override;
     virtual bool is_safe() const override;
-};
-
-// HACK: we need to notify landmark heuristics before evaluating the novelty
-// heuristics that depend on them.
-struct OrderNoveltyEvaluatorsLastHack {
-    bool operator()(const Evaluator *lhs, const Evaluator *rhs) const {
-        if (dynamic_cast<const novelty::NoveltyEvaluator *>(lhs) != nullptr &&
-            dynamic_cast<const novelty::NoveltyEvaluator *>(rhs) == nullptr) {
-            return false;
-        }
-        if (dynamic_cast<const novelty::NoveltyEvaluator *>(lhs) == nullptr &&
-            dynamic_cast<const novelty::NoveltyEvaluator *>(rhs) != nullptr) {
-            return true;
-        }
-        return lhs < rhs;
-    }
+    virtual bool must_be_notified_last() const override;
 };
 }
 
