@@ -153,7 +153,7 @@ void preprocess(int argc, const char **argv) {
         if (!compute_h2_mutexes(
                 ordering, operators, axioms, mutexes, initial_state, goals, h2,
                 disable_bw_h2)) {
-            generate_unsolvable_cpp_input(outfile);
+            generate_trivial_cpp_input(outfile, false);
             return;
         }
 
@@ -184,7 +184,7 @@ void preprocess(int argc, const char **argv) {
         strip_goals(goals);
         cout << "Change id of initial state" << endl;
         if (initial_state.remove_unreachable_atoms()) {
-            generate_unsolvable_cpp_input(outfile);
+            generate_trivial_cpp_input(outfile, false);
             return;
         }
 
@@ -384,7 +384,12 @@ void preprocess(int argc, const char **argv) {
 
     cout << "Writing output..." << endl;
     if (ordering.empty()) {
-        generate_unsolvable_cpp_input(outfile);
+        // All variables have been pruned. The causal graph keeps all goal
+        // variables, so each of them has been pruned because it has a single
+        // reachable value. Since h^2 never marks initial-state or goal atoms
+        // as unreachable, this value is both the initial and the goal value.
+        // Thus, the goal holds in the initial state.
+        generate_trivial_cpp_input(outfile, true);
     } else {
         generate_cpp_input(
             ordering, metric, mutexes, initial_state, goals, operators, axioms,

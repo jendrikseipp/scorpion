@@ -227,8 +227,9 @@ void generate_cpp_input(
 
     out.close();
 }
-void generate_unsolvable_cpp_input(const string &outfile) {
-    cout << "Unsolvable task in preprocessor" << endl;
+void generate_trivial_cpp_input(const string &outfile, bool solvable) {
+    cout << (solvable ? "Trivially solvable" : "Unsolvable") << " task in preprocessor."
+         << endl;
     ofstream out;
     out.open(outfile, ios::out);
     out << "begin_version\n";
@@ -254,7 +255,7 @@ void generate_unsolvable_cpp_input(const string &outfile) {
     out << "begin_state\n0\nend_state\n";
     out << "begin_goal\n"
         << "1\n"
-        << "0 1\n"
+        << "0 " << (solvable ? 0 : 1) << "\n"
         << "end_goal\n";
 
     // Operators

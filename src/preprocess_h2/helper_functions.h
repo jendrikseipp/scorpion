@@ -29,7 +29,9 @@ void dump_preprocessed_problem_description(
     const std::vector<std::pair<Variable *, int>> &goals,
     const std::vector<Operator> &operators, const std::vector<Axiom> &axioms);
 
-void generate_unsolvable_cpp_input(const std::string &outfile);
+// Write a task with a single variable and no operators whose goal holds
+// initially (solvable) or is unreachable (unsolvable).
+void generate_trivial_cpp_input(const std::string &outfile, bool solvable);
 void generate_cpp_input(
     const std::vector<Variable *> &ordered_var, const bool &metric,
     const std::vector<MutexGroup> &mutexes, const State &initial_state,
