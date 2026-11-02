@@ -30,6 +30,8 @@ void dump_preprocessed_problem_description(
     const std::vector<Operator> &operators, const std::vector<Axiom> &axioms);
 
 void generate_unsolvable_cpp_input(const std::string &outfile);
+// A task whose goal holds initially and that the pruning reduced to nothing.
+void generate_solved_cpp_input(const std::string &outfile);
 void generate_cpp_input(
     const std::vector<Variable *> &ordered_var, const bool &metric,
     const std::vector<MutexGroup> &mutexes, const State &initial_state,

@@ -127,6 +127,15 @@ void preprocess(int argc, const char **argv) {
         cin, metric, internal_variables, variables, mutexes, initial_state,
         goals, operators, axioms);
 
+    // Pruning removes the variables of goals that hold initially and that no operator changes, so a task left without
+    // variables is solved, not unsolvable, when its goal holds initially. (Derived goal variables have no initial
+    // value, so this only applies without axioms.)
+    const bool goal_holds_initially =
+        axioms.empty() &&
+        all_of(goals.cbegin(), goals.cend(), [&](const auto &goal) {
+            return initial_state[goal.first] == goal.second;
+        });
+
     cout << "Building causal graph..." << endl;
     CausalGraph causal_graph(variables, operators, axioms, goals);
     const vector<Variable *> &ordering = causal_graph.get_variable_ordering();
@@ -383,7 +392,9 @@ void preprocess(int argc, const char **argv) {
     cout << "Preprocessor task size: " << task_size << endl;
 
     cout << "Writing output..." << endl;
-    if (ordering.empty()) {
+    if (ordering.empty() && goal_holds_initially) {
+        generate_solved_cpp_input(outfile);
+    } else if (ordering.empty()) {
         generate_unsolvable_cpp_input(outfile);
     } else {
         generate_cpp_input(
