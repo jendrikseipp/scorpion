@@ -228,8 +228,8 @@ void generate_cpp_input(
     out.close();
 }
 void generate_trivial_cpp_input(const string &outfile, bool solvable) {
-    cout << (solvable ? "Trivially solvable" : "Unsolvable") << " task in preprocessor."
-         << endl;
+    cout << (solvable ? "Trivially solvable" : "Unsolvable")
+         << " task in preprocessor." << endl;
     ofstream out;
     out.open(outfile, ios::out);
     out << "begin_version\n";
