@@ -1,8 +1,10 @@
 #include "state.h"
 
+#include "causal_graph.h"
 #include "helper_functions.h"
 #include "variable.h"
 
+#include <cassert>
 #include <iostream>
 
 using namespace std;
@@ -18,6 +20,7 @@ State::State(istream &in, const vector<Variable *> &variables) {
 }
 
 int State::operator[](Variable *var) const {
+    assert(values.contains(var));
     return values.find(var)->second;
 }
 
@@ -31,7 +34,7 @@ bool State::remove_unreachable_atoms() {
     for (auto it = values.begin(); it != values.end(); ++it) {
         Variable *var = it->first;
         int value = it->second;
-        if (var->is_necessary()) {
+        if (var->is_necessary() || g_do_not_prune_variables) {
             if (var->is_reachable(value)) {
                 new_values[var] = var->get_new_id(value);
             } else {
